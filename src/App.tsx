@@ -26,6 +26,7 @@ const App = () => (
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/quiz/new" element={<CreateQuiz />} />
+          <Route path="/quiz/:quizId/edit" element={<CreateQuiz />} />
           <Route path="/my-quizzes" element={<MyQuizzes />} />
           <Route path="/join" element={<JoinGame />} />
           <Route path="/join/:directLink" element={<JoinGame />} />
