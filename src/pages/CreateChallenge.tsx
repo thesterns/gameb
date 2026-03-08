@@ -75,7 +75,7 @@ const CreateChallenge = () => {
   const [logoUrl, setLogoUrl] = useState<string | undefined>();
   const [logoText, setLogoText] = useState("");
   const [dimensions, setDimensions] = useState<DimensionsState>(emptyDimensions());
-  const [newItems, setNewItems] = useState<Record<DimensionKey, string>>({ time: "", place: "", person: "", object: "", extra: "" });
+  const [newItems, setNewItems] = useState<Record<DimensionKey, string>>(emptyNewItems());
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(isEdit);
 
