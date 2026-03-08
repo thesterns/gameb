@@ -6,8 +6,6 @@ import { Timer, CheckCircle2, XCircle, Trophy, ArrowLeft, Users, Crown, RotateCw
 import YouTubeEmbed from "@/components/YouTubeEmbed";
 import QuizLogo from "@/components/QuizLogo";
 import { Confetti } from "@/components/Confetti";
-import YouTubeEmbed from "@/components/YouTubeEmbed";
-import QuizLogo from "@/components/QuizLogo";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
