@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowRight, Target, Users, Clock, MapPin, User, Package, Sparkles, Send, CheckCircle, Edit3, AlertTriangle } from "lucide-react";
+import { ArrowRight, Target, Users, Clock, MapPin, User, Package, Sparkles, Send, CheckCircle, Edit3, AlertTriangle, Plus } from "lucide-react";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
 import QuizLogo from "@/components/QuizLogo";
 import { toast } from "sonner";
@@ -391,7 +391,15 @@ const ChallengePlay = () => {
 
   const dimensionOrder = ["time", "place", "person", "object", "extra"];
 
-  const renderAssignments = (assignments: Assignment[]) => {
+  const handleInsertValue = (value: string) => {
+    if (submitted && editing) {
+      setEditSentence(prev => prev ? `${prev} ${value}` : value);
+    } else if (!submitted) {
+      setSentence(prev => prev ? `${prev} ${value}` : value);
+    }
+  };
+
+  const renderAssignments = (assignments: Assignment[], showInsert = false) => {
     const sorted = [...assignments].sort(
       (a, b) => dimensionOrder.indexOf(a.dimension) - dimensionOrder.indexOf(b.dimension)
     );
@@ -410,7 +418,18 @@ const ChallengePlay = () => {
             >
               <Icon className={`size-5 ${meta.color} shrink-0`} />
               <span className="text-sm font-medium text-muted-foreground w-12">{meta.label}</span>
-              <span className="font-heading font-bold text-foreground">{a.value}</span>
+              <span className="font-heading font-bold text-foreground flex-1">{a.value}</span>
+              {showInsert && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs text-primary hover:text-primary"
+                  onClick={() => handleInsertValue(a.value)}
+                >
+                  <Plus className="!size-3.5" />
+                  הכנס
+                </Button>
+              )}
             </motion.div>
           );
         })}
@@ -466,7 +485,7 @@ const ChallengePlay = () => {
               {myAssignments.length > 0 && (
                 <div className="space-y-3">
                   <h3 className="font-heading font-bold text-lg text-center">🎯 הערכים שלך</h3>
-                  {renderAssignments(myAssignments)}
+                  {renderAssignments(myAssignments, !submitted || editing)}
                 </div>
               )}
 
