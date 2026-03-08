@@ -229,6 +229,8 @@ export type Database = {
           description: string | null
           id: string
           image_url: string | null
+          logo_text: string | null
+          logo_url: string | null
           mode: string
           theme: string
           time_per_question: number
@@ -242,6 +244,8 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          logo_text?: string | null
+          logo_url?: string | null
           mode?: string
           theme?: string
           time_per_question?: number
@@ -255,6 +259,8 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          logo_text?: string | null
+          logo_url?: string | null
           mode?: string
           theme?: string
           time_per_question?: number
