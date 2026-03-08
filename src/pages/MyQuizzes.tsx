@@ -208,6 +208,15 @@ const MyQuizzes = () => {
               </div>
               <div className="flex items-center gap-1 shrink-0">
                 <Button
+                  variant="hero"
+                  size="sm"
+                  className="ml-1"
+                  onClick={() => handleStartGame(quiz.id)}
+                >
+                  <Play className="!size-4" />
+                  הפעל
+                </Button>
+                <Button
                   variant="ghost"
                   size="icon"
                   className="text-muted-foreground hover:text-foreground"
