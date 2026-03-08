@@ -301,6 +301,7 @@ export type Database = {
           challenge_id: string | null
           created_at: string
           current_question_index: number
+          enable_voting: boolean
           host_user_id: string
           id: string
           join_code: string
@@ -312,6 +313,7 @@ export type Database = {
           challenge_id?: string | null
           created_at?: string
           current_question_index?: number
+          enable_voting?: boolean
           host_user_id: string
           id?: string
           join_code: string
@@ -323,6 +325,7 @@ export type Database = {
           challenge_id?: string | null
           created_at?: string
           current_question_index?: number
+          enable_voting?: boolean
           host_user_id?: string
           id?: string
           join_code?: string
