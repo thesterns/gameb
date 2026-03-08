@@ -125,6 +125,13 @@ const CreateQuiz = () => {
       if ((quiz as any).youtube_url) {
         setQuizYoutubeUrl((quiz as any).youtube_url);
       }
+      if ((quiz as any).logo_url) {
+        setLogoUrl((quiz as any).logo_url);
+        setLogoPreview((quiz as any).logo_url);
+      }
+      if ((quiz as any).logo_text) {
+        setLogoText((quiz as any).logo_text);
+      }
 
       const { data: dbQuestions } = await supabase
         .from("questions")
