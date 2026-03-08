@@ -2,9 +2,10 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
-import { Timer, CheckCircle2, XCircle, Trophy, ArrowLeft, Users, Crown, RotateCw, BarChart3 } from "lucide-react";
+import { Timer, CheckCircle2, XCircle, Trophy, ArrowLeft, Users, Crown, RotateCw, BarChart3, Star } from "lucide-react";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
 import QuizLogo from "@/components/QuizLogo";
+import { Confetti } from "@/components/Confetti";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
@@ -40,6 +41,64 @@ const ANSWER_COLORS = [
   "bg-[hsl(var(--answer-purple))]",
   "bg-[hsl(var(--answer-orange))]",
 ];
+
+interface LeaderboardEntry {
+  player_name: string;
+  total_score: number;
+  total_correct: number;
+  max_streak: number;
+}
+
+const StarBadge = ({ maxStreak, totalCorrect }: { maxStreak: number; totalCorrect: number }) => {
+  if (maxStreak >= 5 || totalCorrect >= 5) {
+    return <Star className="size-4 fill-[hsl(var(--answer-yellow))] text-[hsl(var(--answer-yellow))]" />;
+  }
+  if (maxStreak >= 3 || totalCorrect >= 3) {
+    return <Star className="size-4 fill-muted-foreground/50 text-muted-foreground" />;
+  }
+  return null;
+};
+
+/** Compute leaderboard with streak data from raw responses */
+function computeLeaderboard(
+  data: { participant_id: string; score: number; is_correct: boolean; question_id: string; game_participants: any }[],
+  questionsOrdered: { id: string }[],
+  excludeId?: string | null,
+): LeaderboardEntry[] {
+  const players: Record<string, {
+    player_name: string;
+    total_score: number;
+    total_correct: number;
+    responses: Map<string, boolean>; // question_id -> is_correct
+  }> = {};
+
+  for (const row of data) {
+    const pid = row.participant_id;
+    if (excludeId && pid === excludeId) continue;
+    const name = (row.game_participants as any)?.player_name || "?";
+    if (!players[pid]) players[pid] = { player_name: name, total_score: 0, total_correct: 0, responses: new Map() };
+    players[pid].total_score += row.score;
+    if (row.is_correct) players[pid].total_correct += 1;
+    players[pid].responses.set(row.question_id, row.is_correct);
+  }
+
+  // Compute max streak per player based on question order
+  const result: LeaderboardEntry[] = Object.values(players).map((p) => {
+    let maxStreak = 0;
+    let currentStreak = 0;
+    for (const q of questionsOrdered) {
+      if (p.responses.get(q.id)) {
+        currentStreak++;
+        maxStreak = Math.max(maxStreak, currentStreak);
+      } else if (p.responses.has(q.id)) {
+        currentStreak = 0;
+      }
+    }
+    return { player_name: p.player_name, total_score: p.total_score, total_correct: p.total_correct, max_streak: maxStreak };
+  });
+
+  return result.sort((a, b) => b.total_score - a.total_score);
+}
 
 const GamePlay = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -104,9 +163,15 @@ const GamePlay = () => {
   const [myAnswerCorrect, setMyAnswerCorrect] = useState<boolean | null>(null);
   const [revealedCorrectAnswerId, setRevealedCorrectAnswerId] = useState<string | null>(null);
 
+  // Streak & confetti
+  const [correctStreak, setCorrectStreak] = useState(0);
+  const [maxStreak, setMaxStreak] = useState(0);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [totalCorrect, setTotalCorrect] = useState(0);
+
   // Leaderboard state
   const [showLeaderboard, setShowLeaderboard] = useState(false);
-  const [midGameLeaderboard, setMidGameLeaderboard] = useState<{ player_name: string; total_score: number }[]>([]);
+  const [midGameLeaderboard, setMidGameLeaderboard] = useState<LeaderboardEntry[]>([]);
 
   // Auto-advance state
   const [autoAdvance, setAutoAdvance] = useState(false);
@@ -114,7 +179,7 @@ const GamePlay = () => {
 
   // Player leaderboard popup
   const [showPlayerLeaderboard, setShowPlayerLeaderboard] = useState(false);
-  const [playerLeaderboardData, setPlayerLeaderboardData] = useState<{ player_name: string; total_score: number }[]>([]);
+  const [playerLeaderboardData, setPlayerLeaderboardData] = useState<LeaderboardEntry[]>([]);
 
   // Statistics overlay
   const [showStats, setShowStats] = useState(false);
@@ -453,6 +518,15 @@ const GamePlay = () => {
         setMyAnswerCorrect(result?.is_correct ?? false);
         if (result?.is_correct) {
           setScore((prev) => prev + result.score);
+          setTotalCorrect((prev) => prev + 1);
+          setCorrectStreak((prev) => {
+            const newStreak = prev + 1;
+            setMaxStreak((m) => Math.max(m, newStreak));
+            if (newStreak >= 3) setShowConfetti(true);
+            return newStreak;
+          });
+        } else {
+          setCorrectStreak(0);
         }
       }
     },
@@ -494,8 +568,24 @@ const GamePlay = () => {
       const currentQ = questions[currentIndex];
       const pts = currentQ?.double_points ? 20 : 10;
       setScore((prev) => prev + pts);
+      setTotalCorrect((prev) => prev + 1);
+      setCorrectStreak((prev) => {
+        const newStreak = prev + 1;
+        setMaxStreak((m) => Math.max(m, newStreak));
+        if (newStreak >= 3) setShowConfetti(true);
+        return newStreak;
+      });
+    } else {
+      setCorrectStreak(0);
     }
   }, [timeUp, kingAnswerId, isKingOrTribeMode, isHost, selectedAnswerId, isCurrentPlayerKing]);
+
+  // Reset confetti after showing
+  useEffect(() => {
+    if (!showConfetti) return;
+    const timer = setTimeout(() => setShowConfetti(false), 3000);
+    return () => clearTimeout(timer);
+  }, [showConfetti]);
 
   // Auto-advance: when enabled and timeUp, advance after 4 seconds
   useEffect(() => {
@@ -545,21 +635,13 @@ const GamePlay = () => {
 
     const { data } = await supabase
       .from("game_responses")
-      .select("participant_id, score, game_participants!inner(player_name)")
+      .select("participant_id, score, is_correct, question_id, game_participants!inner(player_name)")
       .eq("session_id", sessionId);
 
     if (!data) return;
 
-    const scores: Record<string, { player_name: string; total_score: number }> = {};
-    for (const row of data) {
-      const pid = row.participant_id;
-      if (quizMode === "king" && pid === currentKingId) continue;
-      const name = (row.game_participants as any)?.player_name || "?";
-      if (!scores[pid]) scores[pid] = { player_name: name, total_score: 0 };
-      scores[pid].total_score += row.score;
-    }
-
-    const sorted = Object.values(scores).sort((a, b) => b.total_score - a.total_score);
+    const excludeId = quizMode === "king" ? currentKingId : null;
+    const sorted = computeLeaderboard(data as any, questions, excludeId);
     setPlayerLeaderboardData(sorted);
     setShowPlayerLeaderboard(true);
   };
@@ -567,24 +649,15 @@ const GamePlay = () => {
   const handleShowLeaderboard = async () => {
     if (!isHost || !sessionId) return;
 
-    // Load current scores
     const { data } = await supabase
       .from("game_responses")
-      .select("participant_id, score, game_participants!inner(player_name)")
+      .select("participant_id, score, is_correct, question_id, game_participants!inner(player_name)")
       .eq("session_id", sessionId);
 
     if (!data) return;
 
-    const scores: Record<string, { player_name: string; total_score: number }> = {};
-    for (const row of data) {
-      const pid = row.participant_id;
-      if (quizMode === "king" && pid === currentKingId) continue;
-      const name = (row.game_participants as any)?.player_name || "?";
-      if (!scores[pid]) scores[pid] = { player_name: name, total_score: 0 };
-      scores[pid].total_score += row.score;
-    }
-
-    const sorted = Object.values(scores).sort((a, b) => b.total_score - a.total_score);
+    const excludeId = quizMode === "king" ? currentKingId : null;
+    const sorted = computeLeaderboard(data as any, questions, excludeId);
     setMidGameLeaderboard(sorted);
     setShowLeaderboard(true);
 
@@ -681,6 +754,7 @@ const GamePlay = () => {
         quizTitle={quizTitle}
         quizLogoUrl={quizLogoUrl}
         quizLogoText={quizLogoText}
+        questions={questions}
       />
     );
   }
@@ -801,6 +875,8 @@ const GamePlay = () => {
 
   return (
     <div className={`min-h-screen ${t.bg} flex flex-col`} dir="rtl">
+      {/* Confetti effect */}
+      <Confetti show={showConfetti} />
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3">
         <QuizLogo logoUrl={quizLogoUrl} logoText={quizLogoText} size="sm" />
@@ -1017,7 +1093,7 @@ const GamePlay = () => {
             }`}
           >
             {myAnswerCorrect
-              ? "תשובה נכונה! +10 נקודות 🎉"
+              ? `תשובה נכונה! 🎉${correctStreak >= 3 ? ` 🔥 רצף של ${correctStreak}!` : ""}`
               : `תשובה שגויה. התשובה הנכונה: ${correctAnswerForDisplay?.text || "?"}`}
           </motion.p>
         )}
@@ -1056,7 +1132,7 @@ const GamePlay = () => {
             }`}
           >
             {selectedAnswerId === kingAnswerId
-              ? "תשובה נכונה! +10 נקודות 🎉"
+              ? `תשובה נכונה! 🎉${correctStreak >= 3 ? ` 🔥 רצף של ${correctStreak}!` : ""}`
               : `תשובה שגויה. התשובה הנכונה: ${correctAnswerForDisplay?.text || "?"}`}
           </motion.p>
         )}
@@ -1212,6 +1288,7 @@ const GamePlay = () => {
                       <span className="font-heading font-semibold text-foreground">
                         {entry.player_name}
                       </span>
+                      <StarBadge maxStreak={entry.max_streak ?? 0} totalCorrect={entry.total_correct ?? 0} />
                     </div>
                     <span className="font-heading font-bold text-foreground">{entry.total_score} נק׳</span>
                   </motion.div>
@@ -1290,6 +1367,7 @@ const GamePlay = () => {
                       <span className="font-heading font-semibold text-foreground">
                         {entry.player_name}
                       </span>
+                      <StarBadge maxStreak={entry.max_streak ?? 0} totalCorrect={entry.total_correct ?? 0} />
                     </div>
                     <span className="font-heading font-bold text-foreground">{entry.total_score} נק׳</span>
                   </motion.div>
@@ -1331,6 +1409,7 @@ const GameFinished = ({
   quizTitle,
   quizLogoUrl,
   quizLogoText,
+  questions,
 }: {
   sessionId: string;
   isHost: boolean;
@@ -1344,40 +1423,28 @@ const GameFinished = ({
   quizTitle: string;
   quizLogoUrl: string | null;
   quizLogoText: string | null;
+  questions: Question[];
 }) => {
   const navigate = useNavigate();
   const t = themeClasses[quizTheme];
-  const [leaderboard, setLeaderboard] = useState<{ player_name: string; total_score: number }[]>(
-    []
-  );
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
 
   useEffect(() => {
     const loadLeaderboard = async () => {
       const { data } = await supabase
         .from("game_responses")
-        .select("participant_id, score, game_participants!inner(player_name)")
+        .select("participant_id, score, is_correct, question_id, game_participants!inner(player_name)")
         .eq("session_id", sessionId);
 
       if (!data) return;
 
-      const scores: Record<string, { player_name: string; total_score: number }> = {};
-      for (const row of data) {
-        const pid = row.participant_id;
-
-        // In king mode, exclude king from leaderboard
-        if (quizMode === "king" && pid === kingParticipantId) continue;
-
-        const name = (row.game_participants as any)?.player_name || "?";
-        if (!scores[pid]) scores[pid] = { player_name: name, total_score: 0 };
-        scores[pid].total_score += row.score;
-      }
-
-      const sorted = Object.values(scores).sort((a, b) => b.total_score - a.total_score);
+      const excludeId = quizMode === "king" ? kingParticipantId : null;
+      const sorted = computeLeaderboard(data as any, questions, excludeId);
       setLeaderboard(sorted);
     };
 
     loadLeaderboard();
-  }, [sessionId, quizMode, kingParticipantId]);
+  }, [sessionId, quizMode, kingParticipantId, questions]);
 
   // Assign ranks with ties (same score = same rank)
   const rankedLeaderboard = leaderboard.map((entry, idx) => {
@@ -1452,14 +1519,16 @@ const GameFinished = ({
                   >
                     <span className={podiumMedalSizes[rank]}>{medalEmojis[rank]}</span>
                     {group.players.map((entry, pIdx) => (
-                      <span
-                        key={pIdx}
-                        className={`font-heading font-bold truncate max-w-full ${podiumTextSizes[rank]} ${
-                          entry.player_name === playerName ? "text-primary" : "text-foreground"
-                        }`}
-                      >
-                        {entry.player_name}
-                      </span>
+                      <div key={pIdx} className="flex items-center gap-1">
+                        <span
+                          className={`font-heading font-bold truncate max-w-full ${podiumTextSizes[rank]} ${
+                            entry.player_name === playerName ? "text-primary" : "text-foreground"
+                          }`}
+                        >
+                          {entry.player_name}
+                        </span>
+                        <StarBadge maxStreak={entry.max_streak ?? 0} totalCorrect={entry.total_correct ?? 0} />
+                      </div>
                     ))}
                     <span className="text-sm font-heading font-bold text-muted-foreground">
                       {group.players[0].total_score} נק׳
@@ -1508,6 +1577,7 @@ const GameFinished = ({
                     <span className="font-heading font-semibold text-foreground">
                       {entry.player_name}
                     </span>
+                    <StarBadge maxStreak={entry.max_streak ?? 0} totalCorrect={entry.total_correct ?? 0} />
                   </div>
                   <span className="font-heading font-bold text-foreground">{entry.total_score}</span>
                 </motion.div>
