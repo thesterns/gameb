@@ -48,6 +48,7 @@ const createDefaultQuestion = (): Question => ({
   id: generateId(),
   text: "",
   answers: [createDefaultAnswer(), createDefaultAnswer()],
+  double_points: false,
 });
 
 const modeDescriptions: Record<string, { label: string; description: string }> = {
