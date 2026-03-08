@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowRight, Target, Users, Clock, MapPin, User, Package, Sparkles, Send, CheckCircle, Medal, Trophy, Award } from "lucide-react";
+import { ArrowRight, Target, Users, Clock, MapPin, User, Package, Sparkles, Send, CheckCircle } from "lucide-react";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
 import QuizLogo from "@/components/QuizLogo";
 import { toast } from "sonner";
