@@ -460,6 +460,15 @@ const GamePlay = () => {
         setMyAnswerCorrect(result?.is_correct ?? false);
         if (result?.is_correct) {
           setScore((prev) => prev + result.score);
+          setTotalCorrect((prev) => prev + 1);
+          setCorrectStreak((prev) => {
+            const newStreak = prev + 1;
+            setMaxStreak((m) => Math.max(m, newStreak));
+            if (newStreak >= 3) setShowConfetti(true);
+            return newStreak;
+          });
+        } else {
+          setCorrectStreak(0);
         }
       }
     },
