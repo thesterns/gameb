@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Timer, CheckCircle2, XCircle, Trophy, ArrowLeft, Users, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { themeClasses, type GameTheme } from "@/lib/gameThemes";
 
 interface Question {
   id: string;
