@@ -418,8 +418,61 @@ const GamePlay = () => {
     }
   }, [timeUp, kingAnswerId, isKingOrTribeMode, isHost, selectedAnswerId, isCurrentPlayerKing]);
 
+  const handleShowLeaderboard = async () => {
+    if (!isHost || !sessionId) return;
+
+    // Load current scores
+    const { data } = await supabase
+      .from("game_responses")
+      .select("participant_id, score, game_participants!inner(player_name)")
+      .eq("session_id", sessionId);
+
+    if (!data) return;
+
+    const scores: Record<string, { player_name: string; total_score: number }> = {};
+    for (const row of data) {
+      const pid = row.participant_id;
+      if (quizMode === "king" && pid === currentKingId) continue;
+      const name = (row.game_participants as any)?.player_name || "?";
+      if (!scores[pid]) scores[pid] = { player_name: name, total_score: 0 };
+      scores[pid].total_score += row.score;
+    }
+
+    const sorted = Object.values(scores).sort((a, b) => b.total_score - a.total_score);
+    setMidGameLeaderboard(sorted);
+    setShowLeaderboard(true);
+
+    // Broadcast to all players
+    const channel = supabase.channel(`leaderboard-${sessionId}`);
+    await channel.subscribe();
+    await channel.send({
+      type: "broadcast",
+      event: "show_leaderboard",
+      payload: { leaderboard: sorted },
+    });
+    supabase.removeChannel(channel);
+  };
+
+  const handleHideLeaderboard = async () => {
+    setShowLeaderboard(false);
+
+    const channel = supabase.channel(`leaderboard-${sessionId}`);
+    await channel.subscribe();
+    await channel.send({
+      type: "broadcast",
+      event: "hide_leaderboard",
+      payload: {},
+    });
+    supabase.removeChannel(channel);
+  };
+
   const handleNextQuestion = async () => {
     if (!isHost || !sessionId) return;
+
+    // Hide leaderboard first if shown
+    if (showLeaderboard) {
+      await handleHideLeaderboard();
+    }
 
     const nextIndex = currentIndex + 1;
 
