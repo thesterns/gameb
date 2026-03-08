@@ -30,11 +30,11 @@ const JoinGame = () => {
           .single();
 
         if (!session) {
-          toast.error("קוד משחק לא נמצא");
+          setCodeError("קוד משחק לא נמצא, נסו שוב");
           return;
         }
         if (session.status !== "lobby") {
-          toast.error("המשחק כבר התחיל");
+          setCodeError("המשחק כבר התחיל או הסתיים");
           return;
         }
         setSessionId(session.id);
