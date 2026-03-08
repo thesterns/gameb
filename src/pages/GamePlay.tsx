@@ -7,6 +7,7 @@ import YouTubeEmbed from "@/components/YouTubeEmbed";
 import QuizLogo from "@/components/QuizLogo";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
 import { themeClasses, type GameTheme } from "@/lib/gameThemes";
 
 interface Question {
