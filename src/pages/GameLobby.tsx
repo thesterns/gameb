@@ -171,28 +171,44 @@ const GameLobby = () => {
           .eq("challenge_id", challengeId);
 
         if (dimItems && dimItems.length > 0) {
-          // Group by dimension
+          // Group by dimension + dedupe values
           const byDimension: Record<string, string[]> = {};
           for (const item of dimItems) {
             if (!byDimension[item.dimension]) byDimension[item.dimension] = [];
             byDimension[item.dimension].push(item.value);
           }
 
-          // Assign one random value per dimension per participant (each picks independently)
-          const assignments: { session_id: string; participant_id: string; dimension: string; value: string }[] = [];
           for (const [dimension, values] of Object.entries(byDimension)) {
-            // Shuffle a copy for fair distribution
-            const shuffled = [...values].sort(() => Math.random() - 0.5);
-            participants.forEach((p, i) => {
-              // Cycle through shuffled values so adjacent players get different ones when possible
-              const randomValue = shuffled[i % shuffled.length];
+            byDimension[dimension] = Array.from(new Set(values.filter(Boolean)));
+          }
+
+          const hasAtLeastOneRealChoice = Object.values(byDimension).some((values) => values.length > 1);
+
+          if (participants.length > 1 && !hasAtLeastOneRealChoice) {
+            toast.error("כדי שכל שחקן יקבל ערכים שונים, צריך לפחות שני ערכים באחד המימדים");
+            return;
+          }
+
+          // Assign random values per dimension, with shuffled participant order each time
+          const assignments: { session_id: string; participant_id: string; dimension: string; value: string }[] = [];
+
+          for (const [dimension, values] of Object.entries(byDimension)) {
+            const shuffledParticipants = [...participants].sort(() => Math.random() - 0.5);
+
+            for (let i = 0; i < shuffledParticipants.length; i++) {
+              // When there are fewer values than participants, cycle with a fresh shuffle
+              const cycleIndex = i % values.length;
+              const cycleValues = cycleIndex === 0 ? [...values].sort(() => Math.random() - 0.5) : null;
+              const valuePool = cycleValues ?? values;
+              const randomValue = valuePool[cycleIndex];
+
               assignments.push({
                 session_id: sessionId!,
-                participant_id: p.id,
+                participant_id: shuffledParticipants[i].id,
                 dimension,
                 value: randomValue,
               });
-            });
+            }
           }
 
           if (assignments.length > 0) {
