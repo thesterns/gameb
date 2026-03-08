@@ -1,7 +1,9 @@
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Zap, Users, Trophy, Sparkles, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/hero-quiz.png";
 
 const features = [
