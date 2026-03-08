@@ -159,16 +159,32 @@ const MyQuizzes = () => {
                   <span>{new Date(quiz.created_at).toLocaleDateString("he-IL")}</span>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-destructive hover:text-destructive shrink-0"
-                onClick={() => handleDelete(quiz.id)}
-              >
-                <Trash2 className="!size-4" />
-              </Button>
-            </motion.div>
-          ))
+              <div className="flex items-center gap-1 shrink-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={() => navigate(`/quiz/${quiz.id}/edit`)}
+                >
+                  <Pencil className="!size-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={() => handleDuplicate(quiz.id)}
+                >
+                  <Copy className="!size-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => handleDelete(quiz.id)}
+                >
+                  <Trash2 className="!size-4" />
+                </Button>
+              </div>
         )}
       </main>
     </div>
