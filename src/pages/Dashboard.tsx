@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Gamepad2, LogOut, BookOpen, Crown, Brain, Users, Play, Target } from "lucide-react";
+import { Plus, Gamepad2, LogOut, BookOpen, Crown, Brain, Users, Play, Target, Edit } from "lucide-react";
 import { toast } from "sonner";
 
 interface Quiz {
@@ -11,6 +11,13 @@ interface Quiz {
   title: string;
   description: string | null;
   mode: string;
+  created_at: string;
+}
+
+interface Challenge {
+  id: string;
+  title: string;
+  description: string | null;
   created_at: string;
 }
 
@@ -24,7 +31,9 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState("");
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loadingQuizzes, setLoadingQuizzes] = useState(true);
+  const [loadingChallenges, setLoadingChallenges] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -35,14 +44,23 @@ const Dashboard = () => {
       }
       setUserName(session.user.user_metadata?.full_name || "משתמש");
 
-      const { data } = await supabase
-        .from("quizzes")
-        .select("id, title, description, mode, created_at")
-        .order("created_at", { ascending: false })
-        .limit(6);
+      const [quizzesRes, challengesRes] = await Promise.all([
+        supabase
+          .from("quizzes")
+          .select("id, title, description, mode, created_at")
+          .order("created_at", { ascending: false })
+          .limit(6),
+        supabase
+          .from("challenges")
+          .select("id, title, description, created_at")
+          .order("created_at", { ascending: false })
+          .limit(6),
+      ]);
 
-      setQuizzes(data || []);
+      setQuizzes(quizzesRes.data || []);
       setLoadingQuizzes(false);
+      setChallenges(challengesRes.data || []);
+      setLoadingChallenges(false);
     };
     checkAuth();
   }, [navigate]);
@@ -73,7 +91,7 @@ const Dashboard = () => {
           <h2 className="text-3xl font-heading font-bold mb-8">הדשבורד שלי</h2>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
             <button
               onClick={() => navigate("/quiz/new")}
               className="bg-card rounded-2xl p-6 shadow-card hover:shadow-elevated transition-all text-center group"
@@ -108,24 +126,36 @@ const Dashboard = () => {
             </button>
 
             <button
-              onClick={() => navigate("/join")}
+              onClick={() => navigate("/my-challenges")}
               className="bg-card rounded-2xl p-6 shadow-card hover:shadow-elevated transition-all text-center group"
             >
               <div className="w-14 h-14 gradient-secondary rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                <Gamepad2 className="!size-7 text-secondary-foreground" />
+                <Target className="!size-7 text-secondary-foreground" />
               </div>
-              <h3 className="font-heading font-bold text-lg">הצטרף למשחק</h3>
-              <p className="text-muted-foreground text-sm mt-1">הכניסו קוד משחק</p>
+              <h3 className="font-heading font-bold text-lg">האתגרים שלי</h3>
+              <p className="text-muted-foreground text-sm mt-1">ניהול ועריכת אתגרים</p>
+            </button>
+          </div>
+
+          <div className="mb-4">
+            <button
+              onClick={() => navigate("/join")}
+              className="bg-card rounded-2xl p-4 shadow-card hover:shadow-elevated transition-all text-center group w-full sm:w-auto sm:px-10"
+            >
+              <div className="flex items-center justify-center gap-3">
+                <Gamepad2 className="!size-6 text-secondary" />
+                <h3 className="font-heading font-bold text-lg">הצטרף למשחק</h3>
+              </div>
             </button>
           </div>
 
           {/* Recent Quizzes */}
           {loadingQuizzes ? (
-            <div className="bg-card rounded-2xl p-8 shadow-card text-center">
+            <div className="bg-card rounded-2xl p-8 shadow-card text-center mb-10">
               <p className="text-muted-foreground">טוען חידונים...</p>
             </div>
           ) : quizzes.length === 0 ? (
-            <div className="bg-card rounded-2xl p-8 shadow-card text-center">
+            <div className="bg-card rounded-2xl p-8 shadow-card text-center mb-10">
               <BookOpen className="!size-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="font-heading font-bold text-xl mb-2">אין חידונים עדיין</h3>
               <p className="text-muted-foreground mb-4">צרו את החידון הראשון שלכם!</p>
@@ -135,7 +165,7 @@ const Dashboard = () => {
               </Button>
             </div>
           ) : (
-            <div>
+            <div className="mb-10">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-heading font-bold text-xl">החידונים האחרונים</h3>
                 <Button variant="ghost" size="sm" onClick={() => navigate("/my-quizzes")}>
@@ -153,7 +183,7 @@ const Dashboard = () => {
                       className="bg-card rounded-2xl p-5 shadow-card hover:shadow-elevated transition-all text-right"
                     >
                       <button
-                        onClick={() => navigate(`/quiz/${quiz.id}`)}
+                        onClick={() => navigate(`/quiz/${quiz.id}/edit`)}
                         className="w-full text-right"
                       >
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
@@ -193,6 +223,68 @@ const Dashboard = () => {
                     </motion.div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* Recent Challenges */}
+          {loadingChallenges ? (
+            <div className="bg-card rounded-2xl p-8 shadow-card text-center">
+              <p className="text-muted-foreground">טוען אתגרים...</p>
+            </div>
+          ) : challenges.length === 0 ? (
+            <div className="bg-card rounded-2xl p-8 shadow-card text-center">
+              <Target className="!size-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="font-heading font-bold text-xl mb-2">אין אתגרים עדיין</h3>
+              <p className="text-muted-foreground mb-4">צרו את האתגר הראשון שלכם!</p>
+              <Button variant="hero" onClick={() => navigate("/challenge/new")}>
+                <Plus className="!size-5" />
+                צור אתגר חדש
+              </Button>
+            </div>
+          ) : (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-heading font-bold text-xl">האתגרים האחרונים</h3>
+                <Button variant="ghost" size="sm" onClick={() => navigate("/my-challenges")}>
+                  הצג הכל
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {challenges.map((challenge) => (
+                  <motion.div
+                    key={challenge.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-card rounded-2xl p-5 shadow-card hover:shadow-elevated transition-all text-right"
+                  >
+                    <button
+                      onClick={() => navigate(`/challenge/${challenge.id}/edit`)}
+                      className="w-full text-right"
+                    >
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+                        <Target className="size-3.5" />
+                        <span>אתגר</span>
+                      </div>
+                      <h4 className="font-heading font-bold text-lg text-foreground truncate">{challenge.title}</h4>
+                      {challenge.description && (
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{challenge.description}</p>
+                      )}
+                    </button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3 w-full"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/challenge/${challenge.id}/edit`);
+                      }}
+                    >
+                      <Edit className="!size-4" />
+                      ערוך אתגר
+                    </Button>
+                  </motion.div>
+                ))}
               </div>
             </div>
           )}
