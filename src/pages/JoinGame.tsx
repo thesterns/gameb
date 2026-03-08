@@ -1,19 +1,46 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useParams } from "react-router-dom";
 import { Gamepad2, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const JoinGame = () => {
   const navigate = useNavigate();
+  const { directLink } = useParams<{ directLink?: string }>();
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [step, setStep] = useState<"code" | "name">("code");
   const [sessionId, setSessionId] = useState("");
   const [joining, setJoining] = useState(false);
+
+  // Auto-submit code from direct link
+  useEffect(() => {
+    if (directLink && /^\d{5}$/.test(directLink)) {
+      setCode(directLink);
+      // Auto-submit
+      (async () => {
+        const { data: session } = await supabase
+          .from("game_sessions")
+          .select("id, status")
+          .eq("join_code", directLink)
+          .single();
+
+        if (!session) {
+          toast.error("קוד משחק לא נמצא");
+          return;
+        }
+        if (session.status !== "lobby") {
+          toast.error("המשחק כבר התחיל");
+          return;
+        }
+        setSessionId(session.id);
+        setStep("name");
+      })();
+    }
+  }, [directLink]);
 
   const handleCodeChange = (value: string) => {
     const numeric = value.replace(/\D/g, "").slice(0, 5);

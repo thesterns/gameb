@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Users, Play, Copy, Check, Crown } from "lucide-react";
+import { ArrowRight, Users, Play, Copy, Check, Crown, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface Participant {
@@ -92,6 +92,24 @@ const GameLobby = () => {
     setCopied(true);
     toast.success("הקוד הועתק!");
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleShare = async () => {
+    const joinUrl = `${window.location.origin}/join/${joinCode}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `הצטרפו למשחק: ${quizTitle}`,
+          text: `הצטרפו למשחק החידון "${quizTitle}" עם הקוד ${joinCode}`,
+          url: joinUrl,
+        });
+      } catch {
+        // User cancelled share
+      }
+    } else {
+      await navigator.clipboard.writeText(joinUrl);
+      toast.success("קישור ההצטרפות הועתק!");
+    }
   };
 
   const handleSelectKing = (participantId: string) => {
@@ -183,6 +201,10 @@ const GameLobby = () => {
               )}
             </button>
             <p className="text-xs text-muted-foreground">לחץ להעתקה</p>
+            <Button variant="outline" size="sm" className="mx-auto" onClick={handleShare}>
+              <Share2 className="!size-4" />
+              שתף קישור הצטרפות
+            </Button>
           </div>
 
           {/* King mode instruction */}
