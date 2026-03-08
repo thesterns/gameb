@@ -584,6 +584,7 @@ const ChallengePlay = () => {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <p className="font-heading font-bold text-sm text-foreground">{s.player_name}</p>
+                              <WordsIndicator valid={sentenceContainsAllWords(s.sentence, s.participant_id)} />
                               {rankInfo && <span className="text-lg">{rankInfo.emoji}</span>}
                             </div>
                             {scores[s.participant_id] > 0 && (
