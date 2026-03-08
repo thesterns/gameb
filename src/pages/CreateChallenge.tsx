@@ -176,11 +176,25 @@ const CreateChallenge = () => {
   };
 
   const handleSave = async () => {
-    if (!title.trim()) { toast.error("יש להזין שם לאתגר"); return; }
+    if (!title.trim()) {
+      toast.error("יש להזין שם לאתגר");
+      return;
+    }
+
+    const finalizedDimensions = mergePendingDimensionInputs(dimensions, newItems);
+    setDimensions(finalizedDimensions);
+    setNewItems(emptyNewItems());
+
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { toast.error("יש להתחבר"); navigate("/login"); return; }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("יש להתחבר");
+        navigate("/login");
+        return;
+      }
 
       if (isEdit && challengeId) {
         let finalImageUrl = imageUrl || null;
@@ -201,7 +215,7 @@ const CreateChallenge = () => {
           .eq("id", challengeId);
         if (error) throw error;
 
-        await saveDimensionItems(challengeId);
+        await saveDimensionItems(challengeId, finalizedDimensions);
         toast.success("האתגר עודכן בהצלחה!");
       } else {
         const { data: challenge, error } = await supabase
@@ -226,10 +240,11 @@ const CreateChallenge = () => {
           await supabase.from("challenges").update({ logo_url: lUrl }).eq("id", challenge.id);
         }
 
-        await saveDimensionItems(challenge.id);
+        await saveDimensionItems(challenge.id, finalizedDimensions);
         toast.success("האתגר נוצר בהצלחה!");
       }
-      navigate("/dashboard");
+
+      navigate(isEdit ? "/my-challenges" : "/dashboard");
     } catch (e) {
       console.error(e);
       toast.error("שגיאה בשמירת האתגר");
