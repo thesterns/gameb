@@ -26,6 +26,9 @@ interface Question {
   id: string;
   text: string;
   answers: Answer[];
+  image_url?: string;
+  imageFile?: File;
+  imagePreview?: string;
 }
 
 const generateId = () => crypto.randomUUID();

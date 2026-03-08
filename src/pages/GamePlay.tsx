@@ -10,6 +10,7 @@ interface Question {
   id: string;
   text: string;
   sort_order: number;
+  image_url?: string;
 }
 
 interface Answer {
