@@ -787,10 +787,13 @@ const GamePlay = () => {
           </span>
         </div>
         {!isHost && !isCurrentPlayerKing && (
-          <div className={`flex items-center gap-1 ${t.text} font-heading font-bold`}>
+          <button
+            onClick={handlePlayerLeaderboard}
+            className={`flex items-center gap-1 ${t.text} font-heading font-bold hover:opacity-80 transition-opacity`}
+          >
             <Trophy className="size-4" />
             <span>{score}</span>
-          </div>
+          </button>
         )}
         {isCurrentPlayerKing && (
           <div className="flex items-center gap-1 text-[hsl(var(--answer-yellow))] font-heading font-bold">
