@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Loader2 } from "lucide-react";
+import { Users, Loader2, Home } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Participant {
   id: string;
