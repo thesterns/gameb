@@ -47,7 +47,7 @@ const Login = () => {
       >
         <div className="text-center mb-8">
           <Link to="/" className="text-3xl font-heading font-bold text-gradient inline-block mb-2">
-            QuizMaster
+            לך תדע
           </Link>
           <h2 className="text-2xl font-heading font-bold">התחברות</h2>
           <p className="text-muted-foreground mt-1">ברוכים השבים!</p>

@@ -11,8 +11,8 @@ import heroImage from "@/assets/hero-quiz.png";
 const features = [
   {
     icon: Zap,
-    title: "חידונים בזמן אמת",
-    description: "צרו חידונים ושחקו עם חברים בזמן אמת",
+    title: "משחקים בזמן אמת",
+    description: "צרו משחקים ושחקו עם חברים בזמן אמת",
     color: "bg-answer-red/10 text-answer-red",
   },
   {
@@ -95,7 +95,7 @@ const Index = () => {
       {/* Navbar */}
       <nav className="relative z-10 flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
         <h1 className="text-2xl font-heading font-bold text-gradient">
-          QuizMaster
+          לך תדע
         </h1>
         <div className="flex gap-3">
           <Button variant="ghost" onClick={() => navigate("/login")}>
@@ -117,12 +117,12 @@ const Index = () => {
             transition={{ duration: 0.6 }}
           >
             <h2 className="text-4xl md:text-6xl font-heading font-black leading-tight mb-6">
-              חידונים שעושים
+              משחקים שעושים
               <br />
               <span className="text-gradient">את ההבדל</span>
             </h2>
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-lg mx-auto lg:mx-0 lg:mr-0">
-              צרו חידונים מדהימים, הזמינו שחקנים ותיהנו ממשחק בזמן אמת.
+              צרו משחקים מדהימים, הזמינו שחקנים ותיהנו ממשחק בזמן אמת.
               מושלם לשיעורים, אירועים וכיף עם חברים!
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start max-w-md mx-auto lg:mx-0">
@@ -155,7 +155,7 @@ const Index = () => {
               <div className="absolute inset-0 gradient-hero rounded-3xl blur-3xl opacity-20 scale-110" />
               <img
                 src={heroImage}
-                alt="QuizMaster - חידונים אינטראקטיביים"
+                alt="לך תדע - משחקים אינטראקטיביים"
                 className="relative z-10 w-72 md:w-96 animate-float drop-shadow-2xl"
               />
             </div>
@@ -172,10 +172,10 @@ const Index = () => {
           viewport={{ once: true }}
         >
           <h3 className="text-3xl md:text-4xl font-heading font-bold mb-4">
-            למה QuizMaster?
+            למה לך תדע?
           </h3>
           <p className="text-muted-foreground text-lg">
-            הכלי המושלם ליצירת חידונים אינטראקטיביים
+            הכלי המושלם ליצירת משחקים אינטראקטיביים
           </p>
         </motion.div>
 
@@ -235,7 +235,7 @@ const Index = () => {
 
       {/* Footer */}
       <footer className="px-6 py-8 text-center text-muted-foreground text-sm border-t border-border">
-        <p>© 2026 QuizMaster. כל הזכויות שמורות.</p>
+        <p>© 2026 לך תדע. כל הזכויות שמורות.</p>
       </footer>
     </div>
   );
