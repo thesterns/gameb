@@ -146,7 +146,7 @@ const GamePlay = () => {
 
       const { data: quiz } = await supabase
         .from("quizzes")
-        .select("time_per_question, mode, title, description, image_url, theme")
+        .select("time_per_question, mode, title, description, image_url, youtube_url, theme")
         .eq("id", session.quiz_id)
         .single();
 
