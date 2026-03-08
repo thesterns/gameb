@@ -4,21 +4,62 @@ import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
 import { Gamepad2, ArrowLeft } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const JoinGame = () => {
   const navigate = useNavigate();
   const [code, setCode] = useState("");
+  const [name, setName] = useState("");
+  const [step, setStep] = useState<"code" | "name">("code");
+  const [sessionId, setSessionId] = useState("");
+  const [joining, setJoining] = useState(false);
 
   const handleCodeChange = (value: string) => {
     const numeric = value.replace(/\D/g, "").slice(0, 5);
     setCode(numeric);
   };
 
-  const handleJoin = (e: React.FormEvent) => {
+  const handleCodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (code.length === 5) {
-      navigate(`/game/${code}/lobby`);
+    if (code.length !== 5) return;
+
+    const { data: session, error } = await supabase
+      .from("game_sessions")
+      .select("id, status")
+      .eq("join_code", code)
+      .single();
+
+    if (error || !session) {
+      toast.error("קוד משחק לא נמצא");
+      return;
     }
+
+    if (session.status !== "lobby") {
+      toast.error("המשחק כבר התחיל");
+      return;
+    }
+
+    setSessionId(session.id);
+    setStep("name");
+  };
+
+  const handleJoin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+
+    setJoining(true);
+    const { error } = await supabase
+      .from("game_participants")
+      .insert({ session_id: sessionId, player_name: name.trim() });
+
+    if (error) {
+      toast.error("שגיאה בהצטרפות למשחק");
+      setJoining(false);
+      return;
+    }
+
+    navigate(`/game/${sessionId}/waiting`);
   };
 
   return (
@@ -38,32 +79,62 @@ const JoinGame = () => {
             <Gamepad2 className="!size-8 text-secondary-foreground" />
           </div>
 
-          <h2 className="text-2xl font-heading font-bold mb-2">הצטרפו למשחק</h2>
-          <p className="text-muted-foreground mb-6">הכניסו את קוד המשחק</p>
+          {step === "code" ? (
+            <>
+              <h2 className="text-2xl font-heading font-bold mb-2">הצטרפו למשחק</h2>
+              <p className="text-muted-foreground mb-6">הכניסו את קוד המשחק</p>
 
-          <form onSubmit={handleJoin} className="space-y-4">
-            <Input
-              type="text"
-              inputMode="numeric"
-              placeholder="12345"
-              value={code}
-              onChange={(e) => handleCodeChange(e.target.value)}
-              className="text-center text-3xl font-heading font-bold h-16 tracking-[0.3em] rounded-xl"
-              maxLength={5}
-              dir="ltr"
-            />
+              <form onSubmit={handleCodeSubmit} className="space-y-4">
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="12345"
+                  value={code}
+                  onChange={(e) => handleCodeChange(e.target.value)}
+                  className="text-center text-3xl font-heading font-bold h-16 tracking-[0.3em] rounded-xl"
+                  maxLength={5}
+                  dir="ltr"
+                />
+                <Button
+                  type="submit"
+                  variant="hero"
+                  size="xl"
+                  className="w-full"
+                  disabled={code.length !== 5}
+                >
+                  <ArrowLeft className="!size-5" />
+                  המשך
+                </Button>
+              </form>
+            </>
+          ) : (
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+              <h2 className="text-2xl font-heading font-bold mb-2">מה השם שלך?</h2>
+              <p className="text-muted-foreground mb-6">הכניסו כינוי למשחק</p>
 
-            <Button
-              type="submit"
-              variant="hero"
-              size="xl"
-              className="w-full"
-              disabled={code.length !== 5}
-            >
-              <ArrowLeft className="!size-5" />
-              המשך
-            </Button>
-          </form>
+              <form onSubmit={handleJoin} className="space-y-4">
+                <Input
+                  type="text"
+                  placeholder="הכינוי שלך"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="text-center text-xl font-heading font-bold h-14 rounded-xl"
+                  maxLength={20}
+                  autoFocus
+                />
+                <Button
+                  type="submit"
+                  variant="hero"
+                  size="xl"
+                  className="w-full"
+                  disabled={!name.trim() || joining}
+                >
+                  <ArrowLeft className="!size-5" />
+                  {joining ? "מצטרף..." : "הצטרף למשחק"}
+                </Button>
+              </form>
+            </motion.div>
+          )}
         </div>
 
         <Link
