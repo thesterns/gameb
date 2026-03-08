@@ -273,10 +273,16 @@ const CreateQuiz = () => {
       }
 
       if (isEdit && quizId) {
+        // Upload quiz image if needed
+        let finalQuizImageUrl = quizImageUrl || null;
+        if (quizImageFile) {
+          finalQuizImageUrl = await uploadQuestionImage(quizImageFile, quizId, 999);
+        }
+
         // Update existing quiz
         const { error: quizErr } = await supabase
           .from("quizzes")
-          .update({ title: title.trim(), description: description.trim() || null, mode, time_per_question: timePerQuestion })
+          .update({ title: title.trim(), description: description.trim() || null, mode, time_per_question: timePerQuestion, image_url: finalQuizImageUrl } as any)
           .eq("id", quizId);
 
         if (quizErr) throw quizErr;
