@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Gamepad2, LogOut, BookOpen, Crown, Brain, Users, Play } from "lucide-react";
+import { Plus, Gamepad2, LogOut, BookOpen, Crown, Brain, Users, Play, Target } from "lucide-react";
 import { toast } from "sonner";
 
 interface Quiz {
