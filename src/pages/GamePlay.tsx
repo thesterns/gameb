@@ -1585,6 +1585,7 @@ const GameFinished = ({
                     <span className="font-heading font-semibold text-foreground">
                       {entry.player_name}
                     </span>
+                    <StarBadge maxStreak={entry.max_streak ?? 0} totalCorrect={entry.total_correct ?? 0} />
                   </div>
                   <span className="font-heading font-bold text-foreground">{entry.total_score}</span>
                 </motion.div>
