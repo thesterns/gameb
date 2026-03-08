@@ -280,9 +280,13 @@ const CreateQuiz = () => {
         // Re-insert questions and answers
         for (let i = 0; i < questions.length; i++) {
           const q = questions[i];
+          let imageUrl = q.image_url || null;
+          if (q.imageFile) {
+            imageUrl = await uploadQuestionImage(q.imageFile, quizId, i);
+          }
           const { data: dbQ, error: qErr } = await supabase
             .from("questions")
-            .insert({ quiz_id: quizId, text: q.text.trim(), sort_order: i })
+            .insert({ quiz_id: quizId, text: q.text.trim(), sort_order: i, image_url: imageUrl } as any)
             .select()
             .single();
 
@@ -312,9 +316,13 @@ const CreateQuiz = () => {
 
         for (let i = 0; i < questions.length; i++) {
           const q = questions[i];
+          let imageUrl: string | null = null;
+          if (q.imageFile) {
+            imageUrl = await uploadQuestionImage(q.imageFile, quiz.id, i);
+          }
           const { data: dbQ, error: qErr } = await supabase
             .from("questions")
-            .insert({ quiz_id: quiz.id, text: q.text.trim(), sort_order: i })
+            .insert({ quiz_id: quiz.id, text: q.text.trim(), sort_order: i, image_url: imageUrl } as any)
             .select()
             .single();
 
