@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Users, Play, Copy, Check } from "lucide-react";
+import { ArrowRight, Users, Play, Copy, Check, Crown } from "lucide-react";
 import { toast } from "sonner";
 
 interface Participant {
@@ -16,8 +16,10 @@ const GameLobby = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const [quizTitle, setQuizTitle] = useState("");
+  const [quizMode, setQuizMode] = useState("genius");
   const [joinCode, setJoinCode] = useState("");
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [kingParticipantId, setKingParticipantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
@@ -41,13 +43,13 @@ const GameLobby = () => {
 
       const { data: quiz } = await supabase
         .from("quizzes")
-        .select("title")
+        .select("title, mode")
         .eq("id", session.quiz_id)
         .single();
 
       setQuizTitle(quiz?.title || "חידון");
+      setQuizMode(quiz?.mode || "genius");
 
-      // Load existing participants
       const { data: existingParticipants } = await supabase
         .from("game_participants")
         .select("id, player_name, joined_at")
@@ -60,7 +62,6 @@ const GameLobby = () => {
 
     loadSession();
 
-    // Subscribe to realtime participant changes
     const channel = supabase
       .channel(`lobby-${sessionId}`)
       .on(
@@ -93,15 +94,29 @@ const GameLobby = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleSelectKing = (participantId: string) => {
+    setKingParticipantId((prev) => (prev === participantId ? null : participantId));
+  };
+
   const handleStartPlaying = async () => {
     if (participants.length === 0) {
       toast.error("צריך לפחות משתתף אחד כדי להתחיל");
       return;
     }
 
+    if (quizMode === "king" && !kingParticipantId) {
+      toast.error("יש לבחור מלך לפני תחילת המשחק");
+      return;
+    }
+
+    const updateData: Record<string, unknown> = { status: "active" };
+    if (quizMode === "king" && kingParticipantId) {
+      updateData.king_participant_id = kingParticipantId;
+    }
+
     const { error } = await supabase
       .from("game_sessions")
-      .update({ status: "active" })
+      .update(updateData)
       .eq("id", sessionId);
 
     if (error) {
@@ -111,6 +126,9 @@ const GameLobby = () => {
 
     navigate(`/game/${sessionId}/play`, { state: { isHost: true } });
   };
+
+  const isKingMode = quizMode === "king";
+  const isTribeMode = quizMode === "tribe";
 
   if (loading) {
     return (
@@ -140,6 +158,11 @@ const GameLobby = () => {
           <h1 className="text-3xl font-heading font-bold text-primary-foreground">
             {quizTitle}
           </h1>
+          {(isKingMode || isTribeMode) && (
+            <p className="text-primary-foreground/70 text-sm mt-1">
+              {isKingMode ? "👑 מצב מלך" : "🏕️ מצב שבט"}
+            </p>
+          )}
         </div>
 
         <div className="bg-card rounded-3xl p-8 shadow-elevated space-y-6">
@@ -162,6 +185,24 @@ const GameLobby = () => {
             <p className="text-xs text-muted-foreground">לחץ להעתקה</p>
           </div>
 
+          {/* King mode instruction */}
+          {isKingMode && (
+            <div className="bg-[hsl(var(--answer-yellow))]/10 border border-[hsl(var(--answer-yellow))]/30 rounded-xl p-3 text-center">
+              <p className="text-sm font-medium text-foreground flex items-center justify-center gap-1">
+                <Crown className="size-4 text-[hsl(var(--answer-yellow))]" />
+                לחץ על שחקן כדי לבחור אותו כמלך
+              </p>
+            </div>
+          )}
+
+          {isTribeMode && (
+            <div className="bg-[hsl(var(--answer-green))]/10 border border-[hsl(var(--answer-green))]/30 rounded-xl p-3 text-center">
+              <p className="text-sm font-medium text-foreground">
+                🏕️ במצב שבט, תפקיד המלך עובר בין השחקנים בכל שאלה
+              </p>
+            </div>
+          )}
+
           {/* Participants */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -177,16 +218,25 @@ const GameLobby = () => {
               ) : (
                 <div className="flex flex-wrap gap-2">
                   <AnimatePresence>
-                    {participants.map((p) => (
-                      <motion.div
-                        key={p.id}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="gradient-secondary text-secondary-foreground px-3 py-1.5 rounded-full text-sm font-heading font-semibold"
-                      >
-                        {p.player_name}
-                      </motion.div>
-                    ))}
+                    {participants.map((p) => {
+                      const isKing = kingParticipantId === p.id;
+                      return (
+                        <motion.button
+                          key={p.id}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          onClick={isKingMode ? () => handleSelectKing(p.id) : undefined}
+                          className={`px-3 py-1.5 rounded-full text-sm font-heading font-semibold flex items-center gap-1 transition-all ${
+                            isKing
+                              ? "bg-[hsl(var(--answer-yellow))] text-white ring-2 ring-[hsl(var(--answer-yellow))]/50"
+                              : "gradient-secondary text-secondary-foreground"
+                          } ${isKingMode ? "cursor-pointer hover:scale-105" : "cursor-default"}`}
+                        >
+                          {isKing && <Crown className="size-3" />}
+                          {p.player_name}
+                        </motion.button>
+                      );
+                    })}
                   </AnimatePresence>
                 </div>
               )}

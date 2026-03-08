@@ -1,0 +1,1 @@
+CREATE POLICY "Anyone can update responses" ON public.game_responses FOR UPDATE USING (true) WITH CHECK (true);

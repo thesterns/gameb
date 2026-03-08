@@ -144,6 +144,7 @@ export type Database = {
           host_user_id: string
           id: string
           join_code: string
+          king_participant_id: string | null
           quiz_id: string
           status: string
         }
@@ -153,6 +154,7 @@ export type Database = {
           host_user_id: string
           id?: string
           join_code: string
+          king_participant_id?: string | null
           quiz_id: string
           status?: string
         }
@@ -162,10 +164,18 @@ export type Database = {
           host_user_id?: string
           id?: string
           join_code?: string
+          king_participant_id?: string | null
           quiz_id?: string
           status?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "game_sessions_king_participant_id_fkey"
+            columns: ["king_participant_id"]
+            isOneToOne: false
+            referencedRelation: "game_participants"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "game_sessions_quiz_id_fkey"
             columns: ["quiz_id"]
