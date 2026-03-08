@@ -5,9 +5,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Plus, Trash2, GripVertical, Check } from "lucide-react";
+import { ArrowRight, Plus, Trash2, GripVertical, Check, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Answer {
   id: string;
@@ -39,8 +46,24 @@ const CreateQuiz = () => {
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [mode, setMode] = useState<string>("genius");
   const [questions, setQuestions] = useState<Question[]>([createDefaultQuestion()]);
   const [saving, setSaving] = useState(false);
+
+  const modeDescriptions: Record<string, { label: string; description: string }> = {
+    genius: {
+      label: "גאון",
+      description: "קובעים מראש תשובות נכונות לשאלות. השחקנים מקבלים ניקוד לפי מהירות ודיוק.",
+    },
+    king: {
+      label: "מלך",
+      description: "התשובה הנכונה תהיה התשובה שיקבע השחקן שהוא המלך.",
+    },
+    tribe: {
+      label: "שבט",
+      description: "התשובה הנכונה תהיה התשובה שיענה אחד השחקנים לפי תור בין כולם.",
+    },
+  };
 
   const updateQuestion = (qId: string, text: string) => {
     setQuestions((prev) =>
@@ -112,8 +135,7 @@ const CreateQuiz = () => {
         if (!q.answers[j].text.trim())
           return `שאלה ${i + 1}, תשובה ${j + 1}: יש להזין טקסט`;
       }
-      if (!q.answers.some((a) => a.is_correct))
-        return `שאלה ${i + 1}: יש לסמן לפחות תשובה נכונה אחת`;
+      // correct answer marking is optional for all modes
     }
     return null;
   };
@@ -138,7 +160,7 @@ const CreateQuiz = () => {
 
       const { data: quiz, error: quizErr } = await supabase
         .from("quizzes")
-        .insert({ title: title.trim(), description: description.trim() || null, user_id: user.id })
+        .insert({ title: title.trim(), description: description.trim() || null, user_id: user.id, mode })
         .select()
         .single();
 
@@ -226,6 +248,23 @@ const CreateQuiz = () => {
                 maxLength={1000}
                 rows={2}
               />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">סוג משחק *</label>
+              <Select value={mode} onValueChange={setMode} dir="rtl">
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="genius">🧠 גאון</SelectItem>
+                  <SelectItem value="king">👑 מלך</SelectItem>
+                  <SelectItem value="tribe">🏕️ שבט</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+                <Info className="size-4 mt-0.5 shrink-0" />
+                <span>{modeDescriptions[mode].description}</span>
+              </div>
             </div>
           </div>
         </motion.div>

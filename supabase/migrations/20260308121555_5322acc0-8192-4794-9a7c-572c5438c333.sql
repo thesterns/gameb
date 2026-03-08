@@ -1,0 +1,1 @@
+ALTER TABLE public.quizzes ADD COLUMN mode TEXT NOT NULL DEFAULT 'genius';
