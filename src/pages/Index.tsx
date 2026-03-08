@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Zap, Users, Trophy, Sparkles, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import heroImage from "@/assets/hero-quiz.png";
 
 const features = [
@@ -50,6 +51,34 @@ const item = {
 const Index = () => {
   const navigate = useNavigate();
   const [joinCode, setJoinCode] = useState("");
+  const [joiningGame, setJoiningGame] = useState(false);
+
+  const handleJoinFromHome = async () => {
+    if (joinCode.length !== 5) return;
+    setJoiningGame(true);
+
+    const { data: session, error } = await supabase
+      .from("game_sessions")
+      .select("id, status")
+      .eq("join_code", joinCode)
+      .single();
+
+    if (error || !session) {
+      toast.error("קוד משחק לא נמצא");
+      setJoiningGame(false);
+      return;
+    }
+
+    if (session.status !== "lobby") {
+      toast.error("המשחק כבר התחיל או הסתיים");
+      setJoiningGame(false);
+      return;
+    }
+
+    // Navigate to join page with session already resolved – skip code step
+    navigate(`/join/${joinCode}`);
+    setJoiningGame(false);
+  };
 
   // Redirect authenticated users (e.g. after OAuth callback) to dashboard
   useEffect(() => {
@@ -107,11 +136,11 @@ const Index = () => {
               <Button
                 variant="hero"
                 size="xl"
-                disabled={joinCode.length !== 5}
-                onClick={() => navigate(`/join/${joinCode}`)}
+                disabled={joinCode.length !== 5 || joiningGame}
+                onClick={handleJoinFromHome}
               >
                 <ArrowLeft className="!size-5" />
-                הצטרפו למשחק
+                {joiningGame ? "בודק..." : "הצטרפו למשחק"}
               </Button>
             </div>
           </motion.div>
