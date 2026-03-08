@@ -160,7 +160,7 @@ const CreateQuiz = () => {
 
       const { data: quiz, error: quizErr } = await supabase
         .from("quizzes")
-        .insert({ title: title.trim(), description: description.trim() || null, user_id: user.id })
+        .insert({ title: title.trim(), description: description.trim() || null, user_id: user.id, mode })
         .select()
         .single();
 
