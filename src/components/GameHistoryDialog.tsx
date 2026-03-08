@@ -78,6 +78,29 @@ const GameHistoryDialog = ({ quizId, quizTitle, open, onOpenChange }: GameHistor
     setLoadingSession(null);
   };
 
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const opts: Intl.DateTimeFormatOptions = { timeZone: "Asia/Jerusalem", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false };
+    const parts = new Intl.DateTimeFormat("en-GB", opts).formatToParts(d);
+    const get = (t: string) => parts.find(p => p.type === t)?.value || "";
+    return `${get("day")}-${get("month")}-${get("year")} ${get("hour")}:${get("minute")}`;
+  };
+
+  const shareToWhatsApp = (session: Session) => {
+    const scores = sessionScores[session.id];
+    if (!scores?.length) return;
+
+    const dateStr = formatDate(session.created_at);
+    let text = `🎯 *${quizTitle}*\n📅 ${dateStr}\n\n`;
+
+    scores.forEach((p, i) => {
+      const emoji = i === 0 ? "🏆" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`;
+      text += `${emoji} ${p.player_name} - ${p.total_score} נק׳\n`;
+    });
+
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+  };
+
   const statusLabels: Record<string, string> = {
     lobby: "ממתין",
     active: "פעיל",
