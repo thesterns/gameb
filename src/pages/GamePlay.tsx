@@ -1409,6 +1409,7 @@ const GameFinished = ({
   quizTitle,
   quizLogoUrl,
   quizLogoText,
+  questions,
 }: {
   sessionId: string;
   isHost: boolean;
@@ -1422,40 +1423,28 @@ const GameFinished = ({
   quizTitle: string;
   quizLogoUrl: string | null;
   quizLogoText: string | null;
+  questions: Question[];
 }) => {
   const navigate = useNavigate();
   const t = themeClasses[quizTheme];
-  const [leaderboard, setLeaderboard] = useState<{ player_name: string; total_score: number }[]>(
-    []
-  );
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
 
   useEffect(() => {
     const loadLeaderboard = async () => {
       const { data } = await supabase
         .from("game_responses")
-        .select("participant_id, score, game_participants!inner(player_name)")
+        .select("participant_id, score, is_correct, question_id, game_participants!inner(player_name)")
         .eq("session_id", sessionId);
 
       if (!data) return;
 
-      const scores: Record<string, { player_name: string; total_score: number }> = {};
-      for (const row of data) {
-        const pid = row.participant_id;
-
-        // In king mode, exclude king from leaderboard
-        if (quizMode === "king" && pid === kingParticipantId) continue;
-
-        const name = (row.game_participants as any)?.player_name || "?";
-        if (!scores[pid]) scores[pid] = { player_name: name, total_score: 0 };
-        scores[pid].total_score += row.score;
-      }
-
-      const sorted = Object.values(scores).sort((a, b) => b.total_score - a.total_score);
+      const excludeId = quizMode === "king" ? kingParticipantId : null;
+      const sorted = computeLeaderboard(data as any, questions, excludeId);
       setLeaderboard(sorted);
     };
 
     loadLeaderboard();
-  }, [sessionId, quizMode, kingParticipantId]);
+  }, [sessionId, quizMode, kingParticipantId, questions]);
 
   // Assign ranks with ties (same score = same rank)
   const rankedLeaderboard = leaderboard.map((entry, idx) => {
