@@ -379,7 +379,7 @@ const CreateQuiz = () => {
           }
           const { data: dbQ, error: qErr } = await supabase
             .from("questions")
-            .insert({ quiz_id: quiz.id, text: q.text.trim(), sort_order: i, image_url: imageUrl, youtube_url: q.youtube_url?.trim() || null } as any)
+            .insert({ quiz_id: quiz.id, text: q.text.trim(), sort_order: i, image_url: imageUrl, youtube_url: q.youtube_url?.trim() || null, double_points: q.double_points, custom_time: q.custom_time || null } as any)
             .select()
             .single();
 
