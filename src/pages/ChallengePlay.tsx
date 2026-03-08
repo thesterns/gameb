@@ -115,8 +115,27 @@ const ChallengePlay = () => {
     2: { emoji: "🥈", label: "מקום שני", bg: "bg-gray-400/10 border-gray-400/30" },
     3: { emoji: "🥉", label: "מקום שלישי", bg: "bg-amber-700/10 border-amber-700/30" },
   };
+  // Check if a sentence contains all assigned values for a participant
+  const sentenceContainsAllWords = useCallback((text: string, participantId: string): boolean => {
+    const participant = participantsWithAssignments.find(p => p.id === participantId);
+    if (!participant || participant.assignments.length === 0) return true;
+    const lowerText = text.toLowerCase();
+    return participant.assignments.every(a => lowerText.includes(a.value.toLowerCase()));
+  }, [participantsWithAssignments]);
 
-  useEffect(() => {
+  const WordsIndicator = ({ valid }: { valid: boolean }) => (
+    valid ? (
+      <span className="inline-flex items-center gap-1 text-xs font-bold text-[hsl(var(--success))]">
+        <CheckCircle className="size-3.5" />
+      </span>
+    ) : (
+      <span className="inline-flex items-center gap-1 text-xs font-bold text-[hsl(var(--warning))]" title="יש להשתמש בכל המילים">
+        <AlertTriangle className="size-3.5" />
+      </span>
+    )
+  );
+
+
     if (!sessionId) return;
 
     const load = async () => {
