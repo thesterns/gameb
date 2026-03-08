@@ -1027,13 +1027,13 @@ const GamePlay = () => {
 
         {/* Host: leaderboard + next question buttons */}
         {isHost && !showLeaderboard && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
-            <Button variant="game" size="xl" onClick={handleShowLeaderboard}>
-              <Trophy className="!size-5" />
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3 mt-8 pt-4 border-t border-muted/30">
+            <Button variant="outline" size="lg" onClick={handleShowLeaderboard} className="text-muted-foreground">
+              <Trophy className="!size-4" />
               לוח נקודות
             </Button>
-            <Button variant="hero" size="xl" onClick={handleNextQuestion}>
-              <ArrowLeft className="!size-5" />
+            <Button variant="outline" size="lg" onClick={handleNextQuestion} className="text-muted-foreground">
+              <ArrowLeft className="!size-4" />
               {currentIndex + 1 >= questions.length ? "סיים משחק" : "שאלה הבאה"}
             </Button>
           </motion.div>
