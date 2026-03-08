@@ -1077,11 +1077,41 @@ const GameFinished = ({
     loadLeaderboard();
   }, [sessionId, quizMode, kingParticipantId]);
 
-  const top3 = leaderboard.slice(0, 3);
-  const rest = leaderboard.slice(3);
+  // Assign ranks with ties (same score = same rank)
+  const rankedLeaderboard = leaderboard.map((entry, idx) => {
+    let rank = 1;
+    for (let i = 0; i < idx; i++) {
+      if (leaderboard[i].total_score > entry.total_score) {
+        rank = i + 1 + 1; // next rank after this different-score group
+      }
+    }
+    // More precise: rank = number of players with strictly higher score + 1
+    rank = leaderboard.filter(e => e.total_score > entry.total_score).length + 1;
+    return { ...entry, rank };
+  });
 
-  const medalEmojis = ["🥇", "🥈", "🥉"];
-  const podiumOrder = top3.length === 3 ? [1, 0, 2] : top3.map((_, i) => i);
+  // Podium entries: all players with rank 1, 2, or 3
+  const podiumEntries = rankedLeaderboard.filter(e => e.rank <= 3);
+  const restEntries = rankedLeaderboard.filter(e => e.rank > 3);
+
+  const medalEmojis: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉" };
+  
+  // Group podium by rank for display
+  const podiumByRank = [1, 2, 3]
+    .map(rank => ({
+      rank,
+      players: podiumEntries.filter(e => e.rank === rank),
+    }))
+    .filter(g => g.players.length > 0);
+
+  // Podium visual order: if we have 3 distinct ranks, show [2nd, 1st, 3rd]
+  const podiumDisplayOrder = podiumByRank.length >= 3
+    ? [podiumByRank[1], podiumByRank[0], podiumByRank[2]]
+    : podiumByRank;
+
+  const podiumHeights: Record<number, string> = { 1: "h-28", 2: "h-20", 3: "h-14" };
+  const podiumTextSizes: Record<number, string> = { 1: "text-xl", 2: "text-base", 3: "text-sm" };
+  const podiumMedalSizes: Record<number, string> = { 1: "text-4xl", 2: "text-3xl", 3: "text-2xl" };
 
   return (
     <div className={`min-h-screen ${t.bg} flex items-center justify-center px-4`} dir="rtl">
@@ -1102,41 +1132,40 @@ const GameFinished = ({
         </div>
 
         <div className="bg-card rounded-3xl p-8 shadow-elevated space-y-6">
-          {/* Podium for top 3 */}
-          {top3.length > 0 && (
+          {/* Podium for top ranks */}
+          {podiumDisplayOrder.length > 0 && (
             <div className="flex items-end justify-center gap-3 pt-4 pb-2">
-              {podiumOrder.map((originalIdx) => {
-                const entry = top3[originalIdx];
-                if (!entry) return null;
-                const heights = ["h-28", "h-20", "h-14"];
-                const sizes = ["text-xl", "text-base", "text-sm"];
-                const medalSizes = ["text-4xl", "text-3xl", "text-2xl"];
-                const isMe = entry.player_name === playerName;
+              {podiumDisplayOrder.map((group, displayIdx) => {
+                if (!group || group.players.length === 0) return null;
+                const rank = group.rank;
 
                 return (
                   <motion.div
-                    key={originalIdx}
+                    key={rank}
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 + originalIdx * 0.15 }}
-                    className="flex flex-col items-center gap-1 flex-1 max-w-[120px]"
+                    transition={{ delay: 0.3 + displayIdx * 0.15 }}
+                    className="flex flex-col items-center gap-1 flex-1 max-w-[140px]"
                   >
-                    <span className={medalSizes[originalIdx]}>{medalEmojis[originalIdx]}</span>
-                    <span
-                      className={`font-heading font-bold truncate max-w-full ${sizes[originalIdx]} ${
-                        isMe ? "text-primary" : "text-foreground"
-                      }`}
-                    >
-                      {entry.player_name}
-                    </span>
+                    <span className={podiumMedalSizes[rank]}>{medalEmojis[rank]}</span>
+                    {group.players.map((entry, pIdx) => (
+                      <span
+                        key={pIdx}
+                        className={`font-heading font-bold truncate max-w-full ${podiumTextSizes[rank]} ${
+                          entry.player_name === playerName ? "text-primary" : "text-foreground"
+                        }`}
+                      >
+                        {entry.player_name}
+                      </span>
+                    ))}
                     <span className="text-sm font-heading font-bold text-muted-foreground">
-                      {entry.total_score} נק׳
+                      {group.players[0].total_score} נק׳
                     </span>
                     <div
-                      className={`w-full ${heights[originalIdx]} rounded-t-xl ${
-                        originalIdx === 0
+                      className={`w-full ${podiumHeights[rank]} rounded-t-xl ${
+                        rank === 1
                           ? "bg-[hsl(var(--answer-yellow))]/30 border-2 border-[hsl(var(--answer-yellow))]/50"
-                          : originalIdx === 1
+                          : rank === 2
                           ? "bg-muted/50 border-2 border-muted-foreground/20"
                           : "bg-[hsl(var(--answer-orange))]/20 border-2 border-[hsl(var(--answer-orange))]/30"
                       }`}
@@ -1156,10 +1185,10 @@ const GameFinished = ({
           )}
 
           {/* Rest of leaderboard */}
-          {rest.length > 0 && (
+          {restEntries.length > 0 && (
             <div className="space-y-2">
               <p className="text-sm font-medium text-muted-foreground">שאר המשתתפים</p>
-              {rest.map((entry, idx) => (
+              {restEntries.map((entry, idx) => (
                 <motion.div
                   key={idx}
                   initial={{ opacity: 0, x: 20 }}
@@ -1171,7 +1200,7 @@ const GameFinished = ({
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-lg font-heading font-bold text-muted-foreground w-6">
-                      {idx + 4}
+                      {entry.rank}
                     </span>
                     <span className="font-heading font-semibold text-foreground">
                       {entry.player_name}
