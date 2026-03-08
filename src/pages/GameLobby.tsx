@@ -26,6 +26,7 @@ const GameLobby = () => {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoText, setLogoText] = useState<string | null>(null);
   const [joinCode, setJoinCode] = useState("");
+  const [challengeId, setChallengeId] = useState<string | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [kingParticipantId, setKingParticipantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
