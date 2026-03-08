@@ -117,12 +117,12 @@ const Index = () => {
             transition={{ duration: 0.6 }}
           >
             <h2 className="text-4xl md:text-6xl font-heading font-black leading-tight mb-6">
-              חידונים שעושים
+              משחקים שעושים
               <br />
               <span className="text-gradient">את ההבדל</span>
             </h2>
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-lg mx-auto lg:mx-0 lg:mr-0">
-              צרו חידונים מדהימים, הזמינו שחקנים ותיהנו ממשחק בזמן אמת.
+              צרו משחקים מדהימים, הזמינו שחקנים ותיהנו ממשחק בזמן אמת.
               מושלם לשיעורים, אירועים וכיף עם חברים!
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start max-w-md mx-auto lg:mx-0">
