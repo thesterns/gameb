@@ -666,8 +666,16 @@ const CreateQuiz = () => {
           </div>
         </motion.div>
 
-        {/* Shuffle buttons */}
+        {/* Shuffle & AI buttons */}
         <div className="flex flex-wrap gap-2">
+          <Button
+            variant="hero"
+            size="sm"
+            onClick={() => setAiDialogOpen(true)}
+          >
+            <Sparkles className="!size-4" />
+            צור שאלות עם AI
+          </Button>
           <Button
             variant="outline"
             size="sm"
