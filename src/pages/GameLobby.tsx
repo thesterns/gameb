@@ -3,8 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Users, Play, Copy, Check, Crown, Share2 } from "lucide-react";
+import { ArrowRight, Users, Play, Copy, Check, Crown, Share2, QrCode, X } from "lucide-react";
 import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
 
 interface Participant {
   id: string;
@@ -22,6 +23,7 @@ const GameLobby = () => {
   const [kingParticipantId, setKingParticipantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [showQR, setShowQR] = useState(false);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -205,10 +207,16 @@ const GameLobby = () => {
               )}
             </button>
             <p className="text-xs text-muted-foreground">לחץ להעתקה</p>
-            <Button variant="outline" size="sm" className="mx-auto" onClick={handleShare}>
-              <Share2 className="!size-4" />
-              שתף קישור הצטרפות
-            </Button>
+            <div className="flex items-center justify-center gap-2">
+              <Button variant="outline" size="sm" onClick={handleShare}>
+                <Share2 className="!size-4" />
+                שתף קישור
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setShowQR(true)}>
+                <QrCode className="!size-4" />
+                QR
+              </Button>
+            </div>
           </div>
 
           {/* King mode instruction */}
@@ -281,6 +289,42 @@ const GameLobby = () => {
             התחל משחק
           </Button>
         </div>
+
+        {/* QR Code Modal */}
+        <AnimatePresence>
+          {showQR && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center px-4"
+              onClick={() => setShowQR(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="bg-card rounded-3xl p-8 shadow-elevated text-center max-w-sm w-full"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-heading font-bold text-lg">סרקו להצטרפות</h3>
+                  <Button variant="ghost" size="icon" onClick={() => setShowQR(false)}>
+                    <X className="!size-4" />
+                  </Button>
+                </div>
+                <div className="bg-white rounded-2xl p-6 inline-block mx-auto">
+                  <QRCodeSVG
+                    value={`${window.location.origin}/join/${joinCode}`}
+                    size={220}
+                    level="M"
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground mt-4">קוד: <span className="font-bold font-heading tracking-wider">{joinCode}</span></p>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </div>
   );
