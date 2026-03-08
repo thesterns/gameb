@@ -140,11 +140,9 @@ const CreateChallenge = () => {
   };
 
   const addDimensionItem = (dim: DimensionKey) => {
-    const raw = newItems[dim].trim();
-    if (!raw) return;
-    // Support comma-separated values for bulk add
-    const values = raw.split(",").map((v) => v.trim()).filter(Boolean);
+    const values = parseDimensionValues(newItems[dim]);
     if (values.length === 0) return;
+
     setDimensions((prev) => ({ ...prev, [dim]: [...prev[dim], ...values] }));
     setNewItems((prev) => ({ ...prev, [dim]: "" }));
   };
