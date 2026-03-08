@@ -75,9 +75,72 @@ export type Database = {
           },
         ]
       }
+      game_responses: {
+        Row: {
+          answer_id: string | null
+          answered_at: string
+          id: string
+          is_correct: boolean
+          participant_id: string
+          question_id: string
+          score: number
+          session_id: string
+        }
+        Insert: {
+          answer_id?: string | null
+          answered_at?: string
+          id?: string
+          is_correct?: boolean
+          participant_id: string
+          question_id: string
+          score?: number
+          session_id: string
+        }
+        Update: {
+          answer_id?: string | null
+          answered_at?: string
+          id?: string
+          is_correct?: boolean
+          participant_id?: string
+          question_id?: string
+          score?: number
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_responses_answer_id_fkey"
+            columns: ["answer_id"]
+            isOneToOne: false
+            referencedRelation: "answers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_responses_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "game_participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_sessions: {
         Row: {
           created_at: string
+          current_question_index: number
           host_user_id: string
           id: string
           join_code: string
@@ -86,6 +149,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          current_question_index?: number
           host_user_id: string
           id?: string
           join_code: string
@@ -94,6 +158,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          current_question_index?: number
           host_user_id?: string
           id?: string
           join_code?: string
