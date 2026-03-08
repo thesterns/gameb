@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowRight, Plus, Trash2, GripVertical, Check, Info } from "lucide-react";
+import { ArrowRight, Plus, Trash2, GripVertical, Check, Info, ImagePlus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -26,6 +26,9 @@ interface Question {
   id: string;
   text: string;
   answers: Answer[];
+  image_url?: string;
+  imageFile?: File;
+  imagePreview?: string;
 }
 
 const generateId = () => crypto.randomUUID();
@@ -105,7 +108,7 @@ const CreateQuiz = () => {
 
       const { data: dbQuestions } = await supabase
         .from("questions")
-        .select("id, text, sort_order")
+        .select("id, text, sort_order, image_url")
         .eq("quiz_id", quizId)
         .order("sort_order");
 
@@ -126,6 +129,8 @@ const CreateQuiz = () => {
               text: a.text,
               is_correct: a.is_correct,
             })),
+            image_url: (q as any).image_url || undefined,
+            imagePreview: (q as any).image_url || undefined,
           });
         }
         setQuestions(loadedQuestions);
@@ -195,6 +200,38 @@ const CreateQuiz = () => {
     );
   };
 
+  const handleImageSelect = (qId: string, file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("יש לבחור קובץ תמונה בלבד");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("גודל התמונה מוגבל ל-5MB");
+      return;
+    }
+    const preview = URL.createObjectURL(file);
+    setQuestions((prev) =>
+      prev.map((q) => (q.id === qId ? { ...q, imageFile: file, imagePreview: preview } : q))
+    );
+  };
+
+  const removeImage = (qId: string) => {
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q.id === qId ? { ...q, imageFile: undefined, imagePreview: undefined, image_url: undefined } : q
+      )
+    );
+  };
+
+  const uploadQuestionImage = async (file: File, quizId: string, questionIndex: number): Promise<string> => {
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${quizId}/${questionIndex}-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("question-images").upload(path, file);
+    if (error) throw error;
+    const { data } = supabase.storage.from("question-images").getPublicUrl(path);
+    return data.publicUrl;
+  };
+
   const validate = (): string | null => {
     if (!title.trim()) return "יש להזין שם לחידון";
     if (title.trim().length > 200) return "שם החידון ארוך מדי";
@@ -243,9 +280,13 @@ const CreateQuiz = () => {
         // Re-insert questions and answers
         for (let i = 0; i < questions.length; i++) {
           const q = questions[i];
+          let imageUrl = q.image_url || null;
+          if (q.imageFile) {
+            imageUrl = await uploadQuestionImage(q.imageFile, quizId, i);
+          }
           const { data: dbQ, error: qErr } = await supabase
             .from("questions")
-            .insert({ quiz_id: quizId, text: q.text.trim(), sort_order: i })
+            .insert({ quiz_id: quizId, text: q.text.trim(), sort_order: i, image_url: imageUrl } as any)
             .select()
             .single();
 
@@ -275,9 +316,13 @@ const CreateQuiz = () => {
 
         for (let i = 0; i < questions.length; i++) {
           const q = questions[i];
+          let imageUrl: string | null = null;
+          if (q.imageFile) {
+            imageUrl = await uploadQuestionImage(q.imageFile, quiz.id, i);
+          }
           const { data: dbQ, error: qErr } = await supabase
             .from("questions")
-            .insert({ quiz_id: quiz.id, text: q.text.trim(), sort_order: i })
+            .insert({ quiz_id: quiz.id, text: q.text.trim(), sort_order: i, image_url: imageUrl } as any)
             .select()
             .single();
 
@@ -423,6 +468,36 @@ const CreateQuiz = () => {
                 onChange={(e) => updateQuestion(q.id, e.target.value)}
                 maxLength={500}
               />
+
+              {/* Image upload */}
+              {q.imagePreview ? (
+                <div className="relative rounded-xl overflow-hidden border border-border">
+                  <img src={q.imagePreview} alt="תמונת שאלה" className="w-full max-h-48 object-contain bg-muted/30" />
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 left-2 size-7 rounded-full"
+                    onClick={() => removeImage(q.id)}
+                  >
+                    <X className="!size-3.5" />
+                  </Button>
+                </div>
+              ) : (
+                <label className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors border border-dashed border-border rounded-xl p-3 justify-center">
+                  <ImagePlus className="size-4" />
+                  <span>הוסף תמונה (אופציונלי)</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleImageSelect(q.id, file);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              )}
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">

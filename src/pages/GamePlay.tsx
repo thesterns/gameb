@@ -10,6 +10,7 @@ interface Question {
   id: string;
   text: string;
   sort_order: number;
+  image_url?: string;
 }
 
 interface Answer {
@@ -111,7 +112,7 @@ const GamePlay = () => {
 
       const { data: qs } = await supabase
         .from("questions")
-        .select("id, text, sort_order")
+        .select("id, text, sort_order, image_url")
         .eq("quiz_id", session.quiz_id)
         .order("sort_order");
 
@@ -619,6 +620,13 @@ const GamePlay = () => {
             exit={{ opacity: 0, y: -20 }}
             className="bg-card rounded-3xl p-8 shadow-elevated w-full max-w-lg text-center"
           >
+            {currentQuestion.image_url && (
+              <img
+                src={currentQuestion.image_url}
+                alt="תמונת שאלה"
+                className="w-full max-h-56 object-contain rounded-2xl mb-4"
+              />
+            )}
             <h2 className="text-2xl font-heading font-bold text-foreground leading-relaxed">
               {currentQuestion.text}
             </h2>
