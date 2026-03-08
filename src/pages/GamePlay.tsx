@@ -2,11 +2,12 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
-import { Timer, CheckCircle2, XCircle, Trophy, ArrowLeft, Users, Crown } from "lucide-react";
+import { Timer, CheckCircle2, XCircle, Trophy, ArrowLeft, Users, Crown, RotateCw } from "lucide-react";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
 import QuizLogo from "@/components/QuizLogo";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
 import { themeClasses, type GameTheme } from "@/lib/gameThemes";
 
 interface Question {
@@ -103,6 +104,10 @@ const GamePlay = () => {
   // Leaderboard state
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [midGameLeaderboard, setMidGameLeaderboard] = useState<{ player_name: string; total_score: number }[]>([]);
+
+  // Auto-advance state
+  const [autoAdvance, setAutoAdvance] = useState(false);
+  const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Determine current king for tribe mode
   const getCurrentKingId = useCallback(
@@ -494,6 +499,22 @@ const GamePlay = () => {
     }
   }, [timeUp, kingAnswerId, isKingOrTribeMode, isHost, selectedAnswerId, isCurrentPlayerKing]);
 
+  // Auto-advance: when enabled and timeUp, advance after 4 seconds
+  useEffect(() => {
+    if (!autoAdvance || !isHost || !timeUp || gameFinished || showIntroSlide || showLeaderboard) return;
+    
+    // Clear any existing timer
+    if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current);
+    
+    autoAdvanceTimerRef.current = setTimeout(() => {
+      handleNextQuestion();
+    }, 4000);
+
+    return () => {
+      if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current);
+    };
+  }, [autoAdvance, isHost, timeUp, gameFinished, showIntroSlide, showLeaderboard, currentIndex]);
+
   const handleShowLeaderboard = async () => {
     if (!isHost || !sessionId) return;
 
@@ -750,11 +771,22 @@ const GamePlay = () => {
           </div>
         )}
         {isHost && (
-          <div className={`flex items-center gap-1 ${t.textSecondary} text-sm`}>
-            <Users className="size-4" />
-            <span>
-              {responseCount}/{participantCount} ענו
-            </span>
+          <div className={`flex items-center gap-3 ${t.textSecondary} text-sm`}>
+            <label className="flex items-center gap-1.5 cursor-pointer" title="התקדמות אוטומטית">
+              <RotateCw className={`size-3.5 ${autoAdvance ? 'text-[hsl(var(--accent))]' : ''}`} />
+              <span className="text-xs hidden sm:inline">אוטומטי</span>
+              <Switch
+                checked={autoAdvance}
+                onCheckedChange={setAutoAdvance}
+                className="scale-75"
+              />
+            </label>
+            <div className="flex items-center gap-1">
+              <Users className="size-4" />
+              <span>
+                {responseCount}/{participantCount} ענו
+              </span>
+            </div>
           </div>
         )}
       </div>
