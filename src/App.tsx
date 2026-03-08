@@ -9,6 +9,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import JoinGame from "./pages/JoinGame";
 import CreateQuiz from "./pages/CreateQuiz";
+import MyQuizzes from "./pages/MyQuizzes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
