@@ -171,7 +171,7 @@ const GamePlay = () => {
 
   // Leaderboard state
   const [showLeaderboard, setShowLeaderboard] = useState(false);
-  const [midGameLeaderboard, setMidGameLeaderboard] = useState<{ player_name: string; total_score: number }[]>([]);
+  const [midGameLeaderboard, setMidGameLeaderboard] = useState<LeaderboardEntry[]>([]);
 
   // Auto-advance state
   const [autoAdvance, setAutoAdvance] = useState(false);
