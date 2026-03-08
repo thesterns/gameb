@@ -887,7 +887,7 @@ const GamePlay = () => {
             const isSelected = selectedAnswerId === answer.id;
             // King never sees correct/wrong feedback on their own answers
             const isKingViewing = isCurrentPlayerKing;
-            const showCorrectGenius = timeUp && !isKingOrTribeMode && answer.is_correct;
+            const showCorrectGenius = timeUp && !isKingOrTribeMode && revealedCorrectAnswerId === answer.id;
             // Players in king/tribe mode only see feedback AFTER king has chosen
             const showCorrectKing =
               timeUp && isKingOrTribeMode && !isKingViewing && kingAnswerId && answer.id === kingAnswerId;
