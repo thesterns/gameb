@@ -540,6 +540,12 @@ const ChallengePlay = () => {
                         className="text-right min-h-[100px]"
                         maxLength={500}
                       />
+                      {sentence.trim() && myParticipantId && (
+                        <div className={`flex items-center gap-1.5 text-xs font-medium ${sentenceContainsAllWords(sentence, myParticipantId) ? "text-[hsl(var(--success))]" : "text-[hsl(var(--warning))]"}`}>
+                          <WordsIndicator valid={sentenceContainsAllWords(sentence, myParticipantId)} />
+                          {sentenceContainsAllWords(sentence, myParticipantId) ? "כל המילים נמצאות במשפט ✓" : "יש להשתמש בכל המילים שקיבלת"}
+                        </div>
+                      )}
                       <Button
                         variant="hero"
                         className="w-full"
