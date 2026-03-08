@@ -543,6 +543,90 @@ const GamePlay = () => {
     );
   }
 
+  if (showIntroSlide) {
+    return (
+      <div className="min-h-screen gradient-hero flex items-center justify-center px-4" dir="rtl">
+        <motion.div
+          className="w-full max-w-lg text-center"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+        >
+          {quizImageUrl && (
+            <motion.img
+              src={quizImageUrl}
+              alt="תמונת חידון"
+              className="w-full max-h-64 object-contain rounded-3xl mb-6 mx-auto"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            />
+          )}
+          <motion.h1
+            className="text-4xl font-heading font-bold text-primary-foreground mb-3"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            {quizTitle}
+          </motion.h1>
+          {quizDescription && (
+            <motion.p
+              className="text-lg text-primary-foreground/70 mb-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              {quizDescription}
+            </motion.p>
+          )}
+          <motion.p
+            className="text-primary-foreground/50 text-sm mb-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            {questions.length} שאלות · {totalTime} שניות לשאלה
+          </motion.p>
+          {isHost && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <Button
+                variant="hero"
+                size="xl"
+                onClick={async () => {
+                  setShowIntroSlide(false);
+                  if (leaderboardChannelRef.current) {
+                    await leaderboardChannelRef.current.send({
+                      type: "broadcast",
+                      event: "dismiss_intro",
+                      payload: {},
+                    });
+                  }
+                }}
+              >
+                <ArrowLeft className="!size-5" />
+                התחל חידון
+              </Button>
+            </motion.div>
+          )}
+          {!isHost && (
+            <motion.p
+              className="text-primary-foreground/60 font-heading font-semibold"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+            >
+              ממתינים למנהל להתחיל...
+            </motion.p>
+          )}
+        </motion.div>
+      </div>
+    );
+  }
+
   const currentQuestion = questions[currentIndex];
   if (!currentQuestion) return null;
 
