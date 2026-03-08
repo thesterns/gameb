@@ -612,6 +612,39 @@ const CreateQuiz = () => {
                 </label>
               )}
 
+              {/* YouTube URL */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 border border-border rounded-xl p-3">
+                  <Youtube className="size-4 text-destructive shrink-0" />
+                  <Input
+                    className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                    placeholder="קישור יוטיוב (אופציונלי)"
+                    value={q.youtube_url || ""}
+                    onChange={(e) =>
+                      setQuestions((prev) =>
+                        prev.map((qq) => qq.id === q.id ? { ...qq, youtube_url: e.target.value } : qq)
+                      )
+                    }
+                    maxLength={500}
+                  />
+                  {q.youtube_url && (
+                    <Button variant="ghost" size="icon" className="shrink-0 size-7" onClick={() =>
+                      setQuestions((prev) =>
+                        prev.map((qq) => qq.id === q.id ? { ...qq, youtube_url: undefined } : qq)
+                      )
+                    }>
+                      <X className="!size-3.5" />
+                    </Button>
+                  )}
+                </div>
+                {q.youtube_url && isValidYouTubeUrl(q.youtube_url) && (
+                  <YouTubeEmbed url={q.youtube_url} className="max-h-48" />
+                )}
+                {q.youtube_url && !isValidYouTubeUrl(q.youtube_url) && (
+                  <p className="text-xs text-destructive">קישור יוטיוב לא תקין</p>
+                )}
+              </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">
                   תשובות ({q.answers.length}/8) — סמן תשובות נכונות
