@@ -396,57 +396,32 @@ const GamePlay = () => {
 
       setSelectedAnswerId(answerId);
 
-      // King doesn't get scored
+      // Call server-side RPC to submit answer (score computed server-side)
+      const { data } = await supabase.rpc("submit_answer", {
+        p_session_id: sessionId,
+        p_participant_id: participantId,
+        p_question_id: questions[currentIndex].id,
+        p_answer_id: answerId,
+      });
+
       if (isCurrentPlayerKing) {
-        await supabase.from("game_responses").insert({
-          session_id: sessionId,
-          participant_id: participantId,
-          question_id: questions[currentIndex].id,
-          answer_id: answerId,
-          is_correct: false,
-          score: 0,
-        });
         return;
       }
 
-      // For king/tribe modes, correctness is determined by king's answer
-      // For genius mode, correctness is from the pre-set is_correct
-      let isCorrect = false;
       if (isKingOrTribeMode) {
-        // We don't know yet if correct - will be resolved when king answers
-        // For now, insert with is_correct=false, score=0 - will be evaluated at end
-        // Actually, since king might answer after this player, we store the answer_id
-        // and evaluate at timeUp
-        await supabase.from("game_responses").insert({
-          session_id: sessionId,
-          participant_id: participantId,
-          question_id: questions[currentIndex].id,
-          answer_id: answerId,
-          is_correct: false,
-          score: 0,
-        });
         setWaitingForKing(true);
       } else {
-        const answer = answers.find((a) => a.id === answerId);
-        isCorrect = answer?.is_correct || false;
-        const earnedScore = isCorrect ? 10 : 0;
-        if (isCorrect) setScore((prev) => prev + earnedScore);
-
-        await supabase.from("game_responses").insert({
-          session_id: sessionId,
-          participant_id: participantId,
-          question_id: questions[currentIndex].id,
-          answer_id: answerId,
-          is_correct: isCorrect,
-          score: earnedScore,
-        });
+        // For genius mode, server returns the computed result
+        const result = data as { is_correct: boolean; score: number } | null;
+        if (result?.is_correct) {
+          setScore((prev) => prev + result.score);
+        }
       }
     },
     [
       timeUp,
       selectedAnswerId,
       participantId,
-      answers,
       sessionId,
       questions,
       currentIndex,
