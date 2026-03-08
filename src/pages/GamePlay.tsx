@@ -122,11 +122,22 @@ const GamePlay = () => {
     const load = async () => {
       const { data: session } = await supabase
         .from("game_sessions")
-        .select("quiz_id, current_question_index, king_participant_id")
+        .select("quiz_id, current_question_index, king_participant_id, status")
         .eq("id", sessionId)
         .single();
 
       if (!session) return;
+
+      // Handle finished game
+      if ((session as any).status === "finished") {
+        setGameFinished(true);
+      }
+
+      // Skip intro slide if game is already past question 0
+      const qIndex = session.current_question_index || 0;
+      if (qIndex > 0 || (session as any).status === "active") {
+        setShowIntroSlide(false);
+      }
 
       setKingParticipantId((session as any).king_participant_id || null);
 
@@ -150,7 +161,7 @@ const GamePlay = () => {
         .order("sort_order");
 
       setQuestions(qs || []);
-      setCurrentIndex(session.current_question_index || 0);
+      setCurrentIndex(qIndex);
 
       // Load participants (needed for tribe mode rotation & king name)
       const { data: parts } = await supabase
@@ -162,7 +173,7 @@ const GamePlay = () => {
       setParticipants(parts || []);
       setParticipantCount(parts?.length || 0);
 
-      // If player, find participant id
+      // If player, find participant id and restore score
       if (!isHost && playerName) {
         const { data: participant } = await supabase
           .from("game_participants")
@@ -171,7 +182,21 @@ const GamePlay = () => {
           .eq("player_name", playerName)
           .single();
 
-        setParticipantId(participant?.id || null);
+        if (participant) {
+          setParticipantId(participant.id);
+
+          // Restore accumulated score from previous responses
+          const { data: prevResponses } = await supabase
+            .from("game_responses")
+            .select("score")
+            .eq("session_id", sessionId)
+            .eq("participant_id", participant.id);
+
+          if (prevResponses) {
+            const totalScore = prevResponses.reduce((sum, r) => sum + r.score, 0);
+            setScore(totalScore);
+          }
+        }
       }
 
       setLoading(false);
