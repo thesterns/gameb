@@ -371,8 +371,22 @@ const CreateQuiz = () => {
               <div className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
                 <Info className="size-4 mt-0.5 shrink-0" />
                 <span>{modeDescriptions[mode].description}</span>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">זמן לשאלה (שניות) *</label>
+              <div className="flex items-center gap-3">
+                <Input
+                  type="number"
+                  min={5}
+                  max={120}
+                  value={timePerQuestion}
+                  onChange={(e) => setTimePerQuestion(Math.min(120, Math.max(5, Number(e.target.value) || 5)))}
+                  className="w-24"
+                />
+                <span className="text-sm text-muted-foreground">שניות (5-120)</span>
               </div>
             </div>
+          </div>
           </div>
         </motion.div>
 
