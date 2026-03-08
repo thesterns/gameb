@@ -148,7 +148,7 @@ const ChallengeHistoryDialog = ({ challengeId, challengeTitle }: ChallengeHistor
                   <div key={session.id} className="space-y-3">
                     <div className="flex items-center justify-between">
                       <p className="text-xs text-muted-foreground">
-                        {new Date(session.created_at).toLocaleDateString("he-IL", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        {new Date(session.created_at).toLocaleDateString("he-IL", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jerusalem" })}
                       </p>
                       <Button variant="ghost" size="sm" onClick={() => shareToWhatsApp(session)}>
                         <Share2 className="!size-4" />

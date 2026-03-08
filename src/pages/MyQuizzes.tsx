@@ -226,7 +226,7 @@ const MyQuizzes = () => {
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <span>{modeLabels[quiz.mode] || quiz.mode}</span>
                   <span>·</span>
-                  <span>{new Date(quiz.created_at).toLocaleDateString("he-IL")}</span>
+                  <span>{new Date(quiz.created_at).toLocaleDateString("he-IL", { timeZone: "Asia/Jerusalem" })}</span>
                 </div>
               </div>
               <div className="flex items-center gap-1 shrink-0">
