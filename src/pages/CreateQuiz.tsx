@@ -348,7 +348,7 @@ const CreateQuiz = () => {
         // Create new quiz
         const { data: quiz, error: quizErr } = await supabase
           .from("quizzes")
-          .insert({ title: title.trim(), description: description.trim() || null, user_id: user.id, mode, theme, time_per_question: timePerQuestion, youtube_url: quizYoutubeUrl.trim() || null } as any)
+          .insert({ title: title.trim(), description: description.trim() || null, user_id: user.id, mode, theme, time_per_question: timePerQuestion, youtube_url: quizYoutubeUrl.trim() || null, logo_text: logoText.trim() || null } as any)
           .select()
           .single();
 
@@ -358,6 +358,12 @@ const CreateQuiz = () => {
         if (quizImageFile) {
           const quizImgUrl = await uploadQuestionImage(quizImageFile, quiz.id, 999);
           await supabase.from("quizzes").update({ image_url: quizImgUrl } as any).eq("id", quiz.id);
+        }
+
+        // Upload logo if needed
+        if (logoFile) {
+          const logoImgUrl = await uploadQuestionImage(logoFile, quiz.id, 998);
+          await supabase.from("quizzes").update({ logo_url: logoImgUrl } as any).eq("id", quiz.id);
         }
 
         for (let i = 0; i < questions.length; i++) {
