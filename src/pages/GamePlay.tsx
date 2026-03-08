@@ -754,6 +754,7 @@ const GamePlay = () => {
         quizTitle={quizTitle}
         quizLogoUrl={quizLogoUrl}
         quizLogoText={quizLogoText}
+        questions={questions}
       />
     );
   }
