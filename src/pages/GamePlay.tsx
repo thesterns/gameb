@@ -180,7 +180,7 @@ const GamePlay = () => {
 
   // Timer countdown
   useEffect(() => {
-    if (loading || timeUp || questions.length === 0 || currentIndex >= questions.length) return;
+    if (loading || timeUp || questions.length === 0 || currentIndex >= questions.length || showIntroSlide) return;
 
     if (timerRef.current) clearInterval(timerRef.current);
 
