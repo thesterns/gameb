@@ -576,7 +576,7 @@ const GamePlay = () => {
           </motion.h1>
           {quizDescription && (
             <motion.p
-              className="text-lg text-primary-foreground/70 mb-8"
+              className={`text-lg ${t.textSecondary} mb-8`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
