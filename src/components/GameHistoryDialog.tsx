@@ -155,7 +155,13 @@ const GameHistoryDialog = ({ quizId, quizTitle, open, onOpenChange }: GameHistor
                             {i === 2 && <span className="text-muted-foreground font-mono w-4 text-center">3</span>}
                             {i > 2 && <span className="text-muted-foreground font-mono w-4 text-center">{i + 1}</span>}
                             <span className="font-medium">{p.player_name}</span>
-                          </div>
+                    </div>
+                    {sessionScores[session.id]?.length > 0 && (
+                      <Button variant="ghost" size="sm" className="w-full mt-2" onClick={() => shareToWhatsApp(session)}>
+                        <Share2 className="!size-4" />
+                        שתף בוואטסאפ
+                      </Button>
+                    )}
                           <span className="font-heading font-bold">{p.total_score} נק׳</span>
                         </div>
                       ))}
