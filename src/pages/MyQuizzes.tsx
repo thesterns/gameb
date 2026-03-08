@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Plus, Trash2, Pencil, Copy, Search } from "lucide-react";
+import { ArrowRight, Plus, Trash2, Pencil, Copy, Search, Play } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import {
@@ -134,6 +134,27 @@ const MyQuizzes = () => {
     }
   };
 
+  const handleStartGame = async (quizId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const joinCode = String(Math.floor(10000 + Math.random() * 90000));
+
+      const { data: session, error } = await supabase
+        .from("game_sessions")
+        .insert({ quiz_id: quizId, host_user_id: user.id, join_code: joinCode })
+        .select()
+        .single();
+
+      if (error || !session) throw error;
+
+      navigate(`/game/${session.id}/lobby`);
+    } catch {
+      toast.error("שגיאה בהפעלת המשחק");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card sticky top-0 z-10">
@@ -207,6 +228,15 @@ const MyQuizzes = () => {
                 </div>
               </div>
               <div className="flex items-center gap-1 shrink-0">
+                <Button
+                  variant="hero"
+                  size="sm"
+                  className="ml-1"
+                  onClick={() => handleStartGame(quiz.id)}
+                >
+                  <Play className="!size-4" />
+                  הפעל
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"

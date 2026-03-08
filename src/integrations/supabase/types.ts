@@ -46,6 +46,70 @@ export type Database = {
           },
         ]
       }
+      game_participants: {
+        Row: {
+          id: string
+          joined_at: string
+          player_name: string
+          session_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          player_name: string
+          session_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          player_name?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_participants_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_sessions: {
+        Row: {
+          created_at: string
+          host_user_id: string
+          id: string
+          join_code: string
+          quiz_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          host_user_id: string
+          id?: string
+          join_code: string
+          quiz_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          host_user_id?: string
+          id?: string
+          join_code?: string
+          quiz_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_sessions_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       questions: {
         Row: {
           created_at: string
