@@ -1,10 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Plus, Trash2, Pencil, Copy } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowRight, Plus, Trash2, Pencil, Copy, Search } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Quiz {
   id: string;
