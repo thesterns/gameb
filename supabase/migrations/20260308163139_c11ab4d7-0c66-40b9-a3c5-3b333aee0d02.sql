@@ -1,0 +1,1 @@
+ALTER TABLE public.quizzes ADD COLUMN theme text NOT NULL DEFAULT 'default';
