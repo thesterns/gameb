@@ -41,8 +41,31 @@ const GamePlay = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const state = location.state as { playerName?: string; isHost?: boolean } | null;
-  const isHost = state?.isHost || false;
-  const playerName = state?.playerName || "";
+
+  // Persist & restore player identity across refreshes
+  const storageKey = sessionId ? `game_state_${sessionId}` : "";
+
+  const resolvedState = (() => {
+    if (state?.playerName || state?.isHost) {
+      // Save to sessionStorage for refresh recovery
+      if (storageKey) {
+        sessionStorage.setItem(storageKey, JSON.stringify({ playerName: state.playerName || "", isHost: !!state.isHost }));
+      }
+      return { playerName: state.playerName || "", isHost: !!state.isHost };
+    }
+    // Try to restore from sessionStorage
+    try {
+      const saved = storageKey ? sessionStorage.getItem(storageKey) : null;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return { playerName: parsed.playerName || "", isHost: !!parsed.isHost };
+      }
+    } catch {}
+    return { playerName: "", isHost: false };
+  })();
+
+  const isHost = resolvedState.isHost;
+  const playerName = resolvedState.playerName;
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
