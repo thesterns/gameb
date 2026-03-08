@@ -467,6 +467,31 @@ const CreateQuiz = () => {
                 </label>
               )}
             </div>
+            {/* Quiz YouTube URL */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground">קישור יוטיוב לחידון (לא חובה)</label>
+              <div className="flex items-center gap-2 border border-border rounded-xl p-3">
+                <Youtube className="size-4 text-destructive shrink-0" />
+                <Input
+                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  value={quizYoutubeUrl}
+                  onChange={(e) => setQuizYoutubeUrl(e.target.value)}
+                  maxLength={500}
+                />
+                {quizYoutubeUrl && (
+                  <Button variant="ghost" size="icon" className="shrink-0 size-7" onClick={() => setQuizYoutubeUrl("")}>
+                    <X className="!size-3.5" />
+                  </Button>
+                )}
+              </div>
+              {quizYoutubeUrl && isValidYouTubeUrl(quizYoutubeUrl) && (
+                <YouTubeEmbed url={quizYoutubeUrl} className="max-h-48" />
+              )}
+              {quizYoutubeUrl && !isValidYouTubeUrl(quizYoutubeUrl) && (
+                <p className="text-xs text-destructive">קישור יוטיוב לא תקין</p>
+              )}
+            </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">סוג משחק *</label>
               <Select value={mode} onValueChange={setMode} dir="rtl">
