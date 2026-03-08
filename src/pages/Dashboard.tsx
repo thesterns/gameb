@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Gamepad2, LogOut, BookOpen, Crown, Brain, Users, Play, Target, Edit } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 import { toast } from "sonner";
 import ChallengeHistoryDialog from "@/components/ChallengeHistoryDialog";
 
@@ -79,6 +80,7 @@ const Dashboard = () => {
           <h1 className="text-2xl font-heading font-bold text-gradient">לך תדע</h1>
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground hidden sm:inline">שלום, {userName}</span>
+            <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={handleLogout}>
               <LogOut className="!size-4" />
               יציאה
