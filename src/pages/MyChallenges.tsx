@@ -126,22 +126,7 @@ const MyChallenges = () => {
                   variant="hero"
                   size="sm"
                   className="mt-3 w-full"
-                  onClick={async () => {
-                    try {
-                      const { data: { user } } = await supabase.auth.getUser();
-                      if (!user) return;
-                      const joinCode = String(Math.floor(10000 + Math.random() * 90000));
-                      const { data: session, error } = await supabase
-                        .from("game_sessions")
-                        .insert({ challenge_id: challenge.id, host_user_id: user.id, join_code: joinCode } as any)
-                        .select()
-                        .single();
-                      if (error || !session) throw error;
-                      navigate(`/game/${session.id}/lobby`);
-                    } catch {
-                      toast.error("שגיאה בהפעלת המשחק");
-                    }
-                  }}
+                  onClick={() => handleOpenStartDialog(challenge)}
                 >
                   <Play className="!size-4" />
                   התחל משחק
@@ -160,6 +145,35 @@ const MyChallenges = () => {
             ))}
           </div>
         )}
+
+        {/* Start game dialog */}
+        <Dialog open={startDialogOpen} onOpenChange={setStartDialogOpen}>
+          <DialogContent className="max-w-sm" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="text-right">הפעלת אתגר</DialogTitle>
+              <DialogDescription className="text-right">
+                {selectedChallenge?.title}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex items-center justify-between py-4">
+              <Label htmlFor="enable-voting" className="text-sm font-medium">
+                אפשר דירוג משפטים
+              </Label>
+              <Switch
+                id="enable-voting"
+                checked={enableVoting}
+                onCheckedChange={setEnableVoting}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {enableVoting ? "המשתתפים יוכלו לדרג את המשפטים של האחרים" : "המשחק יהיה ללא דירוג"}
+            </p>
+            <Button variant="hero" className="w-full mt-2" onClick={handleStartGame}>
+              <Play className="!size-4" />
+              התחל משחק
+            </Button>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
