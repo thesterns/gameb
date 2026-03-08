@@ -31,6 +31,7 @@ interface Question {
   image_url?: string;
   imageFile?: File;
   imagePreview?: string;
+  youtube_url?: string;
 }
 
 const generateId = () => crypto.randomUUID();
