@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Plus, Trash2, Pencil, Copy, Search } from "lucide-react";
+import { ArrowRight, Plus, Trash2, Pencil, Copy, Search, Play } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import {
