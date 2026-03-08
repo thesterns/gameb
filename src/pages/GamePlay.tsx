@@ -105,6 +105,12 @@ const GamePlay = () => {
   const [myAnswerCorrect, setMyAnswerCorrect] = useState<boolean | null>(null);
   const [revealedCorrectAnswerId, setRevealedCorrectAnswerId] = useState<string | null>(null);
 
+  // Streak & confetti
+  const [correctStreak, setCorrectStreak] = useState(0);
+  const [maxStreak, setMaxStreak] = useState(0);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [totalCorrect, setTotalCorrect] = useState(0);
+
   // Leaderboard state
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [midGameLeaderboard, setMidGameLeaderboard] = useState<{ player_name: string; total_score: number }[]>([]);
