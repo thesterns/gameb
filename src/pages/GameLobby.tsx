@@ -53,6 +53,7 @@ const GameLobby = () => {
 
       if (session.challenge_id) {
         setGameType("challenge");
+        setChallengeId(session.challenge_id);
         const { data: challenge } = await supabase
           .from("challenges")
           .select("title, youtube_url, image_url, logo_url, logo_text")
