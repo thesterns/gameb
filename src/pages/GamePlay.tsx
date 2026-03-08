@@ -438,37 +438,12 @@ const GamePlay = () => {
     const kingId = quizMode === "king" ? kingParticipantId : getCurrentKingId(questionIndex);
     if (!kingId) return;
 
-    // Find king's response to get the "correct" answer
-    const { data: kingResponse } = await supabase
-      .from("game_responses")
-      .select("answer_id")
-      .eq("session_id", sessionId)
-      .eq("question_id", questionId)
-      .eq("participant_id", kingId)
-      .single();
-
-    if (!kingResponse?.answer_id) return;
-
-    const correctAnswerId = kingResponse.answer_id;
-
-    // Get all non-king responses for this question
-    const { data: allResponses } = await supabase
-      .from("game_responses")
-      .select("id, participant_id, answer_id")
-      .eq("session_id", sessionId)
-      .eq("question_id", questionId)
-      .neq("participant_id", kingId);
-
-    if (!allResponses) return;
-
-    // Update each response
-    for (const resp of allResponses) {
-      const correct = resp.answer_id === correctAnswerId;
-      await supabase
-        .from("game_responses")
-        .update({ is_correct: correct, score: correct ? 10 : 0 })
-        .eq("id", resp.id);
-    }
+    // Call server-side RPC to resolve scores (host-only, validated server-side)
+    await supabase.rpc("resolve_king_scores", {
+      p_session_id: sessionId,
+      p_question_id: questionId,
+      p_king_participant_id: kingId,
+    });
   }, [isKingOrTribeMode, sessionId, questions, quizMode, kingParticipantId, getCurrentKingId]);
 
   // Track king answer locally for player feedback
