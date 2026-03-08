@@ -21,6 +21,9 @@ const MyChallenges = () => {
   const navigate = useNavigate();
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
+  const [startDialogOpen, setStartDialogOpen] = useState(false);
+  const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
+  const [enableVoting, setEnableVoting] = useState(true);
 
   useEffect(() => {
     const load = async () => {
