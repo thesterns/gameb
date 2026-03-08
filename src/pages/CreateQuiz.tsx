@@ -8,6 +8,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ArrowRight, Plus, Trash2, GripVertical, Check, Info, ImagePlus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { themeOptions, type GameTheme } from "@/lib/gameThemes";
 import {
   Select,
   SelectContent,
@@ -79,6 +80,7 @@ const CreateQuiz = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [mode, setMode] = useState<string>("genius");
+  const [theme, setTheme] = useState<GameTheme>("default");
   const [timePerQuestion, setTimePerQuestion] = useState<number>(30);
   const [questions, setQuestions] = useState<Question[]>([createDefaultQuestion()]);
   const [saving, setSaving] = useState(false);
@@ -94,7 +96,7 @@ const CreateQuiz = () => {
     const loadQuiz = async () => {
       const { data: quiz, error: quizErr } = await supabase
         .from("quizzes")
-        .select("title, description, mode, time_per_question, image_url")
+        .select("title, description, mode, time_per_question, image_url, theme")
         .eq("id", quizId)
         .single();
 
@@ -108,6 +110,7 @@ const CreateQuiz = () => {
       setDescription(quiz.description || "");
       setMode(quiz.mode || "genius");
       setTimePerQuestion(quiz.time_per_question ?? 30);
+      setTheme(((quiz as any).theme as GameTheme) || "default");
       if ((quiz as any).image_url) {
         setQuizImageUrl((quiz as any).image_url);
         setQuizImagePreview((quiz as any).image_url);
@@ -282,7 +285,7 @@ const CreateQuiz = () => {
         // Update existing quiz
         const { error: quizErr } = await supabase
           .from("quizzes")
-          .update({ title: title.trim(), description: description.trim() || null, mode, time_per_question: timePerQuestion, image_url: finalQuizImageUrl } as any)
+          .update({ title: title.trim(), description: description.trim() || null, mode, theme, time_per_question: timePerQuestion, image_url: finalQuizImageUrl } as any)
           .eq("id", quizId);
 
         if (quizErr) throw quizErr;
@@ -321,7 +324,7 @@ const CreateQuiz = () => {
         // Create new quiz
         const { data: quiz, error: quizErr } = await supabase
           .from("quizzes")
-          .insert({ title: title.trim(), description: description.trim() || null, user_id: user.id, mode, time_per_question: timePerQuestion } as any)
+          .insert({ title: title.trim(), description: description.trim() || null, user_id: user.id, mode, theme, time_per_question: timePerQuestion } as any)
           .select()
           .single();
 
@@ -472,6 +475,28 @@ const CreateQuiz = () => {
               <div className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
                 <Info className="size-4 mt-0.5 shrink-0" />
                 <span>{modeDescriptions[mode].description}</span>
+            </div>
+            {/* Theme selector */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">עיצוב המשחק</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {themeOptions.map((t) => (
+                  <button
+                    key={t.value}
+                    type="button"
+                    onClick={() => setTheme(t.value)}
+                    className={`rounded-xl p-3 text-right border-2 transition-all ${
+                      theme === t.value
+                        ? "border-primary bg-primary/10 shadow-sm"
+                        : "border-border bg-card hover:border-muted-foreground/30"
+                    }`}
+                  >
+                    <div className="text-lg mb-0.5">{t.emoji}</div>
+                    <div className="text-sm font-heading font-semibold">{t.label}</div>
+                    <div className="text-xs text-muted-foreground">{t.description}</div>
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">זמן לשאלה (שניות) *</label>

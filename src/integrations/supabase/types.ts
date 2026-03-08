@@ -227,6 +227,7 @@ export type Database = {
           id: string
           image_url: string | null
           mode: string
+          theme: string
           time_per_question: number
           title: string
           updated_at: string
@@ -238,6 +239,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           mode?: string
+          theme?: string
           time_per_question?: number
           title: string
           updated_at?: string
@@ -249,6 +251,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           mode?: string
+          theme?: string
           time_per_question?: number
           title?: string
           updated_at?: string

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Timer, CheckCircle2, XCircle, Trophy, ArrowLeft, Users, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { themeClasses, type GameTheme } from "@/lib/gameThemes";
 
 interface Question {
   id: string;
@@ -64,6 +65,7 @@ const GamePlay = () => {
 
   // King/tribe mode state
   const [quizMode, setQuizMode] = useState("genius");
+  const [quizTheme, setQuizTheme] = useState<GameTheme>("default");
   const [kingParticipantId, setKingParticipantId] = useState<string | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [kingAnswerId, setKingAnswerId] = useState<string | null>(null);
@@ -107,12 +109,13 @@ const GamePlay = () => {
 
       const { data: quiz } = await supabase
         .from("quizzes")
-        .select("time_per_question, mode, title, description, image_url")
+        .select("time_per_question, mode, title, description, image_url, theme")
         .eq("id", session.quiz_id)
         .single();
 
       setTotalTime(quiz?.time_per_question || 30);
       setQuizMode(quiz?.mode || "genius");
+      setQuizTheme(((quiz as any)?.theme as GameTheme) || "default");
       setQuizTitle(quiz?.title || "");
       setQuizDescription((quiz as any)?.description || "");
       setQuizImageUrl((quiz as any)?.image_url || null);
@@ -522,6 +525,8 @@ const GamePlay = () => {
     );
   }
 
+  const t = themeClasses[quizTheme];
+
   if (gameFinished) {
     return (
       <GameFinished
@@ -531,6 +536,7 @@ const GamePlay = () => {
         score={score}
         quizMode={quizMode}
         kingParticipantId={currentKingId}
+        quizTheme={quizTheme}
       />
     );
   }
@@ -545,7 +551,7 @@ const GamePlay = () => {
 
   if (showIntroSlide) {
     return (
-      <div className="min-h-screen gradient-hero flex items-center justify-center px-4" dir="rtl">
+      <div className={`min-h-screen ${t.bg} flex items-center justify-center px-4`} dir="rtl">
         <motion.div
           className="w-full max-w-lg text-center"
           initial={{ opacity: 0, scale: 0.9 }}
@@ -562,7 +568,7 @@ const GamePlay = () => {
             />
           )}
           <motion.h1
-            className="text-4xl font-heading font-bold text-primary-foreground mb-3"
+            className={`text-4xl font-heading font-bold ${t.text} mb-3`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
@@ -571,7 +577,7 @@ const GamePlay = () => {
           </motion.h1>
           {quizDescription && (
             <motion.p
-              className="text-lg text-primary-foreground/70 mb-8"
+              className={`text-lg ${t.textSecondary} mb-8`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
@@ -580,7 +586,7 @@ const GamePlay = () => {
             </motion.p>
           )}
           <motion.p
-            className="text-primary-foreground/50 text-sm mb-6"
+            className={`${t.textSecondary} text-sm mb-6`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
@@ -614,7 +620,7 @@ const GamePlay = () => {
           )}
           {!isHost && (
             <motion.p
-              className="text-primary-foreground/60 font-heading font-semibold"
+              className={`${t.textSecondary} font-heading font-semibold`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6 }}
@@ -637,16 +643,16 @@ const GamePlay = () => {
       : answers.find((a) => a.is_correct);
 
   return (
-    <div className="min-h-screen gradient-hero flex flex-col" dir="rtl">
+    <div className={`min-h-screen ${t.bg} flex flex-col`} dir="rtl">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-2 text-primary-foreground/80 text-sm">
+        <div className={`flex items-center gap-2 ${t.textSecondary} text-sm`}>
           <span>
             שאלה {currentIndex + 1} / {questions.length}
           </span>
         </div>
         {!isHost && !isCurrentPlayerKing && (
-          <div className="flex items-center gap-1 text-primary-foreground font-heading font-bold">
+          <div className={`flex items-center gap-1 ${t.text} font-heading font-bold`}>
             <Trophy className="size-4" />
             <span>{score}</span>
           </div>
@@ -658,7 +664,7 @@ const GamePlay = () => {
           </div>
         )}
         {isHost && (
-          <div className="flex items-center gap-1 text-primary-foreground/80 text-sm">
+          <div className={`flex items-center gap-1 ${t.textSecondary} text-sm`}>
             <Users className="size-4" />
             <span>
               {responseCount}/{participantCount} ענו
@@ -683,7 +689,7 @@ const GamePlay = () => {
       <div className="px-4">
         <Progress
           value={totalTime > 0 ? (timeLeft / totalTime) * 100 : 0}
-          className="h-2 bg-primary-foreground/20"
+          className={`h-2 ${t.progressBg}`}
         />
       </div>
 
@@ -693,10 +699,10 @@ const GamePlay = () => {
         <motion.div
           className={`w-20 h-20 rounded-full flex items-center justify-center text-3xl font-heading font-bold ${
             timeUp
-              ? "bg-destructive/20 text-destructive"
+              ? t.timerDanger
               : timeLeft <= 5
-              ? "bg-destructive/20 text-destructive animate-pulse"
-              : "bg-primary-foreground/10 text-primary-foreground"
+              ? `${t.timerDanger} animate-pulse`
+              : `${t.timerBg} ${t.timerText}`
           }`}
           key={timeLeft}
           initial={{ scale: 1.1 }}
@@ -768,8 +774,8 @@ const GamePlay = () => {
                       : showWrong
                       ? "!bg-destructive ring-4 ring-destructive/30 opacity-70"
                       : isSelected
-                      ? `${ANSWER_COLORS[idx % ANSWER_COLORS.length]} ring-4 ring-white/50 scale-[0.97]`
-                      : `${ANSWER_COLORS[idx % ANSWER_COLORS.length]} hover:scale-[1.02] active:scale-[0.97]`
+                      ? `${t.answerColors[idx % t.answerColors.length]} ring-4 ring-white/50 scale-[0.97]`
+                      : `${t.answerColors[idx % t.answerColors.length]} hover:scale-[1.02] active:scale-[0.97]`
                   }
                   ${dimUnselected ? "opacity-50" : ""}
                   disabled:cursor-default
@@ -887,7 +893,7 @@ const GamePlay = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 gradient-hero flex items-center justify-center px-4"
+            className={`fixed inset-0 z-50 ${t.bg} flex items-center justify-center px-4`}
             dir="rtl"
           >
             <motion.div
@@ -898,8 +904,8 @@ const GamePlay = () => {
             >
               <div className="text-center mb-4">
                 <Trophy className="size-12 text-[hsl(var(--answer-yellow))] mx-auto mb-2" />
-                <h2 className="text-2xl font-heading font-bold text-primary-foreground">לוח נקודות</h2>
-                <p className="text-primary-foreground/60 text-sm">אחרי שאלה {currentIndex + 1} מתוך {questions.length}</p>
+                <h2 className={`text-2xl font-heading font-bold ${t.text}`}>לוח נקודות</h2>
+                <p className={`${t.textSecondary} text-sm`}>אחרי שאלה {currentIndex + 1} מתוך {questions.length}</p>
               </div>
 
               <div className="bg-card rounded-3xl p-6 shadow-elevated space-y-3 max-h-[60vh] overflow-y-auto">
@@ -967,6 +973,7 @@ const GameFinished = ({
   score,
   quizMode,
   kingParticipantId,
+  quizTheme,
 }: {
   sessionId: string;
   isHost: boolean;
@@ -974,8 +981,10 @@ const GameFinished = ({
   score: number;
   quizMode: string;
   kingParticipantId: string | null;
+  quizTheme: GameTheme;
 }) => {
   const navigate = useNavigate();
+  const t = themeClasses[quizTheme];
   const [leaderboard, setLeaderboard] = useState<{ player_name: string; total_score: number }[]>(
     []
   );
@@ -1015,7 +1024,7 @@ const GameFinished = ({
   const podiumOrder = top3.length === 3 ? [1, 0, 2] : top3.map((_, i) => i);
 
   return (
-    <div className="min-h-screen gradient-hero flex items-center justify-center px-4" dir="rtl">
+    <div className={`min-h-screen ${t.bg} flex items-center justify-center px-4`} dir="rtl">
       <motion.div
         className="w-full max-w-md"
         initial={{ opacity: 0, scale: 0.9 }}
@@ -1029,7 +1038,7 @@ const GameFinished = ({
           >
             <Trophy className="size-16 text-[hsl(var(--answer-yellow))] mx-auto mb-2" />
           </motion.div>
-          <h1 className="text-3xl font-heading font-bold text-primary-foreground">המשחק נגמר!</h1>
+          <h1 className={`text-3xl font-heading font-bold ${t.text}`}>המשחק נגמר!</h1>
         </div>
 
         <div className="bg-card rounded-3xl p-8 shadow-elevated space-y-6">
