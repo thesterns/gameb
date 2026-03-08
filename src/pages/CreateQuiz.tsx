@@ -162,6 +162,8 @@ const CreateQuiz = () => {
             image_url: (q as any).image_url || undefined,
             imagePreview: (q as any).image_url || undefined,
             youtube_url: (q as any).youtube_url || undefined,
+            double_points: (q as any).double_points || false,
+            custom_time: (q as any).custom_time || undefined,
           });
         }
         setQuestions(loadedQuestions);
