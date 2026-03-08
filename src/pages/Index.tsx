@@ -52,6 +52,7 @@ const Index = () => {
   const navigate = useNavigate();
   const [joinCode, setJoinCode] = useState("");
   const [joiningGame, setJoiningGame] = useState(false);
+  const [joinError, setJoinError] = useState("");
 
   const handleJoinFromHome = async () => {
     if (joinCode.length !== 5) return;
