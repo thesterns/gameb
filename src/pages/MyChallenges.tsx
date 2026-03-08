@@ -124,6 +124,7 @@ const MyChallenges = () => {
                     <Trash2 className="!size-4" />
                   </Button>
                 </div>
+                <ChallengeHistoryDialog challengeId={challenge.id} challengeTitle={challenge.title} />
               </motion.div>
             ))}
           </div>
