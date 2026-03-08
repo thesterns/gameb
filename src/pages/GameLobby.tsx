@@ -96,7 +96,11 @@ const GameLobby = () => {
 
   const handleShare = async () => {
     const joinUrl = `${window.location.origin}/join/${joinCode}`;
-    if (navigator.share) {
+    const shareText = `הצטרפו למשחק החידון "${quizTitle}" עם הקוד ${joinCode}\n${joinUrl}`;
+    
+    // Use Web Share API only on mobile (touch devices)
+    const isMobile = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+    if (isMobile && navigator.share) {
       try {
         await navigator.share({
           title: `הצטרפו למשחק: ${quizTitle}`,
@@ -107,8 +111,8 @@ const GameLobby = () => {
         // User cancelled share
       }
     } else {
-      await navigator.clipboard.writeText(joinUrl);
-      toast.success("קישור ההצטרפות הועתק!");
+      await navigator.clipboard.writeText(shareText);
+      toast.success("הטקסט והקישור הועתקו!");
     }
   };
 
