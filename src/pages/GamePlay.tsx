@@ -550,7 +550,7 @@ const GamePlay = () => {
 
   if (showIntroSlide) {
     return (
-      <div className="min-h-screen gradient-hero flex items-center justify-center px-4" dir="rtl">
+      <div className={`min-h-screen ${t.bg} flex items-center justify-center px-4`} dir="rtl">
         <motion.div
           className="w-full max-w-lg text-center"
           initial={{ opacity: 0, scale: 0.9 }}
