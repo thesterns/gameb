@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowRight, Target, Users, Clock, MapPin, User, Package, Sparkles, Send, CheckCircle } from "lucide-react";
+import { ArrowRight, Target, Users, Clock, MapPin, User, Package, Sparkles, Send, CheckCircle, Medal, Trophy, Award } from "lucide-react";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
 import QuizLogo from "@/components/QuizLogo";
 import { toast } from "sonner";
@@ -17,6 +17,15 @@ const DIMENSION_META: Record<string, { label: string; icon: typeof Clock; color:
   extra: { label: "נוסף", icon: Sparkles, color: "text-[hsl(var(--answer-purple))]" },
 };
 
+type VoteType = "gold" | "silver" | "bronze" | "none";
+
+const VOTE_META: Record<VoteType, { label: string; emoji: string; points: number; color: string }> = {
+  gold: { label: "זהב", emoji: "🥇", points: 3, color: "text-yellow-500" },
+  silver: { label: "כסף", emoji: "🥈", points: 2, color: "text-gray-400" },
+  bronze: { label: "ארד", emoji: "🥉", points: 1, color: "text-amber-700" },
+  none: { label: "ללא", emoji: "➖", points: 0, color: "text-muted-foreground" },
+};
+
 interface Assignment {
   dimension: string;
   value: string;
@@ -26,6 +35,12 @@ interface SentenceEntry {
   participant_id: string;
   player_name: string;
   sentence: string;
+}
+
+interface Vote {
+  voter_participant_id: string;
+  target_participant_id: string;
+  vote_type: VoteType;
 }
 
 interface ParticipantWithAssignments {
@@ -56,7 +71,47 @@ const ChallengePlay = () => {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [sentences, setSentences] = useState<SentenceEntry[]>([]);
+  const [votes, setVotes] = useState<Vote[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Compute my votes (what I voted for others)
+  const myVotes = votes.filter((v) => v.voter_participant_id === myParticipantId);
+  const getMyVoteForTarget = (targetId: string): VoteType => {
+    const v = myVotes.find((v) => v.target_participant_id === targetId);
+    return v?.vote_type || "none";
+  };
+
+  // Compute scores per participant from all votes
+  const getScores = useCallback(() => {
+    const scores: Record<string, number> = {};
+    for (const v of votes) {
+      const pts = VOTE_META[v.vote_type]?.points || 0;
+      scores[v.target_participant_id] = (scores[v.target_participant_id] || 0) + pts;
+    }
+    return scores;
+  }, [votes]);
+
+  // Get ranking (1st, 2nd, 3rd)
+  const getRanking = useCallback(() => {
+    const scores = getScores();
+    const sorted = Object.entries(scores)
+      .filter(([, s]) => s > 0)
+      .sort(([, a], [, b]) => b - a);
+
+    const ranking: Record<string, number> = {};
+    let rank = 1;
+    for (let i = 0; i < sorted.length; i++) {
+      if (i > 0 && sorted[i][1] < sorted[i - 1][1]) rank = i + 1;
+      if (rank <= 3) ranking[sorted[i][0]] = rank;
+    }
+    return ranking;
+  }, [getScores]);
+
+  const RANK_DISPLAY: Record<number, { emoji: string; label: string; bg: string }> = {
+    1: { emoji: "🏆", label: "מקום ראשון", bg: "bg-yellow-500/10 border-yellow-500/30" },
+    2: { emoji: "🥈", label: "מקום שני", bg: "bg-gray-400/10 border-gray-400/30" },
+    3: { emoji: "🥉", label: "מקום שלישי", bg: "bg-amber-700/10 border-amber-700/30" },
+  };
 
   useEffect(() => {
     if (!sessionId) return;
@@ -73,39 +128,29 @@ const ChallengePlay = () => {
         return;
       }
 
-      const { data: ch } = await supabase
-        .from("challenges")
-        .select("title, description, image_url, youtube_url, logo_url, logo_text")
-        .eq("id", session.challenge_id)
-        .single();
+      const [chRes, partsRes, assignRes, sentRes, votesRes] = await Promise.all([
+        supabase.from("challenges").select("title, description, image_url, youtube_url, logo_url, logo_text").eq("id", session.challenge_id).single(),
+        supabase.from("game_participants").select("id, player_name").eq("session_id", sessionId).order("joined_at"),
+        supabase.from("participant_dimension_assignments").select("participant_id, dimension, value").eq("session_id", sessionId),
+        supabase.from("challenge_sentences").select("participant_id, sentence").eq("session_id", sessionId),
+        supabase.from("challenge_votes").select("voter_participant_id, target_participant_id, vote_type").eq("session_id", sessionId),
+      ]);
 
-      setChallenge(ch || null);
+      setChallenge(chRes.data || null);
 
-      const { data: parts } = await supabase
-        .from("game_participants")
-        .select("id, player_name")
-        .eq("session_id", sessionId)
-        .order("joined_at");
-
-      const { data: allAssignments } = await supabase
-        .from("participant_dimension_assignments")
-        .select("participant_id, dimension, value")
-        .eq("session_id", sessionId);
-
+      const parts = partsRes.data || [];
       const assignmentMap: Record<string, Assignment[]> = {};
-      for (const a of allAssignments || []) {
+      for (const a of assignRes.data || []) {
         if (!assignmentMap[a.participant_id]) assignmentMap[a.participant_id] = [];
         assignmentMap[a.participant_id].push({ dimension: a.dimension, value: a.value });
       }
 
-      const pwa: ParticipantWithAssignments[] = (parts || []).map((p) => ({
+      const pwa: ParticipantWithAssignments[] = parts.map((p) => ({
         ...p,
         assignments: assignmentMap[p.id] || [],
       }));
-
       setParticipantsWithAssignments(pwa);
 
-      // Find current player
       if (!isHost && playerName) {
         const myP = pwa.find((p) => p.player_name === playerName);
         if (myP) {
@@ -114,32 +159,29 @@ const ChallengePlay = () => {
         }
       }
 
-      // Load existing sentences
-      const { data: existingSentences } = await supabase
-        .from("challenge_sentences")
-        .select("participant_id, sentence")
-        .eq("session_id", sessionId);
+      const nameMap: Record<string, string> = {};
+      for (const p of parts) nameMap[p.id] = p.player_name;
 
-      if (existingSentences) {
-        const nameMap: Record<string, string> = {};
-        for (const p of parts || []) nameMap[p.id] = p.player_name;
-
-        const entries: SentenceEntry[] = existingSentences.map((s) => ({
+      if (sentRes.data) {
+        const entries: SentenceEntry[] = sentRes.data.map((s) => ({
           participant_id: s.participant_id,
           player_name: nameMap[s.participant_id] || "",
           sentence: s.sentence,
         }));
         setSentences(entries);
 
-        // Check if current player already submitted
         if (!isHost && playerName) {
           const myP = pwa.find((p) => p.player_name === playerName);
-          if (myP && existingSentences.some((s) => s.participant_id === myP.id)) {
+          if (myP && sentRes.data.some((s) => s.participant_id === myP.id)) {
             setSubmitted(true);
-            const mySentence = existingSentences.find((s) => s.participant_id === myP.id);
+            const mySentence = sentRes.data.find((s) => s.participant_id === myP.id);
             if (mySentence) setSentence(mySentence.sentence);
           }
         }
+      }
+
+      if (votesRes.data) {
+        setVotes(votesRes.data.map((v) => ({ ...v, vote_type: v.vote_type as VoteType })));
       }
 
       setLoading(false);
@@ -147,17 +189,10 @@ const ChallengePlay = () => {
 
     load();
 
-    // Realtime subscription for new sentences
-    const channel = supabase
+    // Realtime for sentences
+    const sentChannel = supabase
       .channel(`challenge-sentences-${sessionId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "challenge_sentences",
-          filter: `session_id=eq.${sessionId}`,
-        },
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "challenge_sentences", filter: `session_id=eq.${sessionId}` },
         (payload) => {
           const newS = payload.new as { participant_id: string; sentence: string };
           setParticipantsWithAssignments((prev) => {
@@ -165,11 +200,7 @@ const ChallengePlay = () => {
             if (!player) return prev;
             setSentences((prevSentences) => {
               if (prevSentences.some((s) => s.participant_id === newS.participant_id)) return prevSentences;
-              return [...prevSentences, {
-                participant_id: newS.participant_id,
-                player_name: player.player_name,
-                sentence: newS.sentence,
-              }];
+              return [...prevSentences, { participant_id: newS.participant_id, player_name: player.player_name, sentence: newS.sentence }];
             });
             return prev;
           });
@@ -177,8 +208,23 @@ const ChallengePlay = () => {
       )
       .subscribe();
 
+    // Realtime for votes
+    const voteChannel = supabase
+      .channel(`challenge-votes-${sessionId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "challenge_votes", filter: `session_id=eq.${sessionId}` },
+        () => {
+          // Refetch all votes on any change
+          supabase.from("challenge_votes").select("voter_participant_id, target_participant_id, vote_type").eq("session_id", sessionId)
+            .then(({ data }) => {
+              if (data) setVotes(data.map((v) => ({ ...v, vote_type: v.vote_type as VoteType })));
+            });
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(sentChannel);
+      supabase.removeChannel(voteChannel);
     };
   }, [sessionId, navigate, isHost, playerName]);
 
@@ -186,13 +232,11 @@ const ChallengePlay = () => {
     if (!sentence.trim() || !myParticipantId || !sessionId) return;
     setSubmitting(true);
     try {
-      const { error } = await supabase
-        .from("challenge_sentences")
-        .insert({
-          session_id: sessionId,
-          participant_id: myParticipantId,
-          sentence: sentence.trim(),
-        });
+      const { error } = await supabase.from("challenge_sentences").insert({
+        session_id: sessionId,
+        participant_id: myParticipantId,
+        sentence: sentence.trim(),
+      });
       if (error) throw error;
       setSubmitted(true);
       toast.success("המשפט נשלח!");
@@ -200,6 +244,130 @@ const ChallengePlay = () => {
       toast.error("שגיאה בשליחה");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleVote = async (targetId: string, newVoteType: VoteType) => {
+    if (!myParticipantId || !sessionId) return;
+
+    const currentVote = getMyVoteForTarget(targetId);
+
+    try {
+      if (newVoteType === "none") {
+        // Remove vote
+        if (currentVote !== "none") {
+          await supabase.from("challenge_votes")
+            .delete()
+            .eq("session_id", sessionId)
+            .eq("voter_participant_id", myParticipantId)
+            .eq("target_participant_id", targetId);
+        }
+      } else {
+        // Check if this vote type is already assigned to someone else
+        const existingVoteOfType = myVotes.find((v) => v.vote_type === newVoteType && v.target_participant_id !== targetId);
+        if (existingVoteOfType) {
+          // Remove old vote of this type
+          await supabase.from("challenge_votes")
+            .delete()
+            .eq("session_id", sessionId)
+            .eq("voter_participant_id", myParticipantId)
+            .eq("target_participant_id", existingVoteOfType.target_participant_id);
+        }
+
+        if (currentVote !== "none") {
+          // Remove current vote for this target first
+          await supabase.from("challenge_votes")
+            .delete()
+            .eq("session_id", sessionId)
+            .eq("voter_participant_id", myParticipantId)
+            .eq("target_participant_id", targetId);
+        }
+
+        // Insert new vote
+        await supabase.from("challenge_votes").insert({
+          session_id: sessionId,
+          voter_participant_id: myParticipantId,
+          target_participant_id: targetId,
+          vote_type: newVoteType,
+        });
+      }
+
+      // Optimistic update
+      setVotes((prev) => {
+        let updated = prev.filter(
+          (v) => !(v.voter_participant_id === myParticipantId && v.target_participant_id === targetId)
+        );
+        if (newVoteType !== "none" && existingVoteOfType) {
+          updated = updated.filter(
+            (v) => !(v.voter_participant_id === myParticipantId && v.target_participant_id === existingVoteOfType.target_participant_id)
+          );
+        }
+        if (newVoteType !== "none") {
+          updated.push({ voter_participant_id: myParticipantId, target_participant_id: targetId, vote_type: newVoteType });
+        }
+        return updated;
+      });
+    } catch {
+      toast.error("שגיאה בדירוג");
+    }
+  };
+
+  // Fix: existingVoteOfType needs to be accessible in optimistic update
+  // Refactor handleVote to avoid closure issue
+  const handleVoteFixed = async (targetId: string, newVoteType: VoteType) => {
+    if (!myParticipantId || !sessionId) return;
+
+    const currentVote = getMyVoteForTarget(targetId);
+    const existingOfType = myVotes.find((v) => v.vote_type === newVoteType && v.target_participant_id !== targetId);
+
+    try {
+      if (newVoteType === "none") {
+        if (currentVote !== "none") {
+          await supabase.from("challenge_votes")
+            .delete()
+            .eq("session_id", sessionId)
+            .eq("voter_participant_id", myParticipantId)
+            .eq("target_participant_id", targetId);
+        }
+      } else {
+        if (existingOfType) {
+          await supabase.from("challenge_votes")
+            .delete()
+            .eq("session_id", sessionId)
+            .eq("voter_participant_id", myParticipantId)
+            .eq("target_participant_id", existingOfType.target_participant_id);
+        }
+        if (currentVote !== "none") {
+          await supabase.from("challenge_votes")
+            .delete()
+            .eq("session_id", sessionId)
+            .eq("voter_participant_id", myParticipantId)
+            .eq("target_participant_id", targetId);
+        }
+        await supabase.from("challenge_votes").insert({
+          session_id: sessionId,
+          voter_participant_id: myParticipantId,
+          target_participant_id: targetId,
+          vote_type: newVoteType,
+        });
+      }
+
+      setVotes((prev) => {
+        let updated = prev.filter(
+          (v) => !(v.voter_participant_id === myParticipantId && v.target_participant_id === targetId)
+        );
+        if (newVoteType !== "none" && existingOfType) {
+          updated = updated.filter(
+            (v) => !(v.voter_participant_id === myParticipantId && v.target_participant_id === existingOfType.target_participant_id)
+          );
+        }
+        if (newVoteType !== "none") {
+          updated.push({ voter_participant_id: myParticipantId, target_participant_id: targetId, vote_type: newVoteType });
+        }
+        return updated;
+      });
+    } catch {
+      toast.error("שגיאה בדירוג");
     }
   };
 
@@ -240,12 +408,17 @@ const ChallengePlay = () => {
     );
   };
 
-  // Sentences visible to a player: only after they submitted
-  const visibleSentences = isHost
-    ? sentences
-    : submitted
-      ? sentences
-      : [];
+  const visibleSentences = isHost ? sentences : submitted ? sentences : [];
+  const otherSentences = visibleSentences.filter((s) => s.participant_id !== myParticipantId);
+  const scores = getScores();
+  const ranking = getRanking();
+
+  // Sort participants by score for host view
+  const sortedParticipants = [...participantsWithAssignments].sort((a, b) => {
+    return (scores[b.id] || 0) - (scores[a.id] || 0);
+  });
+
+  const voteOptions: VoteType[] = ["gold", "silver", "bronze", "none"];
 
   return (
     <div className="min-h-screen gradient-hero flex items-center justify-center px-4 py-8">
@@ -291,7 +464,7 @@ const ChallengePlay = () => {
                 </div>
               )}
 
-              {/* Sentence input - always show for identified players */}
+              {/* Sentence input */}
               {myParticipantId && (
                 <div className="space-y-3">
                   <h3 className="font-heading font-bold text-sm text-muted-foreground text-center">
@@ -329,54 +502,100 @@ const ChallengePlay = () => {
                   )}
                 </div>
               )}
+
+              {/* Other players' sentences with voting */}
+              {submitted && otherSentences.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-heading font-bold text-lg flex items-center gap-2">
+                    📝 דרגו את המשפטים
+                  </h3>
+                  <p className="text-xs text-muted-foreground text-center">
+                    בחרו זהב 🥇, כסף 🥈 וארד 🥉 – אחד מכל סוג
+                  </p>
+                  <AnimatePresence>
+                    {otherSentences.map((s) => {
+                      const currentVote = getMyVoteForTarget(s.participant_id);
+                      const rank = ranking[s.participant_id];
+                      const rankInfo = rank ? RANK_DISPLAY[rank] : null;
+                      return (
+                        <motion.div
+                          key={s.participant_id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className={`rounded-xl p-4 space-y-3 border ${rankInfo ? rankInfo.bg : "bg-muted/30 border-transparent"}`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <p className="font-heading font-bold text-sm text-foreground">{s.player_name}</p>
+                              {rankInfo && <span className="text-lg">{rankInfo.emoji}</span>}
+                            </div>
+                            {scores[s.participant_id] > 0 && (
+                              <span className="text-xs font-bold text-muted-foreground">{scores[s.participant_id]} נק׳</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">{s.sentence}</p>
+                          <div className="flex gap-1.5">
+                            {voteOptions.map((vt) => {
+                              const meta = VOTE_META[vt];
+                              const isSelected = currentVote === vt;
+                              return (
+                                <button
+                                  key={vt}
+                                  onClick={() => handleVoteFixed(s.participant_id, vt === currentVote ? "none" : vt)}
+                                  className={`flex-1 text-center py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                    isSelected
+                                      ? "bg-primary text-primary-foreground scale-105"
+                                      : "bg-muted/50 hover:bg-muted text-muted-foreground"
+                                  }`}
+                                >
+                                  {meta.emoji}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
+                </div>
+              )}
             </>
           )}
 
-          {/* Sentences display */}
-          {!isHost && visibleSentences.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="font-heading font-bold text-lg flex items-center gap-2">
-                📝 משפטים ({visibleSentences.length}/{participantsWithAssignments.length})
-              </h3>
-              <AnimatePresence>
-                {visibleSentences.map((s) => (
-                  <motion.div
-                    key={s.participant_id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-muted/30 rounded-xl p-4 space-y-1"
-                  >
-                    <p className="font-heading font-bold text-sm text-foreground">{s.player_name}</p>
-                    <p className="text-sm text-muted-foreground">{s.sentence}</p>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-          )}
-
-          {/* Host: show participants with sentence status, no dimension values */}
+          {/* Host: show participants with sentences and scores */}
           {isHost && (
             <div className="space-y-4">
               <h3 className="font-heading font-bold text-lg flex items-center gap-2">
                 <Users className="size-5" />
                 משתתפים ({sentences.length}/{participantsWithAssignments.length} שלחו)
               </h3>
-              {participantsWithAssignments.map((p) => {
+              {sortedParticipants.map((p) => {
                 const pSentence = sentences.find((s) => s.participant_id === p.id);
+                const score = scores[p.id] || 0;
+                const rank = ranking[p.id];
+                const rankInfo = rank ? RANK_DISPLAY[rank] : null;
                 return (
                   <motion.div
                     key={p.id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="border border-border rounded-2xl p-4 space-y-2"
+                    className={`border rounded-2xl p-4 space-y-2 ${rankInfo ? rankInfo.bg : "border-border"}`}
                   >
                     <div className="flex items-center justify-between">
-                      <h4 className="font-heading font-bold text-foreground">{p.player_name}</h4>
-                      {pSentence ? (
-                        <CheckCircle className="size-4 text-accent" />
-                      ) : (
-                        <span className="text-xs text-muted-foreground">ממתין...</span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {rankInfo && <span className="text-xl">{rankInfo.emoji}</span>}
+                        <h4 className="font-heading font-bold text-foreground">{p.player_name}</h4>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {score > 0 && (
+                          <span className="text-sm font-bold text-primary">{score} נק׳</span>
+                        )}
+                        {pSentence ? (
+                          <CheckCircle className="size-4 text-accent" />
+                        ) : (
+                          <span className="text-xs text-muted-foreground">ממתין...</span>
+                        )}
+                      </div>
                     </div>
                     {pSentence && (
                       <p className="text-sm text-muted-foreground">{pSentence.sentence}</p>
