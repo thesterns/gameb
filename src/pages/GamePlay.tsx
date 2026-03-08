@@ -645,7 +645,7 @@ const GamePlay = () => {
     <div className={`min-h-screen ${t.bg} flex flex-col`} dir="rtl">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-2 text-primary-foreground/80 text-sm">
+        <div className={`flex items-center gap-2 ${t.textSecondary} text-sm`}>
           <span>
             שאלה {currentIndex + 1} / {questions.length}
           </span>
