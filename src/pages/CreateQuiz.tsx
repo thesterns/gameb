@@ -80,6 +80,7 @@ const CreateQuiz = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [mode, setMode] = useState<string>("genius");
+  const [theme, setTheme] = useState<GameTheme>("default");
   const [timePerQuestion, setTimePerQuestion] = useState<number>(30);
   const [questions, setQuestions] = useState<Question[]>([createDefaultQuestion()]);
   const [saving, setSaving] = useState(false);
