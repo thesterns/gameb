@@ -91,50 +91,56 @@ const Dashboard = () => {
           <h2 className="text-3xl font-heading font-bold mb-8">הדשבורד שלי</h2>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-            <button
-              onClick={() => navigate("/quiz/new")}
-              className="bg-card rounded-2xl p-6 shadow-card hover:shadow-elevated transition-all text-center group"
-            >
-              <div className="w-14 h-14 gradient-primary rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                <Plus className="!size-7 text-primary-foreground" />
-              </div>
-              <h3 className="font-heading font-bold text-lg">צור חידון</h3>
-              <p className="text-muted-foreground text-sm mt-1">צרו חידון חדש מאפס</p>
-            </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
+            {/* Quiz pair */}
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => navigate("/quiz/new")}
+                className="bg-card rounded-2xl p-6 shadow-card hover:shadow-elevated transition-all text-center group"
+              >
+                <div className="w-14 h-14 gradient-primary rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                  <Plus className="!size-7 text-primary-foreground" />
+                </div>
+                <h3 className="font-heading font-bold text-lg">צור חידון</h3>
+                <p className="text-muted-foreground text-sm mt-1">צרו חידון חדש מאפס</p>
+              </button>
 
-            <button
-              onClick={() => navigate("/challenge/new")}
-              className="bg-card rounded-2xl p-6 shadow-card hover:shadow-elevated transition-all text-center group"
-            >
-              <div className="w-14 h-14 bg-accent rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                <Target className="!size-7 text-accent-foreground" />
-              </div>
-              <h3 className="font-heading font-bold text-lg">צור אתגר</h3>
-              <p className="text-muted-foreground text-sm mt-1">צרו אתגר חדש</p>
-            </button>
+              <button
+                onClick={() => navigate("/my-quizzes")}
+                className="bg-card rounded-2xl p-6 shadow-card hover:shadow-elevated transition-all text-center group"
+              >
+                <div className="w-14 h-14 gradient-fun rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                  <BookOpen className="!size-7 text-accent-foreground" />
+                </div>
+                <h3 className="font-heading font-bold text-lg">החידונים שלי</h3>
+                <p className="text-muted-foreground text-sm mt-1">ניהול ועריכת חידונים</p>
+              </button>
+            </div>
 
-            <button
-              onClick={() => navigate("/my-quizzes")}
-              className="bg-card rounded-2xl p-6 shadow-card hover:shadow-elevated transition-all text-center group"
-            >
-              <div className="w-14 h-14 gradient-fun rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                <BookOpen className="!size-7 text-accent-foreground" />
-              </div>
-              <h3 className="font-heading font-bold text-lg">החידונים שלי</h3>
-              <p className="text-muted-foreground text-sm mt-1">ניהול ועריכת חידונים</p>
-            </button>
+            {/* Challenge pair */}
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => navigate("/challenge/new")}
+                className="bg-card rounded-2xl p-6 shadow-card hover:shadow-elevated transition-all text-center group"
+              >
+                <div className="w-14 h-14 bg-accent rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                  <Target className="!size-7 text-accent-foreground" />
+                </div>
+                <h3 className="font-heading font-bold text-lg">צור אתגר</h3>
+                <p className="text-muted-foreground text-sm mt-1">צרו אתגר חדש</p>
+              </button>
 
-            <button
-              onClick={() => navigate("/my-challenges")}
-              className="bg-card rounded-2xl p-6 shadow-card hover:shadow-elevated transition-all text-center group"
-            >
-              <div className="w-14 h-14 gradient-secondary rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                <Target className="!size-7 text-secondary-foreground" />
-              </div>
-              <h3 className="font-heading font-bold text-lg">האתגרים שלי</h3>
-              <p className="text-muted-foreground text-sm mt-1">ניהול ועריכת אתגרים</p>
-            </button>
+              <button
+                onClick={() => navigate("/my-challenges")}
+                className="bg-card rounded-2xl p-6 shadow-card hover:shadow-elevated transition-all text-center group"
+              >
+                <div className="w-14 h-14 gradient-secondary rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                  <Target className="!size-7 text-secondary-foreground" />
+                </div>
+                <h3 className="font-heading font-bold text-lg">האתגרים שלי</h3>
+                <p className="text-muted-foreground text-sm mt-1">ניהול ועריכת אתגרים</p>
+              </button>
+            </div>
           </div>
 
           <div className="mb-4">
