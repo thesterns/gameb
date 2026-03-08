@@ -22,6 +22,8 @@ const PlayerWaiting = () => {
   const [quizDescription, setQuizDescription] = useState("");
   const [quizImageUrl, setQuizImageUrl] = useState<string | null>(null);
   const [quizYoutubeUrl, setQuizYoutubeUrl] = useState<string | null>(null);
+  const [quizLogoUrl, setQuizLogoUrl] = useState<string | null>(null);
+  const [quizLogoText, setQuizLogoText] = useState<string | null>(null);
   const [joinCode, setJoinCode] = useState("");
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
