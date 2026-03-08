@@ -130,7 +130,7 @@ const GameHistoryDialog = ({ quizId, quizTitle, open, onOpenChange }: GameHistor
                     <span className="font-heading font-semibold">הפעלה {sessions.length - idx}</span>
                     <span className="flex items-center gap-1 text-muted-foreground">
                       <Calendar className="size-3" />
-                      {new Date(session.created_at).toLocaleString("he-IL", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Jerusalem" })}
+                      {formatDate(session.created_at)}
                     </span>
                     <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground mr-auto">
                       {statusLabels[session.status] || session.status}
