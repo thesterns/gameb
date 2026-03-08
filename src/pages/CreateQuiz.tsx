@@ -138,7 +138,7 @@ const CreateQuiz = () => {
 
       const { data: dbQuestions } = await supabase
         .from("questions")
-        .select("id, text, sort_order, image_url")
+        .select("id, text, sort_order, image_url, double_points, custom_time")
         .eq("quiz_id", quizId)
         .order("sort_order");
 
