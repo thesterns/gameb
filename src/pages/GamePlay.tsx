@@ -601,6 +601,9 @@ const GamePlay = () => {
         quizMode={quizMode}
         kingParticipantId={currentKingId}
         quizTheme={quizTheme}
+        quizYoutubeUrl={quizYoutubeUrl}
+        quizImageUrl={quizImageUrl}
+        quizTitle={quizTitle}
       />
     );
   }
