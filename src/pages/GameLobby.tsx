@@ -48,12 +48,14 @@ const GameLobby = () => {
 
       const { data: quiz } = await supabase
         .from("quizzes")
-        .select("title, mode")
+        .select("title, mode, youtube_url, image_url")
         .eq("id", session.quiz_id)
         .single();
 
       setQuizTitle(quiz?.title || "חידון");
       setQuizMode(quiz?.mode || "genius");
+      setQuizYoutubeUrl(quiz?.youtube_url || null);
+      setQuizImageUrl(quiz?.image_url || null);
 
       const { data: existingParticipants } = await supabase
         .from("game_participants")
