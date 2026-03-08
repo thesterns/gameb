@@ -113,6 +113,11 @@ const GamePlay = () => {
   const [showPlayerLeaderboard, setShowPlayerLeaderboard] = useState(false);
   const [playerLeaderboardData, setPlayerLeaderboardData] = useState<{ player_name: string; total_score: number }[]>([]);
 
+  // Statistics overlay
+  const [showStats, setShowStats] = useState(false);
+  const [statsData, setStatsData] = useState<{ text: string; count: number; colorClass: string }[]>([]);
+  const [playerLeaderboardData, setPlayerLeaderboardData] = useState<{ player_name: string; total_score: number }[]>([]);
+
   // Determine current king for tribe mode
   const getCurrentKingId = useCallback(
     (index: number) => {
