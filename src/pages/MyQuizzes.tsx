@@ -35,6 +35,7 @@ const MyQuizzes = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [modeFilter, setModeFilter] = useState<string>("all");
+  const [historyQuiz, setHistoryQuiz] = useState<{ id: string; title: string } | null>(null);
 
   const filteredQuizzes = useMemo(() => {
     return quizzes.filter((q) => {
