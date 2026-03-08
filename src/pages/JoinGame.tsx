@@ -15,6 +15,7 @@ const JoinGame = () => {
   const [step, setStep] = useState<"code" | "name">("code");
   const [sessionId, setSessionId] = useState("");
   const [joining, setJoining] = useState(false);
+  const [codeError, setCodeError] = useState("");
 
   // Auto-submit code from direct link
   useEffect(() => {
@@ -29,11 +30,11 @@ const JoinGame = () => {
           .single();
 
         if (!session) {
-          toast.error("קוד משחק לא נמצא");
+          setCodeError("קוד משחק לא נמצא, נסו שוב");
           return;
         }
         if (session.status !== "lobby") {
-          toast.error("המשחק כבר התחיל");
+          setCodeError("המשחק כבר התחיל או הסתיים");
           return;
         }
         setSessionId(session.id);
@@ -45,11 +46,13 @@ const JoinGame = () => {
   const handleCodeChange = (value: string) => {
     const numeric = value.replace(/\D/g, "").slice(0, 5);
     setCode(numeric);
+    if (codeError) setCodeError("");
   };
 
   const handleCodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (code.length !== 5) return;
+    setCodeError("");
 
     const { data: session, error } = await supabase
       .from("game_sessions")
@@ -58,12 +61,12 @@ const JoinGame = () => {
       .single();
 
     if (error || !session) {
-      toast.error("קוד משחק לא נמצא");
+      setCodeError("קוד משחק לא נמצא, נסו שוב");
       return;
     }
 
     if (session.status !== "lobby") {
-      toast.error("המשחק כבר התחיל");
+      setCodeError("המשחק כבר התחיל או הסתיים");
       return;
     }
 
@@ -112,16 +115,29 @@ const JoinGame = () => {
               <p className="text-muted-foreground mb-6">הכניסו את קוד המשחק</p>
 
               <form onSubmit={handleCodeSubmit} className="space-y-4">
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="12345"
-                  value={code}
-                  onChange={(e) => handleCodeChange(e.target.value)}
-                  className="text-center text-3xl font-heading font-bold h-16 tracking-[0.3em] rounded-xl"
-                  maxLength={5}
-                  dir="ltr"
-                />
+                <div>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="12345"
+                    value={code}
+                    onChange={(e) => handleCodeChange(e.target.value)}
+                    className={`text-center text-3xl font-heading font-bold h-16 tracking-[0.3em] rounded-xl ${
+                      codeError ? "border-destructive ring-2 ring-destructive/30" : ""
+                    }`}
+                    maxLength={5}
+                    dir="ltr"
+                  />
+                  {codeError && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-2 text-sm font-semibold text-destructive bg-destructive/10 rounded-lg px-3 py-2 text-center"
+                    >
+                      {codeError}
+                    </motion.p>
+                  )}
+                </div>
                 <Button
                   type="submit"
                   variant="hero"

@@ -52,10 +52,12 @@ const Index = () => {
   const navigate = useNavigate();
   const [joinCode, setJoinCode] = useState("");
   const [joiningGame, setJoiningGame] = useState(false);
+  const [joinError, setJoinError] = useState("");
 
   const handleJoinFromHome = async () => {
     if (joinCode.length !== 5) return;
     setJoiningGame(true);
+    setJoinError("");
 
     const { data: session, error } = await supabase
       .from("game_sessions")
@@ -64,13 +66,13 @@ const Index = () => {
       .single();
 
     if (error || !session) {
-      toast.error("קוד משחק לא נמצא");
+      setJoinError("קוד משחק לא נמצא");
       setJoiningGame(false);
       return;
     }
 
     if (session.status !== "lobby") {
-      toast.error("המשחק כבר התחיל או הסתיים");
+      setJoinError("המשחק כבר התחיל או הסתיים");
       setJoiningGame(false);
       return;
     }
@@ -129,8 +131,13 @@ const Index = () => {
               <Input
                 placeholder="הכניסו קוד משחק"
                 value={joinCode}
-                onChange={(e) => setJoinCode(e.target.value.replace(/\D/g, "").slice(0, 5))}
-                className="text-center text-lg font-heading tracking-widest h-14 rounded-xl"
+                onChange={(e) => {
+                  setJoinCode(e.target.value.replace(/\D/g, "").slice(0, 5));
+                  if (joinError) setJoinError("");
+                }}
+                className={`text-center text-lg font-heading tracking-widest h-14 rounded-xl ${
+                  joinError ? "border-destructive ring-2 ring-destructive/30" : ""
+                }`}
                 dir="ltr"
               />
               <Button
@@ -143,6 +150,15 @@ const Index = () => {
                 {joiningGame ? "בודק..." : "הצטרפו למשחק"}
               </Button>
             </div>
+            {joinError && (
+              <motion.p
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-2 text-sm font-semibold text-destructive bg-destructive/10 rounded-lg px-3 py-2 inline-block"
+              >
+                {joinError}
+              </motion.p>
+            )}
           </motion.div>
 
           <motion.div
