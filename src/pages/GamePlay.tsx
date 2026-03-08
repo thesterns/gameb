@@ -635,21 +635,13 @@ const GamePlay = () => {
 
     const { data } = await supabase
       .from("game_responses")
-      .select("participant_id, score, game_participants!inner(player_name)")
+      .select("participant_id, score, is_correct, question_id, game_participants!inner(player_name)")
       .eq("session_id", sessionId);
 
     if (!data) return;
 
-    const scores: Record<string, { player_name: string; total_score: number }> = {};
-    for (const row of data) {
-      const pid = row.participant_id;
-      if (quizMode === "king" && pid === currentKingId) continue;
-      const name = (row.game_participants as any)?.player_name || "?";
-      if (!scores[pid]) scores[pid] = { player_name: name, total_score: 0 };
-      scores[pid].total_score += row.score;
-    }
-
-    const sorted = Object.values(scores).sort((a, b) => b.total_score - a.total_score);
+    const excludeId = quizMode === "king" ? currentKingId : null;
+    const sorted = computeLeaderboard(data as any, questions, excludeId);
     setPlayerLeaderboardData(sorted);
     setShowPlayerLeaderboard(true);
   };
@@ -657,24 +649,15 @@ const GamePlay = () => {
   const handleShowLeaderboard = async () => {
     if (!isHost || !sessionId) return;
 
-    // Load current scores
     const { data } = await supabase
       .from("game_responses")
-      .select("participant_id, score, game_participants!inner(player_name)")
+      .select("participant_id, score, is_correct, question_id, game_participants!inner(player_name)")
       .eq("session_id", sessionId);
 
     if (!data) return;
 
-    const scores: Record<string, { player_name: string; total_score: number }> = {};
-    for (const row of data) {
-      const pid = row.participant_id;
-      if (quizMode === "king" && pid === currentKingId) continue;
-      const name = (row.game_participants as any)?.player_name || "?";
-      if (!scores[pid]) scores[pid] = { player_name: name, total_score: 0 };
-      scores[pid].total_score += row.score;
-    }
-
-    const sorted = Object.values(scores).sort((a, b) => b.total_score - a.total_score);
+    const excludeId = quizMode === "king" ? currentKingId : null;
+    const sorted = computeLeaderboard(data as any, questions, excludeId);
     setMidGameLeaderboard(sorted);
     setShowLeaderboard(true);
 
