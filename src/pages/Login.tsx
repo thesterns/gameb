@@ -88,6 +88,12 @@ const Login = () => {
             </div>
           </div>
 
+          <div className="flex justify-end">
+            <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+              שכחת סיסמה?
+            </Link>
+          </div>
+
           <Button type="submit" variant="hero" size="lg" className="w-full" disabled={loading}>
             <LogIn className="!size-5" />
             {loading ? "מתחבר..." : "התחברות"}
