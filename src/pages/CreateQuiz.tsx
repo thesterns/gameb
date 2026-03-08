@@ -83,6 +83,9 @@ const CreateQuiz = () => {
   const [questions, setQuestions] = useState<Question[]>([createDefaultQuestion()]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(isEdit);
+  const [quizImageFile, setQuizImageFile] = useState<File | null>(null);
+  const [quizImagePreview, setQuizImagePreview] = useState<string | undefined>(undefined);
+  const [quizImageUrl, setQuizImageUrl] = useState<string | undefined>(undefined);
 
   // Load existing quiz data in edit mode
   useEffect(() => {
@@ -91,7 +94,7 @@ const CreateQuiz = () => {
     const loadQuiz = async () => {
       const { data: quiz, error: quizErr } = await supabase
         .from("quizzes")
-        .select("title, description, mode, time_per_question")
+        .select("title, description, mode, time_per_question, image_url")
         .eq("id", quizId)
         .single();
 
@@ -105,6 +108,10 @@ const CreateQuiz = () => {
       setDescription(quiz.description || "");
       setMode(quiz.mode || "genius");
       setTimePerQuestion(quiz.time_per_question ?? 30);
+      if ((quiz as any).image_url) {
+        setQuizImageUrl((quiz as any).image_url);
+        setQuizImagePreview((quiz as any).image_url);
+      }
 
       const { data: dbQuestions } = await supabase
         .from("questions")
@@ -266,10 +273,16 @@ const CreateQuiz = () => {
       }
 
       if (isEdit && quizId) {
+        // Upload quiz image if needed
+        let finalQuizImageUrl = quizImageUrl || null;
+        if (quizImageFile) {
+          finalQuizImageUrl = await uploadQuestionImage(quizImageFile, quizId, 999);
+        }
+
         // Update existing quiz
         const { error: quizErr } = await supabase
           .from("quizzes")
-          .update({ title: title.trim(), description: description.trim() || null, mode, time_per_question: timePerQuestion })
+          .update({ title: title.trim(), description: description.trim() || null, mode, time_per_question: timePerQuestion, image_url: finalQuizImageUrl } as any)
           .eq("id", quizId);
 
         if (quizErr) throw quizErr;
@@ -308,11 +321,17 @@ const CreateQuiz = () => {
         // Create new quiz
         const { data: quiz, error: quizErr } = await supabase
           .from("quizzes")
-          .insert({ title: title.trim(), description: description.trim() || null, user_id: user.id, mode, time_per_question: timePerQuestion })
+          .insert({ title: title.trim(), description: description.trim() || null, user_id: user.id, mode, time_per_question: timePerQuestion } as any)
           .select()
           .single();
 
         if (quizErr || !quiz) throw quizErr;
+
+        // Upload quiz image if needed
+        if (quizImageFile) {
+          const quizImgUrl = await uploadQuestionImage(quizImageFile, quiz.id, 999);
+          await supabase.from("quizzes").update({ image_url: quizImgUrl } as any).eq("id", quiz.id);
+        }
 
         for (let i = 0; i < questions.length; i++) {
           const q = questions[i];
@@ -400,6 +419,43 @@ const CreateQuiz = () => {
                 maxLength={1000}
                 rows={2}
               />
+            </div>
+            {/* Quiz image */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground">תמונת חידון (לא חובה)</label>
+              {quizImagePreview ? (
+                <div className="relative rounded-xl overflow-hidden border border-border">
+                  <img src={quizImagePreview} alt="תמונת חידון" className="w-full max-h-48 object-contain bg-muted/30" />
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 left-2 size-7 rounded-full"
+                    onClick={() => { setQuizImageFile(null); setQuizImagePreview(undefined); setQuizImageUrl(undefined); }}
+                  >
+                    <X className="!size-3.5" />
+                  </Button>
+                </div>
+              ) : (
+                <label className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors border border-dashed border-border rounded-xl p-3 justify-center">
+                  <ImagePlus className="size-4" />
+                  <span>הוסף תמונה לחידון</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (!file.type.startsWith("image/")) { toast.error("יש לבחור קובץ תמונה בלבד"); return; }
+                        if (file.size > 5 * 1024 * 1024) { toast.error("גודל התמונה מוגבל ל-5MB"); return; }
+                        setQuizImageFile(file);
+                        setQuizImagePreview(URL.createObjectURL(file));
+                      }
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              )}
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">סוג משחק *</label>

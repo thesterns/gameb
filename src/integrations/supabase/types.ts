@@ -225,6 +225,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          image_url: string | null
           mode: string
           time_per_question: number
           title: string
@@ -235,6 +236,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          image_url?: string | null
           mode?: string
           time_per_question?: number
           title: string
@@ -245,6 +247,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          image_url?: string | null
           mode?: string
           time_per_question?: number
           title?: string
