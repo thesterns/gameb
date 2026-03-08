@@ -168,6 +168,9 @@ const MyChallenges = () => {
                     <Edit className="!size-4" />
                     ערוך
                   </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleDuplicate(challenge)}>
+                    <Copy className="!size-4" />
+                  </Button>
                   <Button variant="ghost" size="sm" onClick={() => handleDelete(challenge.id)} className="text-destructive hover:text-destructive">
                     <Trash2 className="!size-4" />
                   </Button>
