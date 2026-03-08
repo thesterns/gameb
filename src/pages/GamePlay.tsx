@@ -176,7 +176,7 @@ const GamePlay = () => {
     };
 
     loadAnswers();
-  }, [questions, currentIndex, totalTime]);
+  }, [questions, currentIndex, totalTime, showIntroSlide]);
 
   // Timer countdown
   useEffect(() => {
