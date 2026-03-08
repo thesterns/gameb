@@ -1,10 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Plus, Trash2, Pencil, Copy } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowRight, Plus, Trash2, Pencil, Copy, Search } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Quiz {
   id: string;
@@ -24,6 +32,18 @@ const MyQuizzes = () => {
   const navigate = useNavigate();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [modeFilter, setModeFilter] = useState<string>("all");
+
+  const filteredQuizzes = useMemo(() => {
+    return quizzes.filter((q) => {
+      const matchesSearch = !search.trim() ||
+        q.title.toLowerCase().includes(search.toLowerCase()) ||
+        (q.description || "").toLowerCase().includes(search.toLowerCase());
+      const matchesMode = modeFilter === "all" || q.mode === modeFilter;
+      return matchesSearch && matchesMode;
+    });
+  }, [quizzes, search, modeFilter]);
 
   useEffect(() => {
     const fetchQuizzes = async () => {
@@ -133,6 +153,31 @@ const MyQuizzes = () => {
       </header>
 
       <main className="max-w-3xl mx-auto px-6 py-8 space-y-4">
+        {!loading && quizzes.length > 0 && (
+          <div className="flex gap-3 items-center">
+            <div className="relative flex-1">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Input
+                placeholder="חיפוש לפי שם או תיאור..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pr-9"
+              />
+            </div>
+            <Select value={modeFilter} onValueChange={setModeFilter} dir="rtl">
+              <SelectTrigger className="w-36">
+                <SelectValue placeholder="כל הסוגים" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל הסוגים</SelectItem>
+                <SelectItem value="genius">🧠 גאון</SelectItem>
+                <SelectItem value="king">👑 מלך</SelectItem>
+                <SelectItem value="tribe">🏕️ שבט</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         {loading ? (
           <p className="text-center text-muted-foreground py-12">טוען...</p>
         ) : quizzes.length === 0 ? (
@@ -143,8 +188,10 @@ const MyQuizzes = () => {
               צור חידון ראשון
             </Button>
           </div>
+        ) : filteredQuizzes.length === 0 ? (
+          <p className="text-center text-muted-foreground py-12">לא נמצאו חידונים תואמים</p>
         ) : (
-          quizzes.map((quiz) => (
+          filteredQuizzes.map((quiz) => (
             <motion.div
               key={quiz.id}
               initial={{ opacity: 0, y: 10 }}

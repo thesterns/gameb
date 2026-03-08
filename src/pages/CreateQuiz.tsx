@@ -76,6 +76,7 @@ const CreateQuiz = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [mode, setMode] = useState<string>("genius");
+  const [timePerQuestion, setTimePerQuestion] = useState<number>(30);
   const [questions, setQuestions] = useState<Question[]>([createDefaultQuestion()]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(isEdit);
@@ -87,7 +88,7 @@ const CreateQuiz = () => {
     const loadQuiz = async () => {
       const { data: quiz, error: quizErr } = await supabase
         .from("quizzes")
-        .select("title, description, mode")
+        .select("title, description, mode, time_per_question")
         .eq("id", quizId)
         .single();
 
@@ -100,6 +101,7 @@ const CreateQuiz = () => {
       setTitle(quiz.title);
       setDescription(quiz.description || "");
       setMode(quiz.mode || "genius");
+      setTimePerQuestion(quiz.time_per_question ?? 30);
 
       const { data: dbQuestions } = await supabase
         .from("questions")
@@ -230,7 +232,7 @@ const CreateQuiz = () => {
         // Update existing quiz
         const { error: quizErr } = await supabase
           .from("quizzes")
-          .update({ title: title.trim(), description: description.trim() || null, mode })
+          .update({ title: title.trim(), description: description.trim() || null, mode, time_per_question: timePerQuestion })
           .eq("id", quizId);
 
         if (quizErr) throw quizErr;
@@ -265,7 +267,7 @@ const CreateQuiz = () => {
         // Create new quiz
         const { data: quiz, error: quizErr } = await supabase
           .from("quizzes")
-          .insert({ title: title.trim(), description: description.trim() || null, user_id: user.id, mode })
+          .insert({ title: title.trim(), description: description.trim() || null, user_id: user.id, mode, time_per_question: timePerQuestion })
           .select()
           .single();
 
@@ -369,8 +371,22 @@ const CreateQuiz = () => {
               <div className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
                 <Info className="size-4 mt-0.5 shrink-0" />
                 <span>{modeDescriptions[mode].description}</span>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">זמן לשאלה (שניות) *</label>
+              <div className="flex items-center gap-3">
+                <Input
+                  type="number"
+                  min={5}
+                  max={120}
+                  value={timePerQuestion}
+                  onChange={(e) => setTimePerQuestion(Math.min(120, Math.max(5, Number(e.target.value) || 5)))}
+                  className="w-24"
+                />
+                <span className="text-sm text-muted-foreground">שניות (5-120)</span>
               </div>
             </div>
+          </div>
           </div>
         </motion.div>
 
