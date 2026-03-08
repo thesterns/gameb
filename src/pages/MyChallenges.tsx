@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Plus, Target, Edit, Trash2, Play } from "lucide-react";
+import ChallengeHistoryDialog from "@/components/ChallengeHistoryDialog";
 import { toast } from "sonner";
 
 interface Challenge {
@@ -123,6 +124,7 @@ const MyChallenges = () => {
                     <Trash2 className="!size-4" />
                   </Button>
                 </div>
+                <ChallengeHistoryDialog challengeId={challenge.id} challengeTitle={challenge.title} />
               </motion.div>
             ))}
           </div>
