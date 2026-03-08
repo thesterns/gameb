@@ -13,6 +13,7 @@ interface Question {
   text: string;
   sort_order: number;
   image_url?: string;
+  youtube_url?: string;
 }
 
 interface Answer {
