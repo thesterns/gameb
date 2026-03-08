@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Timer, CheckCircle2, XCircle, Trophy, ArrowLeft, Users, Crown } from "lucide-react";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
+import QuizLogo from "@/components/QuizLogo";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { themeClasses, type GameTheme } from "@/lib/gameThemes";
