@@ -5,7 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowRight, Plus, Trash2, GripVertical, Check, Info, ImagePlus, X } from "lucide-react";
+import { ArrowRight, Plus, Trash2, GripVertical, Check, Info, ImagePlus, X, Youtube } from "lucide-react";
+import YouTubeEmbed, { isValidYouTubeUrl } from "@/components/YouTubeEmbed";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { themeOptions, type GameTheme } from "@/lib/gameThemes";
@@ -30,6 +31,7 @@ interface Question {
   image_url?: string;
   imageFile?: File;
   imagePreview?: string;
+  youtube_url?: string;
 }
 
 const generateId = () => crypto.randomUUID();
@@ -88,6 +90,7 @@ const CreateQuiz = () => {
   const [quizImageFile, setQuizImageFile] = useState<File | null>(null);
   const [quizImagePreview, setQuizImagePreview] = useState<string | undefined>(undefined);
   const [quizImageUrl, setQuizImageUrl] = useState<string | undefined>(undefined);
+  const [quizYoutubeUrl, setQuizYoutubeUrl] = useState<string>("");
 
   // Load existing quiz data in edit mode
   useEffect(() => {
@@ -115,6 +118,9 @@ const CreateQuiz = () => {
         setQuizImageUrl((quiz as any).image_url);
         setQuizImagePreview((quiz as any).image_url);
       }
+      if ((quiz as any).youtube_url) {
+        setQuizYoutubeUrl((quiz as any).youtube_url);
+      }
 
       const { data: dbQuestions } = await supabase
         .from("questions")
@@ -141,6 +147,7 @@ const CreateQuiz = () => {
             })),
             image_url: (q as any).image_url || undefined,
             imagePreview: (q as any).image_url || undefined,
+            youtube_url: (q as any).youtube_url || undefined,
           });
         }
         setQuestions(loadedQuestions);
@@ -285,7 +292,7 @@ const CreateQuiz = () => {
         // Update existing quiz
         const { error: quizErr } = await supabase
           .from("quizzes")
-          .update({ title: title.trim(), description: description.trim() || null, mode, theme, time_per_question: timePerQuestion, image_url: finalQuizImageUrl } as any)
+          .update({ title: title.trim(), description: description.trim() || null, mode, theme, time_per_question: timePerQuestion, image_url: finalQuizImageUrl, youtube_url: quizYoutubeUrl.trim() || null } as any)
           .eq("id", quizId);
 
         if (quizErr) throw quizErr;
@@ -302,7 +309,7 @@ const CreateQuiz = () => {
           }
           const { data: dbQ, error: qErr } = await supabase
             .from("questions")
-            .insert({ quiz_id: quizId, text: q.text.trim(), sort_order: i, image_url: imageUrl } as any)
+            .insert({ quiz_id: quizId, text: q.text.trim(), sort_order: i, image_url: imageUrl, youtube_url: q.youtube_url?.trim() || null } as any)
             .select()
             .single();
 
@@ -324,7 +331,7 @@ const CreateQuiz = () => {
         // Create new quiz
         const { data: quiz, error: quizErr } = await supabase
           .from("quizzes")
-          .insert({ title: title.trim(), description: description.trim() || null, user_id: user.id, mode, theme, time_per_question: timePerQuestion } as any)
+          .insert({ title: title.trim(), description: description.trim() || null, user_id: user.id, mode, theme, time_per_question: timePerQuestion, youtube_url: quizYoutubeUrl.trim() || null } as any)
           .select()
           .single();
 
@@ -344,7 +351,7 @@ const CreateQuiz = () => {
           }
           const { data: dbQ, error: qErr } = await supabase
             .from("questions")
-            .insert({ quiz_id: quiz.id, text: q.text.trim(), sort_order: i, image_url: imageUrl } as any)
+            .insert({ quiz_id: quiz.id, text: q.text.trim(), sort_order: i, image_url: imageUrl, youtube_url: q.youtube_url?.trim() || null } as any)
             .select()
             .single();
 
@@ -458,6 +465,31 @@ const CreateQuiz = () => {
                     }}
                   />
                 </label>
+              )}
+            </div>
+            {/* Quiz YouTube URL */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground">קישור יוטיוב לחידון (לא חובה)</label>
+              <div className="flex items-center gap-2 border border-border rounded-xl p-3">
+                <Youtube className="size-4 text-destructive shrink-0" />
+                <Input
+                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  value={quizYoutubeUrl}
+                  onChange={(e) => setQuizYoutubeUrl(e.target.value)}
+                  maxLength={500}
+                />
+                {quizYoutubeUrl && (
+                  <Button variant="ghost" size="icon" className="shrink-0 size-7" onClick={() => setQuizYoutubeUrl("")}>
+                    <X className="!size-3.5" />
+                  </Button>
+                )}
+              </div>
+              {quizYoutubeUrl && isValidYouTubeUrl(quizYoutubeUrl) && (
+                <YouTubeEmbed url={quizYoutubeUrl} className="max-h-48" />
+              )}
+              {quizYoutubeUrl && !isValidYouTubeUrl(quizYoutubeUrl) && (
+                <p className="text-xs text-destructive">קישור יוטיוב לא תקין</p>
               )}
             </div>
             <div className="space-y-2">
@@ -579,6 +611,39 @@ const CreateQuiz = () => {
                   />
                 </label>
               )}
+
+              {/* YouTube URL */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 border border-border rounded-xl p-3">
+                  <Youtube className="size-4 text-destructive shrink-0" />
+                  <Input
+                    className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                    placeholder="קישור יוטיוב (אופציונלי)"
+                    value={q.youtube_url || ""}
+                    onChange={(e) =>
+                      setQuestions((prev) =>
+                        prev.map((qq) => qq.id === q.id ? { ...qq, youtube_url: e.target.value } : qq)
+                      )
+                    }
+                    maxLength={500}
+                  />
+                  {q.youtube_url && (
+                    <Button variant="ghost" size="icon" className="shrink-0 size-7" onClick={() =>
+                      setQuestions((prev) =>
+                        prev.map((qq) => qq.id === q.id ? { ...qq, youtube_url: undefined } : qq)
+                      )
+                    }>
+                      <X className="!size-3.5" />
+                    </Button>
+                  )}
+                </div>
+                {q.youtube_url && isValidYouTubeUrl(q.youtube_url) && (
+                  <YouTubeEmbed url={q.youtube_url} className="max-h-48" />
+                )}
+                {q.youtube_url && !isValidYouTubeUrl(q.youtube_url) && (
+                  <p className="text-xs text-destructive">קישור יוטיוב לא תקין</p>
+                )}
+              </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">

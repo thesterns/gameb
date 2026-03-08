@@ -193,6 +193,7 @@ export type Database = {
           quiz_id: string
           sort_order: number
           text: string
+          youtube_url: string | null
         }
         Insert: {
           created_at?: string
@@ -201,6 +202,7 @@ export type Database = {
           quiz_id: string
           sort_order?: number
           text: string
+          youtube_url?: string | null
         }
         Update: {
           created_at?: string
@@ -209,6 +211,7 @@ export type Database = {
           quiz_id?: string
           sort_order?: number
           text?: string
+          youtube_url?: string | null
         }
         Relationships: [
           {
@@ -232,6 +235,7 @@ export type Database = {
           title: string
           updated_at: string
           user_id: string
+          youtube_url: string | null
         }
         Insert: {
           created_at?: string
@@ -244,6 +248,7 @@ export type Database = {
           title: string
           updated_at?: string
           user_id: string
+          youtube_url?: string | null
         }
         Update: {
           created_at?: string
@@ -256,6 +261,7 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+          youtube_url?: string | null
         }
         Relationships: []
       }

@@ -3,6 +3,7 @@ import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Timer, CheckCircle2, XCircle, Trophy, ArrowLeft, Users, Crown } from "lucide-react";
+import YouTubeEmbed from "@/components/YouTubeEmbed";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { themeClasses, type GameTheme } from "@/lib/gameThemes";
@@ -12,6 +13,7 @@ interface Question {
   text: string;
   sort_order: number;
   image_url?: string;
+  youtube_url?: string;
 }
 
 interface Answer {
@@ -82,6 +84,7 @@ const GamePlay = () => {
   const [quizTitle, setQuizTitle] = useState("");
   const [quizDescription, setQuizDescription] = useState("");
   const [quizImageUrl, setQuizImageUrl] = useState<string | null>(null);
+  const [quizYoutubeUrl, setQuizYoutubeUrl] = useState<string | null>(null);
   const [responseCount, setResponseCount] = useState(0);
   const [participantCount, setParticipantCount] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -153,10 +156,11 @@ const GamePlay = () => {
       setQuizTitle(quiz?.title || "");
       setQuizDescription((quiz as any)?.description || "");
       setQuizImageUrl((quiz as any)?.image_url || null);
+      setQuizYoutubeUrl((quiz as any)?.youtube_url || null);
 
       const { data: qs } = await supabase
         .from("questions")
-        .select("id, text, sort_order, image_url")
+        .select("id, text, sort_order, image_url, youtube_url")
         .eq("quiz_id", session.quiz_id)
         .order("sort_order");
 
@@ -617,7 +621,17 @@ const GamePlay = () => {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
         >
-          {quizImageUrl && (
+          {quizYoutubeUrl && (
+            <motion.div
+              className="mb-6"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <YouTubeEmbed url={quizYoutubeUrl} className="max-h-64" />
+            </motion.div>
+          )}
+          {quizImageUrl && !quizYoutubeUrl && (
             <motion.img
               src={quizImageUrl}
               alt="תמונת חידון"
@@ -780,7 +794,12 @@ const GamePlay = () => {
             exit={{ opacity: 0, y: -20 }}
             className="bg-card rounded-3xl p-8 shadow-elevated w-full max-w-lg text-center"
           >
-            {currentQuestion.image_url && (
+            {(currentQuestion as any).youtube_url && (
+              <div className="mb-4">
+                <YouTubeEmbed url={(currentQuestion as any).youtube_url} className="max-h-56" />
+              </div>
+            )}
+            {currentQuestion.image_url && !(currentQuestion as any).youtube_url && (
               <img
                 src={currentQuestion.image_url}
                 alt="תמונת שאלה"
