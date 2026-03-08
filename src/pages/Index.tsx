@@ -49,6 +49,7 @@ const item = {
 
 const Index = () => {
   const navigate = useNavigate();
+  const [joinCode, setJoinCode] = useState("");
 
   // Redirect authenticated users (e.g. after OAuth callback) to dashboard
   useEffect(() => {
