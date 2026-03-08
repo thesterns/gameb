@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Users, Trophy, Calendar } from "lucide-react";
+import { Users, Trophy, Calendar, Share2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Session {
   id: string;
@@ -77,6 +78,29 @@ const GameHistoryDialog = ({ quizId, quizTitle, open, onOpenChange }: GameHistor
     setLoadingSession(null);
   };
 
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const opts: Intl.DateTimeFormatOptions = { timeZone: "Asia/Jerusalem", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false };
+    const parts = new Intl.DateTimeFormat("en-GB", opts).formatToParts(d);
+    const get = (t: string) => parts.find(p => p.type === t)?.value || "";
+    return `${get("day")}-${get("month")}-${get("year")} ${get("hour")}:${get("minute")}`;
+  };
+
+  const shareToWhatsApp = (session: Session) => {
+    const scores = sessionScores[session.id];
+    if (!scores?.length) return;
+
+    const dateStr = formatDate(session.created_at);
+    let text = `🎯 *${quizTitle}*\n📅 ${dateStr}\n\n`;
+
+    scores.forEach((p, i) => {
+      const emoji = i === 0 ? "🏆" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`;
+      text += `${emoji} ${p.player_name} - ${p.total_score} נק׳\n`;
+    });
+
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+  };
+
   const statusLabels: Record<string, string> = {
     lobby: "ממתין",
     active: "פעיל",
@@ -106,7 +130,7 @@ const GameHistoryDialog = ({ quizId, quizTitle, open, onOpenChange }: GameHistor
                     <span className="font-heading font-semibold">הפעלה {sessions.length - idx}</span>
                     <span className="flex items-center gap-1 text-muted-foreground">
                       <Calendar className="size-3" />
-                      {new Date(session.created_at).toLocaleString("he-IL", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Jerusalem" })}
+                      {formatDate(session.created_at)}
                     </span>
                     <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground mr-auto">
                       {statusLabels[session.status] || session.status}
@@ -131,7 +155,13 @@ const GameHistoryDialog = ({ quizId, quizTitle, open, onOpenChange }: GameHistor
                             {i === 2 && <span className="text-muted-foreground font-mono w-4 text-center">3</span>}
                             {i > 2 && <span className="text-muted-foreground font-mono w-4 text-center">{i + 1}</span>}
                             <span className="font-medium">{p.player_name}</span>
-                          </div>
+                    </div>
+                    {sessionScores[session.id]?.length > 0 && (
+                      <Button variant="ghost" size="sm" className="w-full mt-2" onClick={() => shareToWhatsApp(session)}>
+                        <Share2 className="!size-4" />
+                        שתף בוואטסאפ
+                      </Button>
+                    )}
                           <span className="font-heading font-bold">{p.total_score} נק׳</span>
                         </div>
                       ))}
