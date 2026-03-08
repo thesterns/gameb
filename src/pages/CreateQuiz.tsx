@@ -90,6 +90,7 @@ const CreateQuiz = () => {
   const [quizImageFile, setQuizImageFile] = useState<File | null>(null);
   const [quizImagePreview, setQuizImagePreview] = useState<string | undefined>(undefined);
   const [quizImageUrl, setQuizImageUrl] = useState<string | undefined>(undefined);
+  const [quizYoutubeUrl, setQuizYoutubeUrl] = useState<string>("");
 
   // Load existing quiz data in edit mode
   useEffect(() => {
