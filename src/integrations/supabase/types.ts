@@ -210,36 +210,46 @@ export type Database = {
       }
       game_sessions: {
         Row: {
+          challenge_id: string | null
           created_at: string
           current_question_index: number
           host_user_id: string
           id: string
           join_code: string
           king_participant_id: string | null
-          quiz_id: string
+          quiz_id: string | null
           status: string
         }
         Insert: {
+          challenge_id?: string | null
           created_at?: string
           current_question_index?: number
           host_user_id: string
           id?: string
           join_code: string
           king_participant_id?: string | null
-          quiz_id: string
+          quiz_id?: string | null
           status?: string
         }
         Update: {
+          challenge_id?: string | null
           created_at?: string
           current_question_index?: number
           host_user_id?: string
           id?: string
           join_code?: string
           king_participant_id?: string | null
-          quiz_id?: string
+          quiz_id?: string | null
           status?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "game_sessions_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "game_sessions_king_participant_id_fkey"
             columns: ["king_participant_id"]

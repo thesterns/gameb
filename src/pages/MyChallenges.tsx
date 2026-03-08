@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, Plus, Target, Edit, Trash2 } from "lucide-react";
+import { ArrowRight, Plus, Target, Edit, Trash2, Play } from "lucide-react";
 import { toast } from "sonner";
 
 interface Challenge {
@@ -90,7 +90,31 @@ const MyChallenges = () => {
                 {challenge.description && (
                   <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{challenge.description}</p>
                 )}
-                <div className="flex gap-2 mt-3">
+                <Button
+                  variant="hero"
+                  size="sm"
+                  className="mt-3 w-full"
+                  onClick={async () => {
+                    try {
+                      const { data: { user } } = await supabase.auth.getUser();
+                      if (!user) return;
+                      const joinCode = String(Math.floor(10000 + Math.random() * 90000));
+                      const { data: session, error } = await supabase
+                        .from("game_sessions")
+                        .insert({ challenge_id: challenge.id, host_user_id: user.id, join_code: joinCode } as any)
+                        .select()
+                        .single();
+                      if (error || !session) throw error;
+                      navigate(`/game/${session.id}/lobby`);
+                    } catch {
+                      toast.error("שגיאה בהפעלת המשחק");
+                    }
+                  }}
+                >
+                  <Play className="!size-4" />
+                  התחל משחק
+                </Button>
+                <div className="flex gap-2 mt-2">
                   <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/challenge/${challenge.id}/edit`)}>
                     <Edit className="!size-4" />
                     ערוך

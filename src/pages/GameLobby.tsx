@@ -18,12 +18,13 @@ interface Participant {
 const GameLobby = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
-  const [quizTitle, setQuizTitle] = useState("");
+  const [gameTitle, setGameTitle] = useState("");
+  const [gameType, setGameType] = useState<"quiz" | "challenge">("quiz");
   const [quizMode, setQuizMode] = useState("genius");
-  const [quizYoutubeUrl, setQuizYoutubeUrl] = useState<string | null>(null);
-  const [quizImageUrl, setQuizImageUrl] = useState<string | null>(null);
-  const [quizLogoUrl, setQuizLogoUrl] = useState<string | null>(null);
-  const [quizLogoText, setQuizLogoText] = useState<string | null>(null);
+  const [youtubeUrl, setYoutubeUrl] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoText, setLogoText] = useState<string | null>(null);
   const [joinCode, setJoinCode] = useState("");
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [kingParticipantId, setKingParticipantId] = useState<string | null>(null);
@@ -37,30 +38,46 @@ const GameLobby = () => {
     const loadSession = async () => {
       const { data: session, error } = await supabase
         .from("game_sessions")
-        .select("join_code, quiz_id, status")
+        .select("join_code, quiz_id, challenge_id, status")
         .eq("id", sessionId)
         .single();
 
       if (error || !session) {
         toast.error("לא נמצא משחק");
-        navigate("/my-quizzes");
+        navigate("/dashboard");
         return;
       }
 
       setJoinCode(session.join_code);
 
-      const { data: quiz } = await supabase
-        .from("quizzes")
-        .select("title, mode, youtube_url, image_url, logo_url, logo_text")
-        .eq("id", session.quiz_id)
-        .single();
+      if (session.challenge_id) {
+        setGameType("challenge");
+        const { data: challenge } = await supabase
+          .from("challenges")
+          .select("title, youtube_url, image_url, logo_url, logo_text")
+          .eq("id", session.challenge_id)
+          .single();
 
-      setQuizTitle(quiz?.title || "חידון");
-      setQuizMode(quiz?.mode || "genius");
-      setQuizYoutubeUrl(quiz?.youtube_url || null);
-      setQuizImageUrl(quiz?.image_url || null);
-      setQuizLogoUrl((quiz as any)?.logo_url || null);
-      setQuizLogoText((quiz as any)?.logo_text || null);
+        setGameTitle(challenge?.title || "אתגר");
+        setYoutubeUrl(challenge?.youtube_url || null);
+        setImageUrl(challenge?.image_url || null);
+        setLogoUrl(challenge?.logo_url || null);
+        setLogoText(challenge?.logo_text || null);
+      } else if (session.quiz_id) {
+        setGameType("quiz");
+        const { data: quiz } = await supabase
+          .from("quizzes")
+          .select("title, mode, youtube_url, image_url, logo_url, logo_text")
+          .eq("id", session.quiz_id)
+          .single();
+
+        setGameTitle(quiz?.title || "חידון");
+        setQuizMode(quiz?.mode || "genius");
+        setYoutubeUrl(quiz?.youtube_url || null);
+        setImageUrl(quiz?.image_url || null);
+        setLogoUrl((quiz as any)?.logo_url || null);
+        setLogoText((quiz as any)?.logo_text || null);
+      }
 
       const { data: existingParticipants } = await supabase
         .from("game_participants")
@@ -108,15 +125,15 @@ const GameLobby = () => {
 
   const handleShare = async () => {
     const joinUrl = `${window.location.origin}/join/${joinCode}`;
-    const shareText = `הצטרפו למשחק החידון "${quizTitle}" עם הקוד ${joinCode}\n${joinUrl}`;
+    const label = gameType === "challenge" ? "אתגר" : "חידון";
+    const shareText = `הצטרפו ל${label} "${gameTitle}" עם הקוד ${joinCode}\n${joinUrl}`;
     
-    // Use Web Share API only on mobile (touch devices)
     const isMobile = "ontouchstart" in window || navigator.maxTouchPoints > 0;
     if (isMobile && navigator.share) {
       try {
         await navigator.share({
-          title: `הצטרפו למשחק: ${quizTitle}`,
-          text: `הצטרפו למשחק החידון "${quizTitle}" עם הקוד ${joinCode}`,
+          title: `הצטרפו ל${label}: ${gameTitle}`,
+          text: shareText,
           url: joinUrl,
         });
       } catch {
@@ -138,13 +155,13 @@ const GameLobby = () => {
       return;
     }
 
-    if (quizMode === "king" && !kingParticipantId) {
+    if (gameType === "quiz" && quizMode === "king" && !kingParticipantId) {
       toast.error("יש לבחור מלך לפני תחילת המשחק");
       return;
     }
 
     const updateData: Record<string, unknown> = { status: "active" };
-    if (quizMode === "king" && kingParticipantId) {
+    if (gameType === "quiz" && quizMode === "king" && kingParticipantId) {
       updateData.king_participant_id = kingParticipantId;
     }
 
@@ -158,11 +175,15 @@ const GameLobby = () => {
       return;
     }
 
-    navigate(`/game/${sessionId}/play`, { state: { isHost: true } });
+    if (gameType === "challenge") {
+      navigate(`/game/${sessionId}/challenge-play`, { state: { isHost: true } });
+    } else {
+      navigate(`/game/${sessionId}/play`, { state: { isHost: true } });
+    }
   };
 
-  const isKingMode = quizMode === "king";
-  const isTribeMode = quizMode === "tribe";
+  const isKingMode = gameType === "quiz" && quizMode === "king";
+  const isTribeMode = gameType === "quiz" && quizMode === "tribe";
 
   if (loading) {
     return (
@@ -179,56 +200,47 @@ const GameLobby = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <QuizLogo logoUrl={quizLogoUrl} logoText={quizLogoText} size="md" className="mb-4" />
+        <QuizLogo logoUrl={logoUrl} logoText={logoText} size="md" className="mb-4" />
 
         <div className="text-center mb-6">
           <Button
             variant="ghost"
             size="sm"
             className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 mb-4"
-            onClick={() => navigate("/my-quizzes")}
+            onClick={() => navigate("/dashboard")}
           >
             <ArrowRight className="!size-4" />
-            חזרה לחידונים
+            חזרה
           </Button>
           <h1 className="text-3xl font-heading font-bold text-primary-foreground">
-            {quizTitle}
+            {gameTitle}
           </h1>
-          {(isKingMode || isTribeMode) && (
-            <p className="text-primary-foreground/70 text-sm mt-1">
-              {isKingMode ? "👑 מצב מלך" : "🏕️ מצב שבט"}
-            </p>
+          {isKingMode && (
+            <p className="text-primary-foreground/70 text-sm mt-1">👑 מצב מלך</p>
+          )}
+          {isTribeMode && (
+            <p className="text-primary-foreground/70 text-sm mt-1">🏕️ מצב שבט</p>
+          )}
+          {gameType === "challenge" && (
+            <p className="text-primary-foreground/70 text-sm mt-1">🎯 אתגר</p>
           )}
         </div>
 
         <div className="bg-card rounded-3xl p-8 shadow-elevated space-y-6">
-          {/* Quiz media */}
-          {quizYoutubeUrl && (
-            <YouTubeEmbed url={quizYoutubeUrl} />
-          )}
-          {quizImageUrl && !quizYoutubeUrl && (
-            <img
-              src={quizImageUrl}
-              alt={quizTitle}
-              className="w-full max-h-48 object-contain rounded-2xl"
-            />
+          {/* Media */}
+          {youtubeUrl && <YouTubeEmbed url={youtubeUrl} />}
+          {imageUrl && !youtubeUrl && (
+            <img src={imageUrl} alt={gameTitle} className="w-full max-h-48 object-contain rounded-2xl" />
           )}
 
           {/* Join Code */}
           <div className="text-center space-y-2">
             <p className="text-sm text-muted-foreground font-medium">קוד להצטרפות</p>
-            <button
-              onClick={handleCopyCode}
-              className="group flex items-center justify-center gap-2 mx-auto"
-            >
+            <button onClick={handleCopyCode} className="group flex items-center justify-center gap-2 mx-auto">
               <span className="text-5xl font-heading font-bold tracking-[0.2em] text-foreground" dir="ltr">
                 {joinCode}
               </span>
-              {copied ? (
-                <Check className="size-5 text-accent" />
-              ) : (
-                <Copy className="size-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-              )}
+              {copied ? <Check className="size-5 text-accent" /> : <Copy className="size-5 text-muted-foreground group-hover:text-foreground transition-colors" />}
             </button>
             <p className="text-xs text-muted-foreground">לחץ להעתקה</p>
             <div className="flex items-center justify-center gap-2">
@@ -270,9 +282,7 @@ const GameLobby = () => {
 
             <div className="bg-muted/30 rounded-xl p-4 min-h-[120px] max-h-[300px] overflow-y-auto">
               {participants.length === 0 ? (
-                <p className="text-center text-muted-foreground text-sm py-8">
-                  ממתין למשתתפים...
-                </p>
+                <p className="text-center text-muted-foreground text-sm py-8">ממתין למשתתפים...</p>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   <AnimatePresence>
@@ -338,11 +348,7 @@ const GameLobby = () => {
                   </Button>
                 </div>
                 <div className="bg-white rounded-2xl p-6 inline-block mx-auto">
-                  <QRCodeSVG
-                    value={`${window.location.origin}/join/${joinCode}`}
-                    size={220}
-                    level="M"
-                  />
+                  <QRCodeSVG value={`${window.location.origin}/join/${joinCode}`} size={220} level="M" />
                 </div>
                 <p className="text-sm text-muted-foreground mt-4">קוד: <span className="font-bold font-heading tracking-wider">{joinCode}</span></p>
               </motion.div>
