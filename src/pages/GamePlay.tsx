@@ -246,9 +246,7 @@ const GamePlay = () => {
             answer_id: string | null;
           };
           if (resp.question_id === questionId) {
-            if (isHost) {
-              setResponseCount((prev) => prev + 1);
-            }
+            setResponseCount((prev) => prev + 1);
             // If king answered, capture it
             if (isKingMode && resp.participant_id === currentKingId && resp.answer_id) {
               setKingAnswerId(resp.answer_id);
