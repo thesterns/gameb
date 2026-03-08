@@ -179,6 +179,8 @@ const GameLobby = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
+        <QuizLogo logoUrl={quizLogoUrl} logoText={quizLogoText} size="md" className="mb-4" />
+
         <div className="text-center mb-6">
           <Button
             variant="ghost"
@@ -189,7 +191,6 @@ const GameLobby = () => {
             <ArrowRight className="!size-4" />
             חזרה לחידונים
           </Button>
-          <QuizLogo logoUrl={quizLogoUrl} logoText={quizLogoText} size="md" className="mb-2" />
           <h1 className="text-3xl font-heading font-bold text-primary-foreground">
             {quizTitle}
           </h1>
