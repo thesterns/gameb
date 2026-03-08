@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Gamepad2, LogOut, BookOpen, Crown, Brain, Users, Play } from "lucide-react";
+import { Plus, Gamepad2, LogOut, BookOpen, Crown, Brain, Users, Play, Target } from "lucide-react";
 import { toast } from "sonner";
 
 interface Quiz {
@@ -83,6 +83,17 @@ const Dashboard = () => {
               </div>
               <h3 className="font-heading font-bold text-lg">צור חידון</h3>
               <p className="text-muted-foreground text-sm mt-1">צרו חידון חדש מאפס</p>
+            </button>
+
+            <button
+              onClick={() => navigate("/challenge/new")}
+              className="bg-card rounded-2xl p-6 shadow-card hover:shadow-elevated transition-all text-center group"
+            >
+              <div className="w-14 h-14 bg-accent rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                <Target className="!size-7 text-accent-foreground" />
+              </div>
+              <h3 className="font-heading font-bold text-lg">צור אתגר</h3>
+              <p className="text-muted-foreground text-sm mt-1">צרו אתגר חדש</p>
             </button>
 
             <button

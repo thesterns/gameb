@@ -15,6 +15,7 @@ import MyQuizzes from "./pages/MyQuizzes";
 import GameLobby from "./pages/GameLobby";
 import PlayerWaiting from "./pages/PlayerWaiting";
 import GamePlay from "./pages/GamePlay";
+import CreateChallenge from "./pages/CreateChallenge";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,8 @@ const App = () => (
           <Route path="/game/:sessionId/lobby" element={<GameLobby />} />
           <Route path="/game/:sessionId/waiting" element={<PlayerWaiting />} />
           <Route path="/game/:sessionId/play" element={<GamePlay />} />
+          <Route path="/challenge/new" element={<CreateChallenge />} />
+          <Route path="/challenge/:challengeId/edit" element={<CreateChallenge />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
