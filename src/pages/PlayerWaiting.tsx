@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Users, Loader2, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import YouTubeEmbed from "@/components/YouTubeEmbed";
 
 interface Participant {
   id: string;
@@ -19,6 +20,7 @@ const PlayerWaiting = () => {
   const [quizTitle, setQuizTitle] = useState("");
   const [quizDescription, setQuizDescription] = useState("");
   const [quizImageUrl, setQuizImageUrl] = useState<string | null>(null);
+  const [quizYoutubeUrl, setQuizYoutubeUrl] = useState<string | null>(null);
   const [joinCode, setJoinCode] = useState("");
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,13 +46,14 @@ const PlayerWaiting = () => {
 
       const { data: quiz } = await supabase
         .from("quizzes")
-        .select("title, description, image_url")
+        .select("title, description, image_url, youtube_url")
         .eq("id", session.quiz_id)
         .single();
 
       setQuizTitle(quiz?.title || "חידון");
       setQuizDescription(quiz?.description || "");
       setQuizImageUrl(quiz?.image_url || null);
+      setQuizYoutubeUrl(quiz?.youtube_url || null);
 
       const { data: existingParticipants } = await supabase
         .from("game_participants")
@@ -127,7 +130,12 @@ const PlayerWaiting = () => {
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="text-center mb-6">
-          {quizImageUrl && (
+          {quizYoutubeUrl && (
+            <div className="mb-4">
+              <YouTubeEmbed url={quizYoutubeUrl} className="max-h-48" />
+            </div>
+          )}
+          {quizImageUrl && !quizYoutubeUrl && (
             <div className="mb-4 flex justify-center">
               <img
                 src={quizImageUrl}
