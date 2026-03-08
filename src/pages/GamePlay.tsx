@@ -109,6 +109,10 @@ const GamePlay = () => {
   const [autoAdvance, setAutoAdvance] = useState(false);
   const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Player leaderboard popup
+  const [showPlayerLeaderboard, setShowPlayerLeaderboard] = useState(false);
+  const [playerLeaderboardData, setPlayerLeaderboardData] = useState<{ player_name: string; total_score: number }[]>([]);
+
   // Determine current king for tribe mode
   const getCurrentKingId = useCallback(
     (index: number) => {
@@ -515,6 +519,30 @@ const GamePlay = () => {
     };
   }, [autoAdvance, isHost, timeUp, gameFinished, showIntroSlide, showLeaderboard, currentIndex]);
 
+  const handlePlayerLeaderboard = async () => {
+    if (!sessionId) return;
+
+    const { data } = await supabase
+      .from("game_responses")
+      .select("participant_id, score, game_participants!inner(player_name)")
+      .eq("session_id", sessionId);
+
+    if (!data) return;
+
+    const scores: Record<string, { player_name: string; total_score: number }> = {};
+    for (const row of data) {
+      const pid = row.participant_id;
+      if (quizMode === "king" && pid === currentKingId) continue;
+      const name = (row.game_participants as any)?.player_name || "?";
+      if (!scores[pid]) scores[pid] = { player_name: name, total_score: 0 };
+      scores[pid].total_score += row.score;
+    }
+
+    const sorted = Object.values(scores).sort((a, b) => b.total_score - a.total_score);
+    setPlayerLeaderboardData(sorted);
+    setShowPlayerLeaderboard(true);
+  };
+
   const handleShowLeaderboard = async () => {
     if (!isHost || !sessionId) return;
 
@@ -759,10 +787,13 @@ const GamePlay = () => {
           </span>
         </div>
         {!isHost && !isCurrentPlayerKing && (
-          <div className={`flex items-center gap-1 ${t.text} font-heading font-bold`}>
+          <button
+            onClick={handlePlayerLeaderboard}
+            className={`flex items-center gap-1 ${t.text} font-heading font-bold hover:opacity-80 transition-opacity`}
+          >
             <Trophy className="size-4" />
             <span>{score}</span>
-          </div>
+          </button>
         )}
         {isCurrentPlayerKing && (
           <div className="flex items-center gap-1 text-[hsl(var(--answer-yellow))] font-heading font-bold">
@@ -1080,6 +1111,78 @@ const GamePlay = () => {
                   </Button>
                 </motion.div>
               )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Player leaderboard popup */}
+      <AnimatePresence>
+        {showPlayerLeaderboard && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center px-4"
+            dir="rtl"
+            onClick={() => setShowPlayerLeaderboard(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="w-full max-w-md"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center mb-4">
+                <Trophy className="size-12 text-[hsl(var(--answer-yellow))] mx-auto mb-2" />
+                <h2 className="text-2xl font-heading font-bold text-primary-foreground">לוח נקודות</h2>
+                <p className="text-primary-foreground/60 text-sm">אחרי שאלה {currentIndex + 1} מתוך {questions.length}</p>
+              </div>
+
+              <div className="bg-card rounded-3xl p-6 shadow-elevated space-y-3 max-h-[60vh] overflow-y-auto">
+                {playerLeaderboardData.map((entry, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className={`flex items-center justify-between p-3 rounded-xl ${
+                      idx === 0
+                        ? "bg-[hsl(var(--answer-yellow))]/10 ring-1 ring-[hsl(var(--answer-yellow))]/30"
+                        : idx === 1
+                        ? "bg-muted/40"
+                        : idx === 2
+                        ? "bg-[hsl(var(--answer-orange))]/10"
+                        : "bg-muted/20"
+                    } ${entry.player_name === playerName ? "ring-2 ring-primary" : ""}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg font-heading font-bold text-muted-foreground w-6">
+                        {idx < 3 ? ["🥇", "🥈", "🥉"][idx] : idx + 1}
+                      </span>
+                      <span className="font-heading font-semibold text-foreground">
+                        {entry.player_name}
+                      </span>
+                    </div>
+                    <span className="font-heading font-bold text-foreground">{entry.total_score} נק׳</span>
+                  </motion.div>
+                ))}
+                {playerLeaderboardData.length === 0 && (
+                  <p className="text-center text-muted-foreground py-4">אין נתונים עדיין</p>
+                )}
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="mt-4"
+              >
+                <Button variant="hero" size="xl" className="w-full" onClick={() => setShowPlayerLeaderboard(false)}>
+                  סגור
+                </Button>
+              </motion.div>
             </motion.div>
           </motion.div>
         )}
