@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowRight, Target, Users, Clock, MapPin, User, Package, Sparkles, Send, CheckCircle, Edit3 } from "lucide-react";
+import { ArrowRight, Target, Users, Clock, MapPin, User, Package, Sparkles, Send, CheckCircle, Edit3, AlertTriangle } from "lucide-react";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
 import QuizLogo from "@/components/QuizLogo";
 import { toast } from "sonner";
@@ -115,6 +115,25 @@ const ChallengePlay = () => {
     2: { emoji: "🥈", label: "מקום שני", bg: "bg-gray-400/10 border-gray-400/30" },
     3: { emoji: "🥉", label: "מקום שלישי", bg: "bg-amber-700/10 border-amber-700/30" },
   };
+  // Check if a sentence contains all assigned values for a participant
+  const sentenceContainsAllWords = useCallback((text: string, participantId: string): boolean => {
+    const participant = participantsWithAssignments.find(p => p.id === participantId);
+    if (!participant || participant.assignments.length === 0) return true;
+    const lowerText = text.toLowerCase();
+    return participant.assignments.every(a => lowerText.includes(a.value.toLowerCase()));
+  }, [participantsWithAssignments]);
+
+  const WordsIndicator = ({ valid }: { valid: boolean }) => (
+    valid ? (
+      <span className="inline-flex items-center gap-1 text-xs font-bold text-[hsl(var(--success))]">
+        <CheckCircle className="size-3.5" />
+      </span>
+    ) : (
+      <span className="inline-flex items-center gap-1 text-xs font-bold text-[hsl(var(--warning))]" title="יש להשתמש בכל המילים">
+        <AlertTriangle className="size-3.5" />
+      </span>
+    )
+  );
 
   useEffect(() => {
     if (!sessionId) return;
@@ -521,6 +540,12 @@ const ChallengePlay = () => {
                         className="text-right min-h-[100px]"
                         maxLength={500}
                       />
+                      {sentence.trim() && myParticipantId && (
+                        <div className={`flex items-center gap-1.5 text-xs font-medium ${sentenceContainsAllWords(sentence, myParticipantId) ? "text-[hsl(var(--success))]" : "text-[hsl(var(--warning))]"}`}>
+                          <WordsIndicator valid={sentenceContainsAllWords(sentence, myParticipantId)} />
+                          {sentenceContainsAllWords(sentence, myParticipantId) ? "כל המילים נמצאות במשפט ✓" : "יש להשתמש בכל המילים שקיבלת"}
+                        </div>
+                      )}
                       <Button
                         variant="hero"
                         className="w-full"
@@ -559,6 +584,7 @@ const ChallengePlay = () => {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <p className="font-heading font-bold text-sm text-foreground">{s.player_name}</p>
+                              <WordsIndicator valid={sentenceContainsAllWords(s.sentence, s.participant_id)} />
                               {rankInfo && <span className="text-lg">{rankInfo.emoji}</span>}
                             </div>
                             {scores[s.participant_id] > 0 && (
@@ -630,7 +656,10 @@ const ChallengePlay = () => {
                       </div>
                     </div>
                     {pSentence && (
-                      <p className="text-base font-medium text-foreground leading-relaxed">{pSentence.sentence}</p>
+                      <div className="flex items-start gap-2">
+                        <WordsIndicator valid={sentenceContainsAllWords(pSentence.sentence, p.id)} />
+                        <p className="text-base font-medium text-foreground leading-relaxed flex-1">{pSentence.sentence}</p>
+                      </div>
                     )}
                   </motion.div>
                 );
