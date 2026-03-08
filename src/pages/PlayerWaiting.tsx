@@ -18,12 +18,13 @@ const PlayerWaiting = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const playerName = (location.state as { playerName?: string })?.playerName || "";
-  const [quizTitle, setQuizTitle] = useState("");
-  const [quizDescription, setQuizDescription] = useState("");
-  const [quizImageUrl, setQuizImageUrl] = useState<string | null>(null);
-  const [quizYoutubeUrl, setQuizYoutubeUrl] = useState<string | null>(null);
-  const [quizLogoUrl, setQuizLogoUrl] = useState<string | null>(null);
-  const [quizLogoText, setQuizLogoText] = useState<string | null>(null);
+  const [gameTitle, setGameTitle] = useState("");
+  const [gameDescription, setGameDescription] = useState("");
+  const [gameType, setGameType] = useState<"quiz" | "challenge">("quiz");
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [youtubeUrl, setYoutubeUrl] = useState<string | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoText, setLogoText] = useState<string | null>(null);
   const [joinCode, setJoinCode] = useState("");
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,31 +35,52 @@ const PlayerWaiting = () => {
     const loadSession = async () => {
       const { data: session } = await supabase
         .from("game_sessions")
-        .select("join_code, quiz_id, status")
+        .select("join_code, quiz_id, challenge_id, status")
         .eq("id", sessionId)
         .single();
 
       if (!session) return;
 
       if (session.status === "active") {
-        navigate(`/game/${sessionId}/play`, { state: { playerName } });
+        if (session.challenge_id) {
+          navigate(`/game/${sessionId}/challenge-play`, { state: { playerName } });
+        } else {
+          navigate(`/game/${sessionId}/play`, { state: { playerName } });
+        }
         return;
       }
 
       setJoinCode(session.join_code);
 
-      const { data: quiz } = await supabase
-        .from("quizzes")
-        .select("title, description, image_url, youtube_url, logo_url, logo_text")
-        .eq("id", session.quiz_id)
-        .single();
+      if (session.challenge_id) {
+        setGameType("challenge");
+        const { data: challenge } = await supabase
+          .from("challenges")
+          .select("title, description, image_url, youtube_url, logo_url, logo_text")
+          .eq("id", session.challenge_id)
+          .single();
 
-      setQuizTitle(quiz?.title || "חידון");
-      setQuizDescription(quiz?.description || "");
-      setQuizImageUrl(quiz?.image_url || null);
-      setQuizYoutubeUrl(quiz?.youtube_url || null);
-      setQuizLogoUrl((quiz as any)?.logo_url || null);
-      setQuizLogoText((quiz as any)?.logo_text || null);
+        setGameTitle(challenge?.title || "אתגר");
+        setGameDescription(challenge?.description || "");
+        setImageUrl(challenge?.image_url || null);
+        setYoutubeUrl(challenge?.youtube_url || null);
+        setLogoUrl(challenge?.logo_url || null);
+        setLogoText(challenge?.logo_text || null);
+      } else if (session.quiz_id) {
+        setGameType("quiz");
+        const { data: quiz } = await supabase
+          .from("quizzes")
+          .select("title, description, image_url, youtube_url, logo_url, logo_text")
+          .eq("id", session.quiz_id)
+          .single();
+
+        setGameTitle(quiz?.title || "חידון");
+        setGameDescription(quiz?.description || "");
+        setImageUrl(quiz?.image_url || null);
+        setYoutubeUrl(quiz?.youtube_url || null);
+        setLogoUrl((quiz as any)?.logo_url || null);
+        setLogoText((quiz as any)?.logo_text || null);
+      }
 
       const { data: existingParticipants } = await supabase
         .from("game_participants")
@@ -72,7 +94,6 @@ const PlayerWaiting = () => {
 
     loadSession();
 
-    // Listen for new participants
     const participantsChannel = supabase
       .channel(`waiting-participants-${sessionId}`)
       .on(
@@ -93,7 +114,6 @@ const PlayerWaiting = () => {
       )
       .subscribe();
 
-    // Listen for game status change to "active"
     const sessionChannel = supabase
       .channel(`waiting-session-${sessionId}`)
       .on(
@@ -105,9 +125,13 @@ const PlayerWaiting = () => {
           filter: `id=eq.${sessionId}`,
         },
         (payload) => {
-          const updated = payload.new as { status: string };
+          const updated = payload.new as { status: string; challenge_id?: string };
           if (updated.status === "active") {
-            navigate(`/game/${sessionId}/play`, { state: { playerName } });
+            if (updated.challenge_id) {
+              navigate(`/game/${sessionId}/challenge-play`, { state: { playerName } });
+            } else {
+              navigate(`/game/${sessionId}/play`, { state: { playerName } });
+            }
           }
         }
       )
@@ -135,42 +159,32 @@ const PlayerWaiting = () => {
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="text-center mb-6">
-          <QuizLogo logoUrl={quizLogoUrl} logoText={quizLogoText} size="md" className="mb-3" />
-          {quizYoutubeUrl && (
+          <QuizLogo logoUrl={logoUrl} logoText={logoText} size="md" className="mb-3" />
+          {youtubeUrl && (
             <div className="mb-4">
-              <YouTubeEmbed url={quizYoutubeUrl} className="max-h-48" />
+              <YouTubeEmbed url={youtubeUrl} className="max-h-48" />
             </div>
           )}
-          {quizImageUrl && !quizYoutubeUrl && (
+          {imageUrl && !youtubeUrl && (
             <div className="mb-4 flex justify-center">
-              <img
-                src={quizImageUrl}
-                alt={quizTitle}
-                className="w-32 h-32 rounded-2xl object-cover shadow-lg"
-              />
+              <img src={imageUrl} alt={gameTitle} className="w-32 h-32 rounded-2xl object-cover shadow-lg" />
             </div>
           )}
           <h1 className="text-3xl font-heading font-bold text-primary-foreground">
-            {quizTitle}
+            {gameTitle}
           </h1>
-          {quizDescription && (
-            <p className="text-primary-foreground/80 mt-2 text-sm">
-              {quizDescription}
-            </p>
+          {gameDescription && (
+            <p className="text-primary-foreground/80 mt-2 text-sm">{gameDescription}</p>
           )}
-          <p className="text-primary-foreground/70 mt-1" dir="ltr">
-            קוד משחק: {joinCode}
-          </p>
+          <p className="text-primary-foreground/70 mt-1" dir="ltr">קוד משחק: {joinCode}</p>
         </div>
 
         <div className="bg-card rounded-3xl p-8 shadow-elevated space-y-6">
-          {/* Player identity */}
           <div className="text-center space-y-1">
             <p className="text-sm text-muted-foreground">שלום,</p>
             <p className="text-2xl font-heading font-bold text-foreground">{playerName}</p>
           </div>
 
-          {/* Participants */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
               <Users className="size-4" />
@@ -199,19 +213,13 @@ const PlayerWaiting = () => {
             </div>
           </div>
 
-          {/* Waiting indicator */}
           <div className="flex items-center justify-center gap-3 text-muted-foreground py-4">
             <Loader2 className="size-5 animate-spin" />
             <span className="text-sm font-medium">ממתין לתחילת המשחק...</span>
           </div>
 
-          {/* Back to home */}
           <div className="text-center">
-            <Button
-              variant="ghost"
-              className="text-muted-foreground"
-              onClick={() => navigate("/")}
-            >
+            <Button variant="ghost" className="text-muted-foreground" onClick={() => navigate("/")}>
               <Home className="size-4" />
               חזרה לדף הבית
             </Button>
