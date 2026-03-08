@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
-import { Timer, CheckCircle2, XCircle, Trophy, ArrowLeft, Users } from "lucide-react";
+import { Timer, CheckCircle2, XCircle, Trophy, ArrowLeft, Users, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 
@@ -17,6 +17,12 @@ interface Answer {
   text: string;
   is_correct: boolean;
   sort_order: number;
+}
+
+interface Participant {
+  id: string;
+  player_name: string;
+  joined_at: string;
 }
 
 const ANSWER_COLORS = [
@@ -51,6 +57,30 @@ const GamePlay = () => {
   const [participantCount, setParticipantCount] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // King/tribe mode state
+  const [quizMode, setQuizMode] = useState("genius");
+  const [kingParticipantId, setKingParticipantId] = useState<string | null>(null);
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [kingAnswerId, setKingAnswerId] = useState<string | null>(null);
+  const [waitingForKing, setWaitingForKing] = useState(false);
+
+  // Determine current king for tribe mode
+  const getCurrentKingId = useCallback(
+    (index: number) => {
+      if (quizMode !== "tribe" || participants.length === 0) return null;
+      return participants[index % participants.length]?.id || null;
+    },
+    [quizMode, participants]
+  );
+
+  const currentKingId =
+    quizMode === "king" ? kingParticipantId : getCurrentKingId(currentIndex);
+
+  const isCurrentPlayerKing = !isHost && participantId && currentKingId === participantId;
+
+  const currentKingName =
+    currentKingId ? participants.find((p) => p.id === currentKingId)?.player_name || "" : "";
+
   // Load game data
   useEffect(() => {
     if (!sessionId) return;
@@ -58,19 +88,22 @@ const GamePlay = () => {
     const load = async () => {
       const { data: session } = await supabase
         .from("game_sessions")
-        .select("quiz_id, current_question_index")
+        .select("quiz_id, current_question_index, king_participant_id")
         .eq("id", sessionId)
         .single();
 
       if (!session) return;
 
+      setKingParticipantId((session as any).king_participant_id || null);
+
       const { data: quiz } = await supabase
         .from("quizzes")
-        .select("time_per_question")
+        .select("time_per_question, mode")
         .eq("id", session.quiz_id)
         .single();
 
       setTotalTime(quiz?.time_per_question || 30);
+      setQuizMode(quiz?.mode || "genius");
 
       const { data: qs } = await supabase
         .from("questions")
@@ -81,13 +114,15 @@ const GamePlay = () => {
       setQuestions(qs || []);
       setCurrentIndex(session.current_question_index || 0);
 
-      // Get participant count
-      const { count } = await supabase
+      // Load participants (needed for tribe mode rotation & king name)
+      const { data: parts } = await supabase
         .from("game_participants")
-        .select("id", { count: "exact", head: true })
-        .eq("session_id", sessionId);
+        .select("id, player_name, joined_at")
+        .eq("session_id", sessionId)
+        .order("joined_at");
 
-      setParticipantCount(count || 0);
+      setParticipants(parts || []);
+      setParticipantCount(parts?.length || 0);
 
       // If player, find participant id
       if (!isHost && playerName) {
@@ -124,6 +159,8 @@ const GamePlay = () => {
       setTimeUp(false);
       setTimeLeft(totalTime);
       setResponseCount(0);
+      setKingAnswerId(null);
+      setWaitingForKing(false);
     };
 
     loadAnswers();
@@ -183,12 +220,14 @@ const GamePlay = () => {
     };
   }, [sessionId]);
 
-  // Listen for response count (host view)
+  // Listen for response count (host view) AND king's answer (king/tribe mode)
   useEffect(() => {
-    if (!sessionId || !isHost || questions.length === 0 || currentIndex >= questions.length) return;
+    if (!sessionId || questions.length === 0 || currentIndex >= questions.length) return;
 
     const questionId = questions[currentIndex]?.id;
     if (!questionId) return;
+
+    const isKingMode = quizMode === "king" || quizMode === "tribe";
 
     const channel = supabase
       .channel(`responses-${sessionId}-${questionId}`)
@@ -201,9 +240,19 @@ const GamePlay = () => {
           filter: `session_id=eq.${sessionId}`,
         },
         (payload) => {
-          const resp = payload.new as { question_id: string };
+          const resp = payload.new as {
+            question_id: string;
+            participant_id: string;
+            answer_id: string | null;
+          };
           if (resp.question_id === questionId) {
-            setResponseCount((prev) => prev + 1);
+            if (isHost) {
+              setResponseCount((prev) => prev + 1);
+            }
+            // If king answered, capture it
+            if (isKingMode && resp.participant_id === currentKingId && resp.answer_id) {
+              setKingAnswerId(resp.answer_id);
+            }
           }
         }
       )
@@ -212,7 +261,10 @@ const GamePlay = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [sessionId, isHost, questions, currentIndex]);
+  }, [sessionId, isHost, questions, currentIndex, quizMode, currentKingId]);
+
+  // In king/tribe mode, when king answers, check if we need to wait
+  const isKingOrTribeMode = quizMode === "king" || quizMode === "tribe";
 
   const handleSelectAnswer = useCallback(
     async (answerId: string) => {
@@ -220,23 +272,121 @@ const GamePlay = () => {
 
       setSelectedAnswerId(answerId);
 
-      const answer = answers.find((a) => a.id === answerId);
-      const isCorrect = answer?.is_correct || false;
-      const earnedScore = isCorrect ? 10 : 0;
+      // King doesn't get scored
+      if (isCurrentPlayerKing) {
+        await supabase.from("game_responses").insert({
+          session_id: sessionId,
+          participant_id: participantId,
+          question_id: questions[currentIndex].id,
+          answer_id: answerId,
+          is_correct: false,
+          score: 0,
+        });
+        return;
+      }
 
-      if (isCorrect) setScore((prev) => prev + earnedScore);
+      // For king/tribe modes, correctness is determined by king's answer
+      // For genius mode, correctness is from the pre-set is_correct
+      let isCorrect = false;
+      if (isKingOrTribeMode) {
+        // We don't know yet if correct - will be resolved when king answers
+        // For now, insert with is_correct=false, score=0 - will be evaluated at end
+        // Actually, since king might answer after this player, we store the answer_id
+        // and evaluate at timeUp
+        await supabase.from("game_responses").insert({
+          session_id: sessionId,
+          participant_id: participantId,
+          question_id: questions[currentIndex].id,
+          answer_id: answerId,
+          is_correct: false,
+          score: 0,
+        });
+        setWaitingForKing(true);
+      } else {
+        const answer = answers.find((a) => a.id === answerId);
+        isCorrect = answer?.is_correct || false;
+        const earnedScore = isCorrect ? 10 : 0;
+        if (isCorrect) setScore((prev) => prev + earnedScore);
 
-      await supabase.from("game_responses").insert({
-        session_id: sessionId,
-        participant_id: participantId,
-        question_id: questions[currentIndex].id,
-        answer_id: answerId,
-        is_correct: isCorrect,
-        score: earnedScore,
-      });
+        await supabase.from("game_responses").insert({
+          session_id: sessionId,
+          participant_id: participantId,
+          question_id: questions[currentIndex].id,
+          answer_id: answerId,
+          is_correct: isCorrect,
+          score: earnedScore,
+        });
+      }
     },
-    [timeUp, selectedAnswerId, participantId, answers, sessionId, questions, currentIndex]
+    [
+      timeUp,
+      selectedAnswerId,
+      participantId,
+      answers,
+      sessionId,
+      questions,
+      currentIndex,
+      isCurrentPlayerKing,
+      isKingOrTribeMode,
+    ]
   );
+
+  // When time is up in king/tribe mode, update scores based on king's answer
+  useEffect(() => {
+    if (!timeUp || !isKingOrTribeMode || !isHost || !sessionId) return;
+    if (questions.length === 0 || currentIndex >= questions.length) return;
+
+    const questionId = questions[currentIndex].id;
+
+    const updateScores = async () => {
+      // Find king's response to get the "correct" answer
+      const { data: kingResponse } = await supabase
+        .from("game_responses")
+        .select("answer_id")
+        .eq("session_id", sessionId)
+        .eq("question_id", questionId)
+        .eq("participant_id", currentKingId!)
+        .single();
+
+      if (!kingResponse?.answer_id) return;
+
+      const correctAnswerId = kingResponse.answer_id;
+
+      // Get all non-king responses for this question
+      const { data: allResponses } = await supabase
+        .from("game_responses")
+        .select("id, participant_id, answer_id")
+        .eq("session_id", sessionId)
+        .eq("question_id", questionId)
+        .neq("participant_id", currentKingId!);
+
+      if (!allResponses) return;
+
+      // Update each response
+      for (const resp of allResponses) {
+        const correct = resp.answer_id === correctAnswerId;
+        await supabase
+          .from("game_responses")
+          .update({ is_correct: correct, score: correct ? 10 : 0 })
+          .eq("id", resp.id);
+      }
+    };
+
+    if (currentKingId) {
+      updateScores();
+    }
+  }, [timeUp, isKingOrTribeMode, isHost, sessionId, questions, currentIndex, currentKingId]);
+
+  // Track king answer locally for player feedback
+  useEffect(() => {
+    if (!timeUp || !isKingOrTribeMode || isHost || !kingAnswerId || !selectedAnswerId) return;
+    if (isCurrentPlayerKing) return;
+
+    const isCorrect = selectedAnswerId === kingAnswerId;
+    if (isCorrect) {
+      setScore((prev) => prev + 10);
+    }
+  }, [timeUp, kingAnswerId, isKingOrTribeMode, isHost, selectedAnswerId, isCurrentPlayerKing]);
 
   const handleNextQuestion = async () => {
     if (!isHost || !sessionId) return;
@@ -267,7 +417,16 @@ const GamePlay = () => {
   }
 
   if (gameFinished) {
-    return <GameFinished sessionId={sessionId!} isHost={isHost} playerName={playerName} score={score} />;
+    return (
+      <GameFinished
+        sessionId={sessionId!}
+        isHost={isHost}
+        playerName={playerName}
+        score={score}
+        quizMode={quizMode}
+        kingParticipantId={currentKingId}
+      />
+    );
   }
 
   if (questions.length === 0) {
@@ -281,7 +440,11 @@ const GamePlay = () => {
   const currentQuestion = questions[currentIndex];
   if (!currentQuestion) return null;
 
-  const correctAnswer = answers.find((a) => a.is_correct);
+  // In genius mode, correct answer is pre-set. In king/tribe, it's the king's choice.
+  const correctAnswerForDisplay =
+    isKingOrTribeMode && kingAnswerId
+      ? answers.find((a) => a.id === kingAnswerId)
+      : answers.find((a) => a.is_correct);
 
   return (
     <div className="min-h-screen gradient-hero flex flex-col" dir="rtl">
@@ -292,10 +455,16 @@ const GamePlay = () => {
             שאלה {currentIndex + 1} / {questions.length}
           </span>
         </div>
-        {!isHost && (
+        {!isHost && !isCurrentPlayerKing && (
           <div className="flex items-center gap-1 text-primary-foreground font-heading font-bold">
             <Trophy className="size-4" />
             <span>{score}</span>
+          </div>
+        )}
+        {isCurrentPlayerKing && (
+          <div className="flex items-center gap-1 text-[hsl(var(--answer-yellow))] font-heading font-bold">
+            <Crown className="size-4" />
+            <span>מלך</span>
           </div>
         )}
         {isHost && (
@@ -307,6 +476,18 @@ const GamePlay = () => {
           </div>
         )}
       </div>
+
+      {/* King indicator */}
+      {isKingOrTribeMode && currentKingName && (
+        <div className="px-4 pb-2">
+          <div className="bg-[hsl(var(--answer-yellow))]/20 rounded-full px-4 py-1.5 flex items-center justify-center gap-2">
+            <Crown className="size-4 text-[hsl(var(--answer-yellow))]" />
+            <span className="text-sm font-heading font-semibold text-primary-foreground">
+              המלך: {currentKingName}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Timer bar */}
       <div className="px-4">
@@ -346,6 +527,11 @@ const GamePlay = () => {
             <h2 className="text-2xl font-heading font-bold text-foreground leading-relaxed">
               {currentQuestion.text}
             </h2>
+            {isCurrentPlayerKing && (
+              <p className="text-sm text-[hsl(var(--answer-yellow))] mt-2 font-medium">
+                👑 בחר את התשובה הנכונה
+              </p>
+            )}
           </motion.div>
         </AnimatePresence>
 
@@ -353,8 +539,14 @@ const GamePlay = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg">
           {answers.map((answer, idx) => {
             const isSelected = selectedAnswerId === answer.id;
-            const showCorrect = timeUp && answer.is_correct;
-            const showWrong = timeUp && isSelected && !answer.is_correct;
+            const showCorrectGenius = timeUp && !isKingOrTribeMode && answer.is_correct;
+            const showCorrectKing =
+              timeUp && isKingOrTribeMode && kingAnswerId && answer.id === kingAnswerId;
+            const showCorrect = showCorrectGenius || showCorrectKing;
+            const showWrong =
+              timeUp &&
+              isSelected &&
+              !showCorrect;
 
             return (
               <motion.button
@@ -390,8 +582,19 @@ const GamePlay = () => {
           })}
         </div>
 
+        {/* King waiting message */}
+        {isCurrentPlayerKing && selectedAnswerId && !timeUp && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-[hsl(var(--answer-yellow))] font-heading font-semibold"
+          >
+            👑 בחרת את התשובה הנכונה!
+          </motion.p>
+        )}
+
         {/* Time up message for player */}
-        {timeUp && !isHost && !selectedAnswerId && (
+        {timeUp && !isHost && !selectedAnswerId && !isCurrentPlayerKing && (
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -401,20 +604,35 @@ const GamePlay = () => {
           </motion.p>
         )}
 
-        {/* Correct answer feedback for player */}
-        {timeUp && !isHost && selectedAnswerId && (
+        {/* Correct answer feedback for player (non-king) */}
+        {timeUp && !isHost && selectedAnswerId && !isCurrentPlayerKing && (
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className={`font-heading font-semibold ${
-              answers.find((a) => a.id === selectedAnswerId)?.is_correct
+              (isKingOrTribeMode
+                ? kingAnswerId && selectedAnswerId === kingAnswerId
+                : answers.find((a) => a.id === selectedAnswerId)?.is_correct)
                 ? "text-[hsl(var(--accent))]"
                 : "text-destructive-foreground"
             }`}
           >
-            {answers.find((a) => a.id === selectedAnswerId)?.is_correct
+            {(isKingOrTribeMode
+              ? kingAnswerId && selectedAnswerId === kingAnswerId
+              : answers.find((a) => a.id === selectedAnswerId)?.is_correct)
               ? "תשובה נכונה! +10 נקודות 🎉"
-              : `תשובה שגויה. התשובה הנכונה: ${correctAnswer?.text}`}
+              : `תשובה שגויה. התשובה הנכונה: ${correctAnswerForDisplay?.text || "?"}`}
+          </motion.p>
+        )}
+
+        {/* King: time up, no king answer yet */}
+        {timeUp && isKingOrTribeMode && !kingAnswerId && !isCurrentPlayerKing && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-[hsl(var(--answer-yellow))] font-heading font-semibold"
+          >
+            👑 המלך לא בחר תשובה
           </motion.p>
         )}
 
@@ -438,14 +656,20 @@ const GameFinished = ({
   isHost,
   playerName,
   score,
+  quizMode,
+  kingParticipantId,
 }: {
   sessionId: string;
   isHost: boolean;
   playerName: string;
   score: number;
+  quizMode: string;
+  kingParticipantId: string | null;
 }) => {
   const navigate = useNavigate();
-  const [leaderboard, setLeaderboard] = useState<{ player_name: string; total_score: number }[]>([]);
+  const [leaderboard, setLeaderboard] = useState<{ player_name: string; total_score: number }[]>(
+    []
+  );
 
   useEffect(() => {
     const loadLeaderboard = async () => {
@@ -459,6 +683,10 @@ const GameFinished = ({
       const scores: Record<string, { player_name: string; total_score: number }> = {};
       for (const row of data) {
         const pid = row.participant_id;
+
+        // In king mode, exclude king from leaderboard
+        if (quizMode === "king" && pid === kingParticipantId) continue;
+
         const name = (row.game_participants as any)?.player_name || "?";
         if (!scores[pid]) scores[pid] = { player_name: name, total_score: 0 };
         scores[pid].total_score += row.score;
@@ -469,7 +697,7 @@ const GameFinished = ({
     };
 
     loadLeaderboard();
-  }, [sessionId]);
+  }, [sessionId, quizMode, kingParticipantId]);
 
   return (
     <div className="min-h-screen gradient-hero flex items-center justify-center px-4" dir="rtl">
