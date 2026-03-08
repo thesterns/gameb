@@ -585,7 +585,7 @@ const GamePlay = () => {
             </motion.p>
           )}
           <motion.p
-            className="text-primary-foreground/50 text-sm mb-6"
+            className={`${t.textSecondary} text-sm mb-6`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
