@@ -46,6 +46,7 @@ const App = () => (
           <Route path="/challenge/new" element={<CreateChallenge />} />
           <Route path="/challenge/:challengeId/edit" element={<CreateChallenge />} />
           <Route path="/my-challenges" element={<MyChallenges />} />
+          <Route path="/game/:sessionId/challenge-play" element={<ChallengePlay />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
