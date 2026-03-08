@@ -146,7 +146,7 @@ const GamePlay = () => {
 
       const { data: quiz } = await supabase
         .from("quizzes")
-        .select("time_per_question, mode, title, description, image_url, theme")
+        .select("time_per_question, mode, title, description, image_url, youtube_url, theme")
         .eq("id", session.quiz_id)
         .single();
 
@@ -601,6 +601,9 @@ const GamePlay = () => {
         quizMode={quizMode}
         kingParticipantId={currentKingId}
         quizTheme={quizTheme}
+        quizYoutubeUrl={quizYoutubeUrl}
+        quizImageUrl={quizImageUrl}
+        quizTitle={quizTitle}
       />
     );
   }
@@ -1053,6 +1056,9 @@ const GameFinished = ({
   quizMode,
   kingParticipantId,
   quizTheme,
+  quizYoutubeUrl,
+  quizImageUrl,
+  quizTitle,
 }: {
   sessionId: string;
   isHost: boolean;
@@ -1061,6 +1067,9 @@ const GameFinished = ({
   quizMode: string;
   kingParticipantId: string | null;
   quizTheme: GameTheme;
+  quizYoutubeUrl: string | null;
+  quizImageUrl: string | null;
+  quizTitle: string;
 }) => {
   const navigate = useNavigate();
   const t = themeClasses[quizTheme];
@@ -1229,6 +1238,20 @@ const GameFinished = ({
                 </motion.div>
               ))}
             </div>
+          )}
+
+          {/* Quiz media below results */}
+          {quizYoutubeUrl && (
+            <div className="pt-2">
+              <YouTubeEmbed url={quizYoutubeUrl} />
+            </div>
+          )}
+          {quizImageUrl && !quizYoutubeUrl && (
+            <img
+              src={quizImageUrl}
+              alt={quizTitle}
+              className="w-full max-h-48 object-contain rounded-2xl"
+            />
           )}
 
           <Button
