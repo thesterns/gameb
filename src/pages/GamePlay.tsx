@@ -773,8 +773,8 @@ const GamePlay = () => {
                       : showWrong
                       ? "!bg-destructive ring-4 ring-destructive/30 opacity-70"
                       : isSelected
-                      ? `${ANSWER_COLORS[idx % ANSWER_COLORS.length]} ring-4 ring-white/50 scale-[0.97]`
-                      : `${ANSWER_COLORS[idx % ANSWER_COLORS.length]} hover:scale-[1.02] active:scale-[0.97]`
+                      ? `${t.answerColors[idx % t.answerColors.length]} ring-4 ring-white/50 scale-[0.97]`
+                      : `${t.answerColors[idx % t.answerColors.length]} hover:scale-[1.02] active:scale-[0.97]`
                   }
                   ${dimUnselected ? "opacity-50" : ""}
                   disabled:cursor-default
