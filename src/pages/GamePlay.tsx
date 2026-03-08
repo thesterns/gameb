@@ -109,12 +109,13 @@ const GamePlay = () => {
 
       const { data: quiz } = await supabase
         .from("quizzes")
-        .select("time_per_question, mode, title, description, image_url")
+        .select("time_per_question, mode, title, description, image_url, theme")
         .eq("id", session.quiz_id)
         .single();
 
       setTotalTime(quiz?.time_per_question || 30);
       setQuizMode(quiz?.mode || "genius");
+      setQuizTheme(((quiz as any)?.theme as GameTheme) || "default");
       setQuizTitle(quiz?.title || "");
       setQuizDescription((quiz as any)?.description || "");
       setQuizImageUrl((quiz as any)?.image_url || null);
