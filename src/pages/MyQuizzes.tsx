@@ -59,6 +59,61 @@ const MyQuizzes = () => {
     }
   };
 
+  const handleDuplicate = async (quizId: string) => {
+    try {
+      // Fetch the original quiz
+      const { data: original, error: qErr } = await supabase
+        .from("quizzes")
+        .select("title, description, mode")
+        .eq("id", quizId)
+        .single();
+      if (qErr || !original) throw qErr;
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Create duplicated quiz
+      const { data: newQuiz, error: insertErr } = await supabase
+        .from("quizzes")
+        .insert({ title: original.title + " (עותק)", description: original.description, mode: original.mode, user_id: user.id })
+        .select()
+        .single();
+      if (insertErr || !newQuiz) throw insertErr;
+
+      // Fetch questions
+      const { data: questions } = await supabase
+        .from("questions")
+        .select("id, text, sort_order")
+        .eq("quiz_id", quizId)
+        .order("sort_order");
+
+      for (const q of questions || []) {
+        const { data: newQ } = await supabase
+          .from("questions")
+          .insert({ quiz_id: newQuiz.id, text: q.text, sort_order: q.sort_order })
+          .select()
+          .single();
+        if (!newQ) continue;
+
+        const { data: answers } = await supabase
+          .from("answers")
+          .select("text, is_correct, sort_order")
+          .eq("question_id", q.id);
+
+        if (answers?.length) {
+          await supabase.from("answers").insert(
+            answers.map((a) => ({ ...a, question_id: newQ.id }))
+          );
+        }
+      }
+
+      setQuizzes((prev) => [{ ...newQuiz } as Quiz, ...prev]);
+      toast.success("החידון שוכפל בהצלחה");
+    } catch {
+      toast.error("שגיאה בשכפול החידון");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card sticky top-0 z-10">
