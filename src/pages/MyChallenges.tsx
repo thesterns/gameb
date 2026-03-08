@@ -6,6 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Plus, Target, Edit, Trash2, Play } from "lucide-react";
 import ChallengeHistoryDialog from "@/components/ChallengeHistoryDialog";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface Challenge {
   id: string;
