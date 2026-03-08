@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { ArrowRight, Plus, Trash2, GripVertical, Check, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -42,28 +42,97 @@ const createDefaultQuestion = (): Question => ({
   answers: [createDefaultAnswer(), createDefaultAnswer()],
 });
 
+const modeDescriptions: Record<string, { label: string; description: string }> = {
+  genius: {
+    label: "גאון",
+    description: "קובעים מראש תשובות נכונות לשאלות. השחקנים מקבלים ניקוד לפי מהירות ודיוק.",
+  },
+  king: {
+    label: "מלך",
+    description: "התשובה הנכונה תהיה התשובה שיקבע השחקן שהוא המלך.",
+  },
+  tribe: {
+    label: "שבט",
+    description: "התשובה הנכונה תהיה התשובה שיענה אחד השחקנים לפי תור בין כולם.",
+  },
+};
+
+const answerColors = [
+  "border-[hsl(var(--answer-red))]",
+  "border-[hsl(var(--answer-blue))]",
+  "border-[hsl(var(--answer-yellow))]",
+  "border-[hsl(var(--answer-green))]",
+  "border-[hsl(var(--answer-purple))]",
+  "border-[hsl(var(--answer-orange))]",
+  "border-[hsl(var(--answer-red))]",
+  "border-[hsl(var(--answer-blue))]",
+];
+
 const CreateQuiz = () => {
   const navigate = useNavigate();
+  const { quizId } = useParams<{ quizId: string }>();
+  const isEdit = Boolean(quizId);
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [mode, setMode] = useState<string>("genius");
   const [questions, setQuestions] = useState<Question[]>([createDefaultQuestion()]);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(isEdit);
 
-  const modeDescriptions: Record<string, { label: string; description: string }> = {
-    genius: {
-      label: "גאון",
-      description: "קובעים מראש תשובות נכונות לשאלות. השחקנים מקבלים ניקוד לפי מהירות ודיוק.",
-    },
-    king: {
-      label: "מלך",
-      description: "התשובה הנכונה תהיה התשובה שיקבע השחקן שהוא המלך.",
-    },
-    tribe: {
-      label: "שבט",
-      description: "התשובה הנכונה תהיה התשובה שיענה אחד השחקנים לפי תור בין כולם.",
-    },
-  };
+  // Load existing quiz data in edit mode
+  useEffect(() => {
+    if (!quizId) return;
+
+    const loadQuiz = async () => {
+      const { data: quiz, error: quizErr } = await supabase
+        .from("quizzes")
+        .select("title, description, mode")
+        .eq("id", quizId)
+        .single();
+
+      if (quizErr || !quiz) {
+        toast.error("לא ניתן לטעון את החידון");
+        navigate("/my-quizzes");
+        return;
+      }
+
+      setTitle(quiz.title);
+      setDescription(quiz.description || "");
+      setMode(quiz.mode || "genius");
+
+      const { data: dbQuestions } = await supabase
+        .from("questions")
+        .select("id, text, sort_order")
+        .eq("quiz_id", quizId)
+        .order("sort_order");
+
+      if (dbQuestions?.length) {
+        const loadedQuestions: Question[] = [];
+        for (const q of dbQuestions) {
+          const { data: dbAnswers } = await supabase
+            .from("answers")
+            .select("id, text, is_correct, sort_order")
+            .eq("question_id", q.id)
+            .order("sort_order");
+
+          loadedQuestions.push({
+            id: q.id,
+            text: q.text,
+            answers: (dbAnswers || []).map((a) => ({
+              id: a.id,
+              text: a.text,
+              is_correct: a.is_correct,
+            })),
+          });
+        }
+        setQuestions(loadedQuestions);
+      }
+      setLoading(false);
+    };
+
+    loadQuiz();
+  }, [quizId, navigate]);
 
   const updateQuestion = (qId: string, text: string) => {
     setQuestions((prev) =>
@@ -135,7 +204,6 @@ const CreateQuiz = () => {
         if (!q.answers[j].text.trim())
           return `שאלה ${i + 1}, תשובה ${j + 1}: יש להזין טקסט`;
       }
-      // correct answer marking is optional for all modes
     }
     return null;
   };
@@ -153,42 +221,81 @@ const CreateQuiz = () => {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
-        toast.error("יש להתחבר כדי ליצור חידון");
+        toast.error("יש להתחבר כדי לשמור חידון");
         navigate("/login");
         return;
       }
 
-      const { data: quiz, error: quizErr } = await supabase
-        .from("quizzes")
-        .insert({ title: title.trim(), description: description.trim() || null, user_id: user.id, mode })
-        .select()
-        .single();
+      if (isEdit && quizId) {
+        // Update existing quiz
+        const { error: quizErr } = await supabase
+          .from("quizzes")
+          .update({ title: title.trim(), description: description.trim() || null, mode })
+          .eq("id", quizId);
 
-      if (quizErr || !quiz) throw quizErr;
+        if (quizErr) throw quizErr;
 
-      for (let i = 0; i < questions.length; i++) {
-        const q = questions[i];
-        const { data: dbQ, error: qErr } = await supabase
-          .from("questions")
-          .insert({ quiz_id: quiz.id, text: q.text.trim(), sort_order: i })
+        // Delete old questions (cascade deletes answers)
+        await supabase.from("questions").delete().eq("quiz_id", quizId);
+
+        // Re-insert questions and answers
+        for (let i = 0; i < questions.length; i++) {
+          const q = questions[i];
+          const { data: dbQ, error: qErr } = await supabase
+            .from("questions")
+            .insert({ quiz_id: quizId, text: q.text.trim(), sort_order: i })
+            .select()
+            .single();
+
+          if (qErr || !dbQ) throw qErr;
+
+          const answersToInsert = q.answers.map((a, j) => ({
+            question_id: dbQ.id,
+            text: a.text.trim(),
+            is_correct: a.is_correct,
+            sort_order: j,
+          }));
+
+          const { error: aErr } = await supabase.from("answers").insert(answersToInsert);
+          if (aErr) throw aErr;
+        }
+
+        toast.success("החידון עודכן בהצלחה!");
+      } else {
+        // Create new quiz
+        const { data: quiz, error: quizErr } = await supabase
+          .from("quizzes")
+          .insert({ title: title.trim(), description: description.trim() || null, user_id: user.id, mode })
           .select()
           .single();
 
-        if (qErr || !dbQ) throw qErr;
+        if (quizErr || !quiz) throw quizErr;
 
-        const answersToInsert = q.answers.map((a, j) => ({
-          question_id: dbQ.id,
-          text: a.text.trim(),
-          is_correct: a.is_correct,
-          sort_order: j,
-        }));
+        for (let i = 0; i < questions.length; i++) {
+          const q = questions[i];
+          const { data: dbQ, error: qErr } = await supabase
+            .from("questions")
+            .insert({ quiz_id: quiz.id, text: q.text.trim(), sort_order: i })
+            .select()
+            .single();
 
-        const { error: aErr } = await supabase.from("answers").insert(answersToInsert);
-        if (aErr) throw aErr;
+          if (qErr || !dbQ) throw qErr;
+
+          const answersToInsert = q.answers.map((a, j) => ({
+            question_id: dbQ.id,
+            text: a.text.trim(),
+            is_correct: a.is_correct,
+            sort_order: j,
+          }));
+
+          const { error: aErr } = await supabase.from("answers").insert(answersToInsert);
+          if (aErr) throw aErr;
+        }
+
+        toast.success("החידון נוצר בהצלחה!");
       }
 
-      toast.success("החידון נוצר בהצלחה!");
-      navigate("/dashboard");
+      navigate("/my-quizzes");
     } catch (err: any) {
       toast.error("שגיאה בשמירת החידון: " + (err?.message || ""));
     } finally {
@@ -196,30 +303,29 @@ const CreateQuiz = () => {
     }
   };
 
-  const answerColors = [
-    "border-[hsl(var(--answer-red))]",
-    "border-[hsl(var(--answer-blue))]",
-    "border-[hsl(var(--answer-yellow))]",
-    "border-[hsl(var(--answer-green))]",
-    "border-[hsl(var(--answer-purple))]",
-    "border-[hsl(var(--answer-orange))]",
-    "border-[hsl(var(--answer-red))]",
-    "border-[hsl(var(--answer-blue))]",
-  ];
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">טוען חידון...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-heading font-bold text-gradient">QuizMaster</h1>
+          <h1 className="text-2xl font-heading font-bold text-gradient">
+            {isEdit ? "עריכת חידון" : "יצירת חידון"}
+          </h1>
           <div className="flex gap-2">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/my-quizzes")}>
               <ArrowRight className="!size-4" />
-              חזרה לדשבורד
+              חזרה
             </Button>
             <Button variant="hero" size="sm" onClick={handleSave} disabled={saving}>
               <Check className="!size-4" />
-              {saving ? "שומר..." : "שמור חידון"}
+              {saving ? "שומר..." : isEdit ? "שמור שינויים" : "שמור חידון"}
             </Button>
           </div>
         </div>
@@ -227,7 +333,6 @@ const CreateQuiz = () => {
 
       <main className="max-w-3xl mx-auto px-6 py-8 space-y-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          {/* Quiz details */}
           <div className="bg-card rounded-2xl p-6 shadow-card space-y-4">
             <h2 className="text-xl font-heading font-bold">פרטי החידון</h2>
             <div className="space-y-2">
@@ -269,7 +374,6 @@ const CreateQuiz = () => {
           </div>
         </motion.div>
 
-        {/* Questions */}
         <AnimatePresence mode="popLayout">
           {questions.map((q, qIndex) => (
             <motion.div
