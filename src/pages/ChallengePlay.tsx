@@ -122,7 +122,7 @@ const ChallengePlay = () => {
     const load = async () => {
       const { data: session } = await supabase
         .from("game_sessions")
-        .select("challenge_id")
+        .select("challenge_id, enable_voting")
         .eq("id", sessionId)
         .single();
 
@@ -130,6 +130,8 @@ const ChallengePlay = () => {
         navigate("/dashboard");
         return;
       }
+
+      setEnableVoting((session as any).enable_voting !== false);
 
       const [chRes, partsRes, assignRes, sentRes, votesRes] = await Promise.all([
         supabase.from("challenges").select("title, description, image_url, youtube_url, logo_url, logo_text").eq("id", session.challenge_id).single(),
