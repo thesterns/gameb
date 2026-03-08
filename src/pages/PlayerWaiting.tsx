@@ -126,9 +126,23 @@ const PlayerWaiting = () => {
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="text-center mb-6">
+          {quizImageUrl && (
+            <div className="mb-4 flex justify-center">
+              <img
+                src={quizImageUrl}
+                alt={quizTitle}
+                className="w-32 h-32 rounded-2xl object-cover shadow-lg"
+              />
+            </div>
+          )}
           <h1 className="text-3xl font-heading font-bold text-primary-foreground">
             {quizTitle}
           </h1>
+          {quizDescription && (
+            <p className="text-primary-foreground/80 mt-2 text-sm">
+              {quizDescription}
+            </p>
+          )}
           <p className="text-primary-foreground/70 mt-1" dir="ltr">
             קוד משחק: {joinCode}
           </p>
