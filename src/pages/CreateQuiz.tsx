@@ -135,8 +135,7 @@ const CreateQuiz = () => {
         if (!q.answers[j].text.trim())
           return `שאלה ${i + 1}, תשובה ${j + 1}: יש להזין טקסט`;
       }
-      if (!q.answers.some((a) => a.is_correct))
-        return `שאלה ${i + 1}: יש לסמן לפחות תשובה נכונה אחת`;
+      // correct answer marking is optional for all modes
     }
     return null;
   };
