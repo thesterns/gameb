@@ -115,16 +115,29 @@ const JoinGame = () => {
               <p className="text-muted-foreground mb-6">הכניסו את קוד המשחק</p>
 
               <form onSubmit={handleCodeSubmit} className="space-y-4">
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="12345"
-                  value={code}
-                  onChange={(e) => handleCodeChange(e.target.value)}
-                  className="text-center text-3xl font-heading font-bold h-16 tracking-[0.3em] rounded-xl"
-                  maxLength={5}
-                  dir="ltr"
-                />
+                <div>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="12345"
+                    value={code}
+                    onChange={(e) => handleCodeChange(e.target.value)}
+                    className={`text-center text-3xl font-heading font-bold h-16 tracking-[0.3em] rounded-xl ${
+                      codeError ? "border-destructive ring-2 ring-destructive/30" : ""
+                    }`}
+                    maxLength={5}
+                    dir="ltr"
+                  />
+                  {codeError && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-2 text-sm font-semibold text-destructive bg-destructive/10 rounded-lg px-3 py-2 text-center"
+                    >
+                      {codeError}
+                    </motion.p>
+                  )}
+                </div>
                 <Button
                   type="submit"
                   variant="hero"
