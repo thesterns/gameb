@@ -543,6 +543,11 @@ const GamePlay = () => {
       await handleHideLeaderboard();
     }
 
+    // Ensure king/tribe scores are updated before advancing
+    if (isKingOrTribeMode) {
+      await updateKingTribeScores(currentIndex);
+    }
+
     const nextIndex = currentIndex + 1;
 
     if (nextIndex >= questions.length) {
