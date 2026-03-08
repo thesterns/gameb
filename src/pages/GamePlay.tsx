@@ -1240,6 +1240,20 @@ const GameFinished = ({
             </div>
           )}
 
+          {/* Quiz media below results */}
+          {quizYoutubeUrl && (
+            <div className="pt-2">
+              <YouTubeEmbed url={quizYoutubeUrl} />
+            </div>
+          )}
+          {quizImageUrl && !quizYoutubeUrl && (
+            <img
+              src={quizImageUrl}
+              alt={quizTitle}
+              className="w-full max-h-48 object-contain rounded-2xl"
+            />
+          )}
+
           <Button
             variant="hero"
             size="xl"
