@@ -54,6 +54,10 @@ const GamePlay = () => {
   const [score, setScore] = useState(0);
   const [loading, setLoading] = useState(true);
   const [gameFinished, setGameFinished] = useState(false);
+  const [showIntroSlide, setShowIntroSlide] = useState(true);
+  const [quizTitle, setQuizTitle] = useState("");
+  const [quizDescription, setQuizDescription] = useState("");
+  const [quizImageUrl, setQuizImageUrl] = useState<string | null>(null);
   const [responseCount, setResponseCount] = useState(0);
   const [participantCount, setParticipantCount] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
