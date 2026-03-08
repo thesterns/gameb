@@ -1024,7 +1024,7 @@ const GameFinished = ({
   const podiumOrder = top3.length === 3 ? [1, 0, 2] : top3.map((_, i) => i);
 
   return (
-    <div className="min-h-screen gradient-hero flex items-center justify-center px-4" dir="rtl">
+    <div className={`min-h-screen ${t.bg} flex items-center justify-center px-4`} dir="rtl">
       <motion.div
         className="w-full max-w-md"
         initial={{ opacity: 0, scale: 0.9 }}
