@@ -476,6 +476,28 @@ const CreateQuiz = () => {
                 <Info className="size-4 mt-0.5 shrink-0" />
                 <span>{modeDescriptions[mode].description}</span>
             </div>
+            {/* Theme selector */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">עיצוב המשחק</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {themeOptions.map((t) => (
+                  <button
+                    key={t.value}
+                    type="button"
+                    onClick={() => setTheme(t.value)}
+                    className={`rounded-xl p-3 text-right border-2 transition-all ${
+                      theme === t.value
+                        ? "border-primary bg-primary/10 shadow-sm"
+                        : "border-border bg-card hover:border-muted-foreground/30"
+                    }`}
+                  >
+                    <div className="text-lg mb-0.5">{t.emoji}</div>
+                    <div className="text-sm font-heading font-semibold">{t.label}</div>
+                    <div className="text-xs text-muted-foreground">{t.description}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">זמן לשאלה (שניות) *</label>
               <div className="flex items-center gap-3">
