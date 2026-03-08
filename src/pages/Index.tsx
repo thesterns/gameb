@@ -235,7 +235,7 @@ const Index = () => {
 
       {/* Footer */}
       <footer className="px-6 py-8 text-center text-muted-foreground text-sm border-t border-border">
-        <p>© 2026 QuizMaster. כל הזכויות שמורות.</p>
+        <p>© 2026 לך תדע. כל הזכויות שמורות.</p>
       </footer>
     </div>
   );
