@@ -639,7 +639,7 @@ const ChallengePlay = () => {
             onClick={() => navigate(isHost ? "/dashboard" : "/")}
           >
             <ArrowRight className="!size-4" />
-            {isHost ? "חזרה לדשבורד" : "חזרה לדף הבית"}
+            {isHost ? "חזרה לדשבורד" : "יציאה ומעבר לדף הבית"}
           </Button>
         </div>
       </motion.div>
