@@ -276,6 +276,14 @@ const MyQuizzes = () => {
           ))
         )}
       </main>
+      {historyQuiz && (
+        <GameHistoryDialog
+          quizId={historyQuiz.id}
+          quizTitle={historyQuiz.title}
+          open={!!historyQuiz}
+          onOpenChange={(open) => !open && setHistoryQuiz(null)}
+        />
+      )}
     </div>
   );
 };
