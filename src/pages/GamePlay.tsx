@@ -643,7 +643,7 @@ const GamePlay = () => {
         )}
 
         {/* Host: next question button */}
-        {isHost && timeUp && (
+        {isHost && (timeUp || responseCount >= participantCount) && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
             <Button variant="hero" size="xl" onClick={handleNextQuestion}>
               <ArrowLeft className="!size-5" />
