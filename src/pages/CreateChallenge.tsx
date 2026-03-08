@@ -29,6 +29,36 @@ const emptyDimensions = (): DimensionsState => ({
   extra: [],
 });
 
+const emptyNewItems = (): Record<DimensionKey, string> => ({
+  time: "",
+  place: "",
+  person: "",
+  object: "",
+  extra: "",
+});
+
+const parseDimensionValues = (raw: string): string[] =>
+  raw
+    .split(/[\n,]+/)
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+const mergePendingDimensionInputs = (
+  currentDimensions: DimensionsState,
+  pendingInputs: Record<DimensionKey, string>
+): DimensionsState => {
+  const merged = emptyDimensions();
+
+  for (const dim of DIMENSIONS) {
+    merged[dim.key] = [
+      ...currentDimensions[dim.key],
+      ...parseDimensionValues(pendingInputs[dim.key] ?? ""),
+    ];
+  }
+
+  return merged;
+};
+
 const CreateChallenge = () => {
   const navigate = useNavigate();
   const { challengeId } = useParams<{ challengeId: string }>();
@@ -45,7 +75,7 @@ const CreateChallenge = () => {
   const [logoUrl, setLogoUrl] = useState<string | undefined>();
   const [logoText, setLogoText] = useState("");
   const [dimensions, setDimensions] = useState<DimensionsState>(emptyDimensions());
-  const [newItems, setNewItems] = useState<Record<DimensionKey, string>>({ time: "", place: "", person: "", object: "", extra: "" });
+  const [newItems, setNewItems] = useState<Record<DimensionKey, string>>(emptyNewItems());
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(isEdit);
 
@@ -59,7 +89,7 @@ const CreateChallenge = () => {
         .single();
       if (error || !data) {
         toast.error("לא ניתן לטעון את האתגר");
-        navigate("/dashboard");
+        navigate("/my-challenges");
         return;
       }
       setTitle(data.title);
@@ -110,11 +140,9 @@ const CreateChallenge = () => {
   };
 
   const addDimensionItem = (dim: DimensionKey) => {
-    const raw = newItems[dim].trim();
-    if (!raw) return;
-    // Support comma-separated values for bulk add
-    const values = raw.split(",").map((v) => v.trim()).filter(Boolean);
+    const values = parseDimensionValues(newItems[dim]);
     if (values.length === 0) return;
+
     setDimensions((prev) => ({ ...prev, [dim]: [...prev[dim], ...values] }));
     setNewItems((prev) => ({ ...prev, [dim]: "" }));
   };
@@ -123,35 +151,50 @@ const CreateChallenge = () => {
     setDimensions((prev) => ({ ...prev, [dim]: prev[dim].filter((_, i) => i !== index) }));
   };
 
-  const saveDimensionItems = async (cId: string) => {
-    // Delete existing items
-    const { error: delErr } = await supabase.from("challenge_dimension_items").delete().eq("challenge_id", cId);
+  const saveDimensionItems = async (cId: string, dimensionsToSave: DimensionsState) => {
+    const { error: delErr } = await supabase
+      .from("challenge_dimension_items")
+      .delete()
+      .eq("challenge_id", cId);
+
     if (delErr) {
       console.error("Delete dimension items error:", delErr);
       throw delErr;
     }
 
-    // Insert new items
     const rows: { challenge_id: string; dimension: string; value: string; sort_order: number }[] = [];
     for (const dim of DIMENSIONS) {
-      dimensions[dim.key].forEach((value, i) => {
+      dimensionsToSave[dim.key].forEach((value, i) => {
         rows.push({ challenge_id: cId, dimension: dim.key, value, sort_order: i });
       });
     }
-    console.log("Saving dimension items:", rows.length, "rows", JSON.stringify(rows));
-    if (rows.length > 0) {
-      const { error, data } = await supabase.from("challenge_dimension_items").insert(rows).select();
-      console.log("Insert result:", data?.length, "inserted, error:", error);
-      if (error) throw error;
-    }
+
+    if (rows.length === 0) return;
+
+    const { error } = await supabase.from("challenge_dimension_items").insert(rows);
+    if (error) throw error;
   };
 
   const handleSave = async () => {
-    if (!title.trim()) { toast.error("יש להזין שם לאתגר"); return; }
+    if (!title.trim()) {
+      toast.error("יש להזין שם לאתגר");
+      return;
+    }
+
+    const finalizedDimensions = mergePendingDimensionInputs(dimensions, newItems);
+    setDimensions(finalizedDimensions);
+    setNewItems(emptyNewItems());
+
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { toast.error("יש להתחבר"); navigate("/login"); return; }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("יש להתחבר");
+        navigate("/login");
+        return;
+      }
 
       if (isEdit && challengeId) {
         let finalImageUrl = imageUrl || null;
@@ -172,7 +215,7 @@ const CreateChallenge = () => {
           .eq("id", challengeId);
         if (error) throw error;
 
-        await saveDimensionItems(challengeId);
+        await saveDimensionItems(challengeId, finalizedDimensions);
         toast.success("האתגר עודכן בהצלחה!");
       } else {
         const { data: challenge, error } = await supabase
@@ -197,10 +240,11 @@ const CreateChallenge = () => {
           await supabase.from("challenges").update({ logo_url: lUrl }).eq("id", challenge.id);
         }
 
-        await saveDimensionItems(challenge.id);
+        await saveDimensionItems(challenge.id, finalizedDimensions);
         toast.success("האתגר נוצר בהצלחה!");
       }
-      navigate("/dashboard");
+
+      navigate(isEdit ? "/my-challenges" : "/dashboard");
     } catch (e) {
       console.error(e);
       toast.error("שגיאה בשמירת האתגר");
@@ -221,7 +265,11 @@ const CreateChallenge = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b border-border bg-card sticky top-0 z-30">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(isEdit ? "/my-challenges" : "/dashboard")}
+          >
             <ArrowRight className="!size-4" />
             חזרה
           </Button>
