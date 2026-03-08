@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Users, Loader2, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import YouTubeEmbed from "@/components/YouTubeEmbed";
 
 interface Participant {
   id: string;
