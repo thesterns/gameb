@@ -8,6 +8,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ArrowRight, Plus, Trash2, GripVertical, Check, Info, ImagePlus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { themeOptions, type GameTheme } from "@/lib/gameThemes";
 import {
   Select,
   SelectContent,
