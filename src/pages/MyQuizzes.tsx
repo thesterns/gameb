@@ -35,6 +35,16 @@ const MyQuizzes = () => {
   const [search, setSearch] = useState("");
   const [modeFilter, setModeFilter] = useState<string>("all");
 
+  const filteredQuizzes = useMemo(() => {
+    return quizzes.filter((q) => {
+      const matchesSearch = !search.trim() ||
+        q.title.toLowerCase().includes(search.toLowerCase()) ||
+        (q.description || "").toLowerCase().includes(search.toLowerCase());
+      const matchesMode = modeFilter === "all" || q.mode === modeFilter;
+      return matchesSearch && matchesMode;
+    });
+  }, [quizzes, search, modeFilter]);
+
   useEffect(() => {
     const fetchQuizzes = async () => {
       const { data: { user } } = await supabase.auth.getUser();
