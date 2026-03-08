@@ -21,7 +21,6 @@ interface Question {
 interface Answer {
   id: string;
   text: string;
-  is_correct: boolean;
   sort_order: number;
 }
 
