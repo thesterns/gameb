@@ -656,7 +656,10 @@ const ChallengePlay = () => {
                       </div>
                     </div>
                     {pSentence && (
-                      <p className="text-base font-medium text-foreground leading-relaxed">{pSentence.sentence}</p>
+                      <div className="flex items-start gap-2">
+                        <WordsIndicator valid={sentenceContainsAllWords(pSentence.sentence, p.id)} />
+                        <p className="text-base font-medium text-foreground leading-relaxed flex-1">{pSentence.sentence}</p>
+                      </div>
                     )}
                   </motion.div>
                 );
