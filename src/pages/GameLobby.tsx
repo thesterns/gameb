@@ -189,6 +189,7 @@ const GameLobby = () => {
             <ArrowRight className="!size-4" />
             חזרה לחידונים
           </Button>
+          <QuizLogo logoUrl={quizLogoUrl} logoText={quizLogoText} size="md" className="mb-2" />
           <h1 className="text-3xl font-heading font-bold text-primary-foreground">
             {quizTitle}
           </h1>
