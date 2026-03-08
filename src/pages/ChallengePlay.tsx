@@ -73,6 +73,8 @@ const ChallengePlay = () => {
   const [sentences, setSentences] = useState<SentenceEntry[]>([]);
   const [votes, setVotes] = useState<Vote[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [editSentence, setEditSentence] = useState("");
 
   // Compute my votes (what I voted for others)
   const myVotes = votes.filter((v) => v.voter_participant_id === myParticipantId);
