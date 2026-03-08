@@ -195,12 +195,14 @@ const GameLobby = () => {
           for (const [dimension, values] of Object.entries(byDimension)) {
             const shuffledParticipants = [...participants].sort(() => Math.random() - 0.5);
 
+            let shuffledValues = [...values].sort(() => Math.random() - 0.5);
+
             for (let i = 0; i < shuffledParticipants.length; i++) {
-              // When there are fewer values than participants, cycle with a fresh shuffle
-              const cycleIndex = i % values.length;
-              const cycleValues = cycleIndex === 0 ? [...values].sort(() => Math.random() - 0.5) : null;
-              const valuePool = cycleValues ?? values;
-              const randomValue = valuePool[cycleIndex];
+              if (i > 0 && i % values.length === 0) {
+                shuffledValues = [...values].sort(() => Math.random() - 0.5);
+              }
+
+              const randomValue = shuffledValues[i % values.length];
 
               assignments.push({
                 session_id: sessionId!,
