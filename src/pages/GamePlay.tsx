@@ -771,11 +771,22 @@ const GamePlay = () => {
           </div>
         )}
         {isHost && (
-          <div className={`flex items-center gap-1 ${t.textSecondary} text-sm`}>
-            <Users className="size-4" />
-            <span>
-              {responseCount}/{participantCount} ענו
-            </span>
+          <div className={`flex items-center gap-3 ${t.textSecondary} text-sm`}>
+            <label className="flex items-center gap-1.5 cursor-pointer" title="התקדמות אוטומטית">
+              <RotateCw className={`size-3.5 ${autoAdvance ? 'text-[hsl(var(--accent))]' : ''}`} />
+              <span className="text-xs hidden sm:inline">אוטומטי</span>
+              <Switch
+                checked={autoAdvance}
+                onCheckedChange={setAutoAdvance}
+                className="scale-75"
+              />
+            </label>
+            <div className="flex items-center gap-1">
+              <Users className="size-4" />
+              <span>
+                {responseCount}/{participantCount} ענו
+              </span>
+            </div>
           </div>
         )}
       </div>
