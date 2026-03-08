@@ -156,7 +156,7 @@ const GamePlay = () => {
 
   // Load answers for current question
   useEffect(() => {
-    if (questions.length === 0 || currentIndex >= questions.length) return;
+    if (questions.length === 0 || currentIndex >= questions.length || showIntroSlide) return;
 
     const loadAnswers = async () => {
       const q = questions[currentIndex];
