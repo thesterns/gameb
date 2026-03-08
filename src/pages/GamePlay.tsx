@@ -719,9 +719,13 @@ const GamePlay = () => {
           </motion.p>
         )}
 
-        {/* Host: next question button */}
-        {isHost && (timeUp || responseCount >= participantCount) && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        {/* Host: leaderboard + next question buttons */}
+        {isHost && (timeUp || responseCount >= participantCount) && !showLeaderboard && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
+            <Button variant="game" size="xl" onClick={handleShowLeaderboard}>
+              <Trophy className="!size-5" />
+              לוח נקודות
+            </Button>
             <Button variant="hero" size="xl" onClick={handleNextQuestion}>
               <ArrowLeft className="!size-5" />
               {currentIndex + 1 >= questions.length ? "סיים משחק" : "שאלה הבאה"}
@@ -729,6 +733,82 @@ const GamePlay = () => {
           </motion.div>
         )}
       </div>
+
+      {/* Leaderboard overlay */}
+      <AnimatePresence>
+        {showLeaderboard && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 gradient-hero flex items-center justify-center px-4"
+            dir="rtl"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="w-full max-w-md"
+            >
+              <div className="text-center mb-4">
+                <Trophy className="size-12 text-[hsl(var(--answer-yellow))] mx-auto mb-2" />
+                <h2 className="text-2xl font-heading font-bold text-primary-foreground">לוח נקודות</h2>
+                <p className="text-primary-foreground/60 text-sm">אחרי שאלה {currentIndex + 1} מתוך {questions.length}</p>
+              </div>
+
+              <div className="bg-card rounded-3xl p-6 shadow-elevated space-y-3 max-h-[60vh] overflow-y-auto">
+                {midGameLeaderboard.map((entry, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className={`flex items-center justify-between p-3 rounded-xl ${
+                      idx === 0
+                        ? "bg-[hsl(var(--answer-yellow))]/10 ring-1 ring-[hsl(var(--answer-yellow))]/30"
+                        : idx === 1
+                        ? "bg-muted/40"
+                        : idx === 2
+                        ? "bg-[hsl(var(--answer-orange))]/10"
+                        : "bg-muted/20"
+                    } ${entry.player_name === playerName ? "ring-2 ring-primary" : ""}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg font-heading font-bold text-muted-foreground w-6">
+                        {idx < 3 ? ["🥇", "🥈", "🥉"][idx] : idx + 1}
+                      </span>
+                      <span className="font-heading font-semibold text-foreground">
+                        {entry.player_name}
+                      </span>
+                    </div>
+                    <span className="font-heading font-bold text-foreground">{entry.total_score} נק׳</span>
+                  </motion.div>
+                ))}
+                {midGameLeaderboard.length === 0 && (
+                  <p className="text-center text-muted-foreground py-4">אין נתונים עדיין</p>
+                )}
+              </div>
+
+              {isHost && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="mt-4"
+                >
+                  <Button variant="hero" size="xl" className="w-full" onClick={async () => {
+                    await handleHideLeaderboard();
+                    handleNextQuestion();
+                  }}>
+                    <ArrowLeft className="!size-5" />
+                    {currentIndex + 1 >= questions.length ? "סיים משחק" : "שאלה הבאה"}
+                  </Button>
+                </motion.div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
