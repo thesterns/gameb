@@ -258,6 +258,14 @@ const MyQuizzes = () => {
                 <Button
                   variant="ghost"
                   size="icon"
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={() => setHistoryQuiz({ id: quiz.id, title: quiz.title })}
+                >
+                  <History className="!size-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="text-destructive hover:text-destructive"
                   onClick={() => handleDelete(quiz.id)}
                 >
