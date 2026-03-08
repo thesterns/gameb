@@ -130,7 +130,12 @@ const PlayerWaiting = () => {
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="text-center mb-6">
-          {quizImageUrl && (
+          {quizYoutubeUrl && (
+            <div className="mb-4">
+              <YouTubeEmbed url={quizYoutubeUrl} className="max-h-48" />
+            </div>
+          )}
+          {quizImageUrl && !quizYoutubeUrl && (
             <div className="mb-4 flex justify-center">
               <img
                 src={quizImageUrl}
