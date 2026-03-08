@@ -705,6 +705,12 @@ const GameFinished = ({
     loadLeaderboard();
   }, [sessionId, quizMode, kingParticipantId]);
 
+  const top3 = leaderboard.slice(0, 3);
+  const rest = leaderboard.slice(3);
+
+  const medalEmojis = ["🥇", "🥈", "🥉"];
+  const podiumOrder = top3.length === 3 ? [1, 0, 2] : top3.map((_, i) => i);
+
   return (
     <div className="min-h-screen gradient-hero flex items-center justify-center px-4" dir="rtl">
       <motion.div
@@ -713,44 +719,97 @@ const GameFinished = ({
         animate={{ opacity: 1, scale: 1 }}
       >
         <div className="text-center mb-6">
-          <Trophy className="size-16 text-[hsl(var(--answer-yellow))] mx-auto mb-2" />
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", delay: 0.2 }}
+          >
+            <Trophy className="size-16 text-[hsl(var(--answer-yellow))] mx-auto mb-2" />
+          </motion.div>
           <h1 className="text-3xl font-heading font-bold text-primary-foreground">המשחק נגמר!</h1>
         </div>
 
         <div className="bg-card rounded-3xl p-8 shadow-elevated space-y-6">
+          {/* Podium for top 3 */}
+          {top3.length > 0 && (
+            <div className="flex items-end justify-center gap-3 pt-4 pb-2">
+              {podiumOrder.map((originalIdx) => {
+                const entry = top3[originalIdx];
+                if (!entry) return null;
+                const heights = ["h-28", "h-20", "h-14"];
+                const sizes = ["text-xl", "text-base", "text-sm"];
+                const medalSizes = ["text-4xl", "text-3xl", "text-2xl"];
+                const isMe = entry.player_name === playerName;
+
+                return (
+                  <motion.div
+                    key={originalIdx}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 + originalIdx * 0.15 }}
+                    className="flex flex-col items-center gap-1 flex-1 max-w-[120px]"
+                  >
+                    <span className={medalSizes[originalIdx]}>{medalEmojis[originalIdx]}</span>
+                    <span
+                      className={`font-heading font-bold truncate max-w-full ${sizes[originalIdx]} ${
+                        isMe ? "text-primary" : "text-foreground"
+                      }`}
+                    >
+                      {entry.player_name}
+                    </span>
+                    <span className="text-sm font-heading font-bold text-muted-foreground">
+                      {entry.total_score} נק׳
+                    </span>
+                    <div
+                      className={`w-full ${heights[originalIdx]} rounded-t-xl ${
+                        originalIdx === 0
+                          ? "bg-[hsl(var(--answer-yellow))]/30 border-2 border-[hsl(var(--answer-yellow))]/50"
+                          : originalIdx === 1
+                          ? "bg-muted/50 border-2 border-muted-foreground/20"
+                          : "bg-[hsl(var(--answer-orange))]/20 border-2 border-[hsl(var(--answer-orange))]/30"
+                      }`}
+                    />
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Player score (non-host) */}
           {!isHost && (
-            <div className="text-center">
+            <div className="text-center border-t border-border pt-4">
               <p className="text-muted-foreground text-sm">הניקוד שלך</p>
               <p className="text-4xl font-heading font-bold text-foreground">{score}</p>
             </div>
           )}
 
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">טבלת תוצאות</p>
-            {leaderboard.map((entry, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                className={`flex items-center justify-between p-3 rounded-xl ${
-                  idx === 0
-                    ? "bg-[hsl(var(--answer-yellow))]/10 border border-[hsl(var(--answer-yellow))]/30"
-                    : "bg-muted/30"
-                } ${entry.player_name === playerName ? "ring-2 ring-primary" : ""}`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-lg font-heading font-bold text-muted-foreground w-6">
-                    {idx + 1}
-                  </span>
-                  <span className="font-heading font-semibold text-foreground">
-                    {entry.player_name}
-                  </span>
-                </div>
-                <span className="font-heading font-bold text-foreground">{entry.total_score}</span>
-              </motion.div>
-            ))}
-          </div>
+          {/* Rest of leaderboard */}
+          {rest.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-muted-foreground">שאר המשתתפים</p>
+              {rest.map((entry, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.5 + idx * 0.05 }}
+                  className={`flex items-center justify-between p-3 rounded-xl bg-muted/30 ${
+                    entry.player_name === playerName ? "ring-2 ring-primary" : ""
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg font-heading font-bold text-muted-foreground w-6">
+                      {idx + 4}
+                    </span>
+                    <span className="font-heading font-semibold text-foreground">
+                      {entry.player_name}
+                    </span>
+                  </div>
+                  <span className="font-heading font-bold text-foreground">{entry.total_score}</span>
+                </motion.div>
+              ))}
+            </div>
+          )}
 
           <Button
             variant="hero"
