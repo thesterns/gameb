@@ -107,12 +107,15 @@ const GamePlay = () => {
 
       const { data: quiz } = await supabase
         .from("quizzes")
-        .select("time_per_question, mode")
+        .select("time_per_question, mode, title, description, image_url")
         .eq("id", session.quiz_id)
         .single();
 
       setTotalTime(quiz?.time_per_question || 30);
       setQuizMode(quiz?.mode || "genius");
+      setQuizTitle(quiz?.title || "");
+      setQuizDescription((quiz as any)?.description || "");
+      setQuizImageUrl((quiz as any)?.image_url || null);
 
       const { data: qs } = await supabase
         .from("questions")
