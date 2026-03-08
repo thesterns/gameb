@@ -736,14 +736,22 @@ const GamePlay = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg">
           {answers.map((answer, idx) => {
             const isSelected = selectedAnswerId === answer.id;
+            // King never sees correct/wrong feedback on their own answers
+            const isKingViewing = isCurrentPlayerKing;
             const showCorrectGenius = timeUp && !isKingOrTribeMode && answer.is_correct;
+            // Players in king/tribe mode only see feedback AFTER king has chosen
             const showCorrectKing =
-              timeUp && isKingOrTribeMode && kingAnswerId && answer.id === kingAnswerId;
+              timeUp && isKingOrTribeMode && !isKingViewing && kingAnswerId && answer.id === kingAnswerId;
             const showCorrect = showCorrectGenius || showCorrectKing;
             const showWrong =
               timeUp &&
               isSelected &&
+              !isKingViewing &&
+              (!isKingOrTribeMode || !!kingAnswerId) &&
               !showCorrect;
+
+            // In king/tribe mode, don't dim answers until king has chosen
+            const dimUnselected = timeUp && !showCorrect && !showWrong && (!isKingOrTribeMode || !!kingAnswerId || isKingViewing);
 
             return (
               <motion.button
@@ -763,7 +771,7 @@ const GamePlay = () => {
                       ? `${ANSWER_COLORS[idx % ANSWER_COLORS.length]} ring-4 ring-white/50 scale-[0.97]`
                       : `${ANSWER_COLORS[idx % ANSWER_COLORS.length]} hover:scale-[1.02] active:scale-[0.97]`
                   }
-                  ${timeUp && !showCorrect && !showWrong ? "opacity-50" : ""}
+                  ${dimUnselected ? "opacity-50" : ""}
                   disabled:cursor-default
                 `}
               >
