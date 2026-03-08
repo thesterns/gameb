@@ -522,6 +522,13 @@ const GamePlay = () => {
     }
   }, [timeUp, kingAnswerId, isKingOrTribeMode, isHost, selectedAnswerId, isCurrentPlayerKing]);
 
+  // Reset confetti after showing
+  useEffect(() => {
+    if (!showConfetti) return;
+    const timer = setTimeout(() => setShowConfetti(false), 3000);
+    return () => clearTimeout(timer);
+  }, [showConfetti]);
+
   // Auto-advance: when enabled and timeUp, advance after 4 seconds
   useEffect(() => {
     if (!autoAdvance || !isHost || !timeUp || gameFinished || showIntroSlide || showLeaderboard) return;
