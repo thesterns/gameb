@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Users, Play, Copy, Check, Crown, Share2, QrCode, X } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
+import YouTubeEmbed from "@/components/YouTubeEmbed";
 
 interface Participant {
   id: string;
@@ -18,6 +19,8 @@ const GameLobby = () => {
   const navigate = useNavigate();
   const [quizTitle, setQuizTitle] = useState("");
   const [quizMode, setQuizMode] = useState("genius");
+  const [quizYoutubeUrl, setQuizYoutubeUrl] = useState<string | null>(null);
+  const [quizImageUrl, setQuizImageUrl] = useState<string | null>(null);
   const [joinCode, setJoinCode] = useState("");
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [kingParticipantId, setKingParticipantId] = useState<string | null>(null);
@@ -45,12 +48,14 @@ const GameLobby = () => {
 
       const { data: quiz } = await supabase
         .from("quizzes")
-        .select("title, mode")
+        .select("title, mode, youtube_url, image_url")
         .eq("id", session.quiz_id)
         .single();
 
       setQuizTitle(quiz?.title || "חידון");
       setQuizMode(quiz?.mode || "genius");
+      setQuizYoutubeUrl(quiz?.youtube_url || null);
+      setQuizImageUrl(quiz?.image_url || null);
 
       const { data: existingParticipants } = await supabase
         .from("game_participants")
@@ -190,6 +195,18 @@ const GameLobby = () => {
         </div>
 
         <div className="bg-card rounded-3xl p-8 shadow-elevated space-y-6">
+          {/* Quiz media */}
+          {quizYoutubeUrl && (
+            <YouTubeEmbed url={quizYoutubeUrl} />
+          )}
+          {quizImageUrl && !quizYoutubeUrl && (
+            <img
+              src={quizImageUrl}
+              alt={quizTitle}
+              className="w-full max-h-48 object-contain rounded-2xl"
+            />
+          )}
+
           {/* Join Code */}
           <div className="text-center space-y-2">
             <p className="text-sm text-muted-foreground font-medium">קוד להצטרפות</p>
