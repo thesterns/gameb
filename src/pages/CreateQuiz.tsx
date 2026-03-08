@@ -118,6 +118,9 @@ const CreateQuiz = () => {
         setQuizImageUrl((quiz as any).image_url);
         setQuizImagePreview((quiz as any).image_url);
       }
+      if ((quiz as any).youtube_url) {
+        setQuizYoutubeUrl((quiz as any).youtube_url);
+      }
 
       const { data: dbQuestions } = await supabase
         .from("questions")
