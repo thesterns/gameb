@@ -15,6 +15,7 @@ const JoinGame = () => {
   const [step, setStep] = useState<"code" | "name">("code");
   const [sessionId, setSessionId] = useState("");
   const [joining, setJoining] = useState(false);
+  const [codeError, setCodeError] = useState("");
 
   // Auto-submit code from direct link
   useEffect(() => {
