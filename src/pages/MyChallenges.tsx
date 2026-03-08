@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, Plus, Target, Edit, Trash2 } from "lucide-react";
+import { ArrowRight, Plus, Target, Edit, Trash2, Play } from "lucide-react";
 import { toast } from "sonner";
 
 interface Challenge {
