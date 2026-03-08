@@ -454,11 +454,15 @@ const GamePlay = () => {
 
     // Broadcast to all players
     if (leaderboardChannelRef.current) {
-      await leaderboardChannelRef.current.send({
+      console.log("[Leaderboard] Broadcasting show_leaderboard to players");
+      const result = await leaderboardChannelRef.current.send({
         type: "broadcast",
         event: "show_leaderboard",
         payload: { leaderboard: sorted },
       });
+      console.log("[Leaderboard] Broadcast result:", result);
+    } else {
+      console.warn("[Leaderboard] Channel not ready, cannot broadcast");
     }
   };
 
