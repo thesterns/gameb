@@ -414,6 +414,42 @@ const CreateQuiz = () => {
     }
   };
 
+  const handleAiGenerate = async () => {
+    if (!aiTopic.trim()) { toast.error("יש להזין נושא לשאלות"); return; }
+    setAiGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-questions", {
+        body: { topic: aiTopic.trim(), numAnswers: aiNumAnswers, numQuestions: aiNumQuestions },
+      });
+      if (error) throw error;
+      if (data?.error) { toast.error(data.error); return; }
+      const generated: Question[] = (data.questions || []).map((q: any) => ({
+        id: generateId(),
+        text: q.text,
+        double_points: false,
+        answers: (q.answers || []).map((a: any) => ({
+          id: generateId(),
+          text: a.text,
+          is_correct: !!a.is_correct,
+        })),
+      }));
+      if (generated.length === 0) { toast.error("לא נוצרו שאלות"); return; }
+      // If only one empty default question exists, replace it
+      if (questions.length === 1 && !questions[0].text.trim() && questions[0].answers.every(a => !a.text.trim())) {
+        setQuestions(generated);
+      } else {
+        setQuestions(prev => [...prev, ...generated]);
+      }
+      setAiDialogOpen(false);
+      setAiTopic("");
+      toast.success(`${generated.length} שאלות נוצרו בהצלחה!`);
+    } catch (err: any) {
+      toast.error("שגיאה ביצירת שאלות: " + (err?.message || ""));
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
