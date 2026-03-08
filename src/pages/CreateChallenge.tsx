@@ -151,27 +151,28 @@ const CreateChallenge = () => {
     setDimensions((prev) => ({ ...prev, [dim]: prev[dim].filter((_, i) => i !== index) }));
   };
 
-  const saveDimensionItems = async (cId: string) => {
-    // Delete existing items
-    const { error: delErr } = await supabase.from("challenge_dimension_items").delete().eq("challenge_id", cId);
+  const saveDimensionItems = async (cId: string, dimensionsToSave: DimensionsState) => {
+    const { error: delErr } = await supabase
+      .from("challenge_dimension_items")
+      .delete()
+      .eq("challenge_id", cId);
+
     if (delErr) {
       console.error("Delete dimension items error:", delErr);
       throw delErr;
     }
 
-    // Insert new items
     const rows: { challenge_id: string; dimension: string; value: string; sort_order: number }[] = [];
     for (const dim of DIMENSIONS) {
-      dimensions[dim.key].forEach((value, i) => {
+      dimensionsToSave[dim.key].forEach((value, i) => {
         rows.push({ challenge_id: cId, dimension: dim.key, value, sort_order: i });
       });
     }
-    console.log("Saving dimension items:", rows.length, "rows", JSON.stringify(rows));
-    if (rows.length > 0) {
-      const { error, data } = await supabase.from("challenge_dimension_items").insert(rows).select();
-      console.log("Insert result:", data?.length, "inserted, error:", error);
-      if (error) throw error;
-    }
+
+    if (rows.length === 0) return;
+
+    const { error } = await supabase.from("challenge_dimension_items").insert(rows);
+    if (error) throw error;
   };
 
   const handleSave = async () => {
