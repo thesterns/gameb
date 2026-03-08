@@ -333,7 +333,7 @@ const ChallengePlay = () => {
           )}
 
           {/* Sentences display */}
-          {visibleSentences.length > 0 && (
+          {!isHost && visibleSentences.length > 0 && (
             <div className="space-y-3">
               <h3 className="font-heading font-bold text-lg flex items-center gap-2">
                 📝 משפטים ({visibleSentences.length}/{participantsWithAssignments.length})
