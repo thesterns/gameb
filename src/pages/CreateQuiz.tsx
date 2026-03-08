@@ -100,6 +100,11 @@ const CreateQuiz = () => {
   const [logoPreview, setLogoPreview] = useState<string | undefined>(undefined);
   const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
   const [logoText, setLogoText] = useState<string>("");
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [aiTopic, setAiTopic] = useState("");
+  const [aiNumAnswers, setAiNumAnswers] = useState(4);
+  const [aiNumQuestions, setAiNumQuestions] = useState(5);
+  const [aiGenerating, setAiGenerating] = useState(false);
 
   // Load existing quiz data in edit mode
   useEffect(() => {
