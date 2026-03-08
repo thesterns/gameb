@@ -1519,14 +1519,16 @@ const GameFinished = ({
                   >
                     <span className={podiumMedalSizes[rank]}>{medalEmojis[rank]}</span>
                     {group.players.map((entry, pIdx) => (
-                      <span
-                        key={pIdx}
-                        className={`font-heading font-bold truncate max-w-full ${podiumTextSizes[rank]} ${
-                          entry.player_name === playerName ? "text-primary" : "text-foreground"
-                        }`}
-                      >
-                        {entry.player_name}
-                      </span>
+                      <div key={pIdx} className="flex items-center gap-1">
+                        <span
+                          className={`font-heading font-bold truncate max-w-full ${podiumTextSizes[rank]} ${
+                            entry.player_name === playerName ? "text-primary" : "text-foreground"
+                          }`}
+                        >
+                          {entry.player_name}
+                        </span>
+                        <StarBadge maxStreak={entry.max_streak ?? 0} totalCorrect={entry.total_correct ?? 0} />
+                      </div>
                     ))}
                     <span className="text-sm font-heading font-bold text-muted-foreground">
                       {group.players[0].total_score} נק׳
