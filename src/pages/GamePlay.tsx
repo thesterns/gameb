@@ -794,7 +794,12 @@ const GamePlay = () => {
             exit={{ opacity: 0, y: -20 }}
             className="bg-card rounded-3xl p-8 shadow-elevated w-full max-w-lg text-center"
           >
-            {currentQuestion.image_url && (
+            {(currentQuestion as any).youtube_url && (
+              <div className="mb-4">
+                <YouTubeEmbed url={(currentQuestion as any).youtube_url} className="max-h-56" />
+              </div>
+            )}
+            {currentQuestion.image_url && !(currentQuestion as any).youtube_url && (
               <img
                 src={currentQuestion.image_url}
                 alt="תמונת שאלה"
