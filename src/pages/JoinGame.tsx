@@ -46,6 +46,7 @@ const JoinGame = () => {
   const handleCodeChange = (value: string) => {
     const numeric = value.replace(/\D/g, "").slice(0, 5);
     setCode(numeric);
+    if (codeError) setCodeError("");
   };
 
   const handleCodeSubmit = async (e: React.FormEvent) => {
