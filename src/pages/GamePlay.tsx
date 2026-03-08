@@ -261,6 +261,14 @@ const GamePlay = () => {
     };
   }, [sessionId, isHost, questions, currentIndex, quizMode, currentKingId]);
 
+  // Auto-end question when all participants answered
+  useEffect(() => {
+    if (timeUp || participantCount === 0 || responseCount < participantCount) return;
+    // All participants answered - end early
+    if (timerRef.current) clearInterval(timerRef.current);
+    setTimeUp(true);
+  }, [responseCount, participantCount, timeUp]);
+
   // In king/tribe mode, when king answers, check if we need to wait
   const isKingOrTribeMode = quizMode === "king" || quizMode === "tribe";
 
