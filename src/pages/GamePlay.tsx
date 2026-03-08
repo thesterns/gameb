@@ -224,7 +224,9 @@ const GamePlay = () => {
     };
   }, [sessionId]);
 
-  // Listen for leaderboard broadcast
+  // Leaderboard broadcast channel
+  const leaderboardChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
   useEffect(() => {
     if (!sessionId) return;
 
@@ -239,8 +241,11 @@ const GamePlay = () => {
       })
       .subscribe();
 
+    leaderboardChannelRef.current = channel;
+
     return () => {
       supabase.removeChannel(channel);
+      leaderboardChannelRef.current = null;
     };
   }, [sessionId]);
 
