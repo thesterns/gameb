@@ -147,6 +147,7 @@ const CreateQuiz = () => {
             })),
             image_url: (q as any).image_url || undefined,
             imagePreview: (q as any).image_url || undefined,
+            youtube_url: (q as any).youtube_url || undefined,
           });
         }
         setQuestions(loadedQuestions);
