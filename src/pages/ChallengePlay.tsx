@@ -249,6 +249,49 @@ const ChallengePlay = () => {
     }
   };
 
+  const handleEditSentence = () => {
+    setEditing(true);
+    setEditSentence(sentence);
+  };
+
+  const handleResubmitSentence = async () => {
+    if (!editSentence.trim() || !myParticipantId || !sessionId) return;
+    setSubmitting(true);
+    try {
+      // Update sentence
+      const { error } = await supabase.from("challenge_sentences")
+        .update({ sentence: editSentence.trim() })
+        .eq("session_id", sessionId)
+        .eq("participant_id", myParticipantId);
+      if (error) throw error;
+
+      // Delete all votes targeting this participant (reset their score)
+      await supabase.from("challenge_votes")
+        .delete()
+        .eq("session_id", sessionId)
+        .eq("target_participant_id", myParticipantId);
+
+      setSentence(editSentence.trim());
+      setEditing(false);
+
+      // Update local sentences state
+      setSentences((prev) =>
+        prev.map((s) =>
+          s.participant_id === myParticipantId ? { ...s, sentence: editSentence.trim() } : s
+        )
+      );
+
+      // Clear votes targeting me locally
+      setVotes((prev) => prev.filter((v) => v.target_participant_id !== myParticipantId));
+
+      toast.success("המשפט עודכן והניקוד אופס!");
+    } catch {
+      toast.error("שגיאה בעדכון");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleVoteFixed = async (targetId: string, newVoteType: VoteType) => {
     if (!myParticipantId || !sessionId) return;
 
