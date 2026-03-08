@@ -49,6 +49,38 @@ const MyChallenges = () => {
     toast.success("האתגר נמחק");
   };
 
+  const handleDuplicate = async (challenge: Challenge) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Duplicate the challenge
+      const { data: newChallenge, error } = await supabase
+        .from("challenges")
+        .insert({ title: `${challenge.title} (עותק)`, description: challenge.description, user_id: user.id })
+        .select()
+        .single();
+      if (error || !newChallenge) throw error;
+
+      // Duplicate dimension items
+      const { data: items } = await supabase
+        .from("challenge_dimension_items")
+        .select("dimension, value, sort_order")
+        .eq("challenge_id", challenge.id);
+
+      if (items && items.length > 0) {
+        await supabase.from("challenge_dimension_items").insert(
+          items.map((item) => ({ ...item, challenge_id: newChallenge.id }))
+        );
+      }
+
+      setChallenges((prev) => [{ id: newChallenge.id, title: newChallenge.title, description: newChallenge.description, created_at: newChallenge.created_at }, ...prev]);
+      toast.success("האתגר שוכפל בהצלחה");
+    } catch {
+      toast.error("שגיאה בשכפול האתגר");
+    }
+  };
+
   const handleOpenStartDialog = (challenge: Challenge) => {
     setSelectedChallenge(challenge);
     setEnableVoting(true);
