@@ -419,6 +419,7 @@ const GamePlay = () => {
       } else {
         // For genius mode, server returns the computed result
         const result = data as { is_correct: boolean; score: number } | null;
+        setMyAnswerCorrect(result?.is_correct ?? false);
         if (result?.is_correct) {
           setScore((prev) => prev + result.score);
         }
