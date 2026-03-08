@@ -46,6 +46,38 @@ export type Database = {
           },
         ]
       }
+      challenge_dimension_items: {
+        Row: {
+          challenge_id: string
+          dimension: string
+          id: string
+          sort_order: number
+          value: string
+        }
+        Insert: {
+          challenge_id: string
+          dimension: string
+          id?: string
+          sort_order?: number
+          value: string
+        }
+        Update: {
+          challenge_id?: string
+          dimension?: string
+          id?: string
+          sort_order?: number
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_dimension_items_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       challenges: {
         Row: {
           created_at: string
