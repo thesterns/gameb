@@ -49,6 +49,31 @@ const MyChallenges = () => {
     toast.success("האתגר נמחק");
   };
 
+  const handleOpenStartDialog = (challenge: Challenge) => {
+    setSelectedChallenge(challenge);
+    setEnableVoting(true);
+    setStartDialogOpen(true);
+  };
+
+  const handleStartGame = async () => {
+    if (!selectedChallenge) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const joinCode = String(Math.floor(10000 + Math.random() * 90000));
+      const { data: session, error } = await supabase
+        .from("game_sessions")
+        .insert({ challenge_id: selectedChallenge.id, host_user_id: user.id, join_code: joinCode, enable_voting: enableVoting } as any)
+        .select()
+        .single();
+      if (error || !session) throw error;
+      setStartDialogOpen(false);
+      navigate(`/game/${session.id}/lobby`);
+    } catch {
+      toast.error("שגיאה בהפעלת המשחק");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b border-border bg-card sticky top-0 z-30">
