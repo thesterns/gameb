@@ -42,6 +42,64 @@ const ANSWER_COLORS = [
   "bg-[hsl(var(--answer-orange))]",
 ];
 
+interface LeaderboardEntry {
+  player_name: string;
+  total_score: number;
+  total_correct: number;
+  max_streak: number;
+}
+
+const StarBadge = ({ maxStreak, totalCorrect }: { maxStreak: number; totalCorrect: number }) => {
+  if (maxStreak >= 5 || totalCorrect >= 5) {
+    return <Star className="size-4 fill-[hsl(var(--answer-yellow))] text-[hsl(var(--answer-yellow))]" />;
+  }
+  if (maxStreak >= 3 || totalCorrect >= 3) {
+    return <Star className="size-4 fill-muted-foreground/50 text-muted-foreground" />;
+  }
+  return null;
+};
+
+/** Compute leaderboard with streak data from raw responses */
+function computeLeaderboard(
+  data: { participant_id: string; score: number; is_correct: boolean; question_id: string; game_participants: any }[],
+  questionsOrdered: { id: string }[],
+  excludeId?: string | null,
+): LeaderboardEntry[] {
+  const players: Record<string, {
+    player_name: string;
+    total_score: number;
+    total_correct: number;
+    responses: Map<string, boolean>; // question_id -> is_correct
+  }> = {};
+
+  for (const row of data) {
+    const pid = row.participant_id;
+    if (excludeId && pid === excludeId) continue;
+    const name = (row.game_participants as any)?.player_name || "?";
+    if (!players[pid]) players[pid] = { player_name: name, total_score: 0, total_correct: 0, responses: new Map() };
+    players[pid].total_score += row.score;
+    if (row.is_correct) players[pid].total_correct += 1;
+    players[pid].responses.set(row.question_id, row.is_correct);
+  }
+
+  // Compute max streak per player based on question order
+  const result: LeaderboardEntry[] = Object.values(players).map((p) => {
+    let maxStreak = 0;
+    let currentStreak = 0;
+    for (const q of questionsOrdered) {
+      if (p.responses.get(q.id)) {
+        currentStreak++;
+        maxStreak = Math.max(maxStreak, currentStreak);
+      } else if (p.responses.has(q.id)) {
+        currentStreak = 0;
+      }
+    }
+    return { player_name: p.player_name, total_score: p.total_score, total_correct: p.total_correct, max_streak: maxStreak };
+  });
+
+  return result.sort((a, b) => b.total_score - a.total_score);
+}
+
 const GamePlay = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
   const location = useLocation();
