@@ -7,6 +7,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { UserPlus, Mail, Lock, User } from "lucide-react";
+import SocialAuthButtons from "@/components/SocialAuthButtons";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -112,6 +113,8 @@ const Register = () => {
             <UserPlus className="!size-5" />
             {loading ? "נרשם..." : "הרשמה"}
           </Button>
+
+          <SocialAuthButtons />
 
           <p className="text-center text-sm text-muted-foreground">
             כבר יש לך חשבון?{" "}
