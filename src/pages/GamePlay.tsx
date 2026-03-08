@@ -688,7 +688,7 @@ const GamePlay = () => {
       <div className="px-4">
         <Progress
           value={totalTime > 0 ? (timeLeft / totalTime) * 100 : 0}
-          className="h-2 bg-primary-foreground/20"
+          className={`h-2 ${t.progressBg}`}
         />
       </div>
 
