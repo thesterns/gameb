@@ -289,6 +289,42 @@ const GameLobby = () => {
             התחל משחק
           </Button>
         </div>
+
+        {/* QR Code Modal */}
+        <AnimatePresence>
+          {showQR && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center px-4"
+              onClick={() => setShowQR(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="bg-card rounded-3xl p-8 shadow-elevated text-center max-w-sm w-full"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-heading font-bold text-lg">סרקו להצטרפות</h3>
+                  <Button variant="ghost" size="icon" onClick={() => setShowQR(false)}>
+                    <X className="!size-4" />
+                  </Button>
+                </div>
+                <div className="bg-white rounded-2xl p-6 inline-block mx-auto">
+                  <QRCodeSVG
+                    value={`${window.location.origin}/join/${joinCode}`}
+                    size={220}
+                    level="M"
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground mt-4">קוד: <span className="font-bold font-heading tracking-wider">{joinCode}</span></p>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </div>
   );
