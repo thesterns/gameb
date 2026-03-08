@@ -321,9 +321,17 @@ const CreateQuiz = () => {
         // Create new quiz
         const { data: quiz, error: quizErr } = await supabase
           .from("quizzes")
-          .insert({ title: title.trim(), description: description.trim() || null, user_id: user.id, mode, time_per_question: timePerQuestion })
+          .insert({ title: title.trim(), description: description.trim() || null, user_id: user.id, mode, time_per_question: timePerQuestion } as any)
           .select()
           .single();
+
+        if (quizErr || !quiz) throw quizErr;
+
+        // Upload quiz image if needed
+        if (quizImageFile) {
+          const quizImgUrl = await uploadQuestionImage(quizImageFile, quiz.id, 999);
+          await supabase.from("quizzes").update({ image_url: quizImgUrl } as any).eq("id", quiz.id);
+        }
 
         if (quizErr || !quiz) throw quizErr;
 
