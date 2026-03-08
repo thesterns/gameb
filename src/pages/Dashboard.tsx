@@ -272,16 +272,29 @@ const Dashboard = () => {
                       )}
                     </button>
                     <Button
-                      variant="outline"
+                      variant="hero"
                       size="sm"
                       className="mt-3 w-full"
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.stopPropagation();
-                        navigate(`/challenge/${challenge.id}/edit`);
+                        try {
+                          const { data: { user } } = await supabase.auth.getUser();
+                          if (!user) return;
+                          const joinCode = String(Math.floor(10000 + Math.random() * 90000));
+                          const { data: session, error } = await supabase
+                            .from("game_sessions")
+                            .insert({ challenge_id: challenge.id, host_user_id: user.id, join_code: joinCode } as any)
+                            .select()
+                            .single();
+                          if (error || !session) throw error;
+                          navigate(`/game/${session.id}/lobby`);
+                        } catch {
+                          toast.error("שגיאה בהפעלת המשחק");
+                        }
                       }}
                     >
-                      <Edit className="!size-4" />
-                      ערוך אתגר
+                      <Play className="!size-4" />
+                      התחל משחק
                     </Button>
                   </motion.div>
                 ))}
