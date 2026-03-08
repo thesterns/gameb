@@ -396,57 +396,32 @@ const GamePlay = () => {
 
       setSelectedAnswerId(answerId);
 
-      // King doesn't get scored
+      // Call server-side RPC to submit answer (score computed server-side)
+      const { data } = await supabase.rpc("submit_answer", {
+        p_session_id: sessionId,
+        p_participant_id: participantId,
+        p_question_id: questions[currentIndex].id,
+        p_answer_id: answerId,
+      });
+
       if (isCurrentPlayerKing) {
-        await supabase.from("game_responses").insert({
-          session_id: sessionId,
-          participant_id: participantId,
-          question_id: questions[currentIndex].id,
-          answer_id: answerId,
-          is_correct: false,
-          score: 0,
-        });
         return;
       }
 
-      // For king/tribe modes, correctness is determined by king's answer
-      // For genius mode, correctness is from the pre-set is_correct
-      let isCorrect = false;
       if (isKingOrTribeMode) {
-        // We don't know yet if correct - will be resolved when king answers
-        // For now, insert with is_correct=false, score=0 - will be evaluated at end
-        // Actually, since king might answer after this player, we store the answer_id
-        // and evaluate at timeUp
-        await supabase.from("game_responses").insert({
-          session_id: sessionId,
-          participant_id: participantId,
-          question_id: questions[currentIndex].id,
-          answer_id: answerId,
-          is_correct: false,
-          score: 0,
-        });
         setWaitingForKing(true);
       } else {
-        const answer = answers.find((a) => a.id === answerId);
-        isCorrect = answer?.is_correct || false;
-        const earnedScore = isCorrect ? 10 : 0;
-        if (isCorrect) setScore((prev) => prev + earnedScore);
-
-        await supabase.from("game_responses").insert({
-          session_id: sessionId,
-          participant_id: participantId,
-          question_id: questions[currentIndex].id,
-          answer_id: answerId,
-          is_correct: isCorrect,
-          score: earnedScore,
-        });
+        // For genius mode, server returns the computed result
+        const result = data as { is_correct: boolean; score: number } | null;
+        if (result?.is_correct) {
+          setScore((prev) => prev + result.score);
+        }
       }
     },
     [
       timeUp,
       selectedAnswerId,
       participantId,
-      answers,
       sessionId,
       questions,
       currentIndex,
@@ -463,37 +438,12 @@ const GamePlay = () => {
     const kingId = quizMode === "king" ? kingParticipantId : getCurrentKingId(questionIndex);
     if (!kingId) return;
 
-    // Find king's response to get the "correct" answer
-    const { data: kingResponse } = await supabase
-      .from("game_responses")
-      .select("answer_id")
-      .eq("session_id", sessionId)
-      .eq("question_id", questionId)
-      .eq("participant_id", kingId)
-      .single();
-
-    if (!kingResponse?.answer_id) return;
-
-    const correctAnswerId = kingResponse.answer_id;
-
-    // Get all non-king responses for this question
-    const { data: allResponses } = await supabase
-      .from("game_responses")
-      .select("id, participant_id, answer_id")
-      .eq("session_id", sessionId)
-      .eq("question_id", questionId)
-      .neq("participant_id", kingId);
-
-    if (!allResponses) return;
-
-    // Update each response
-    for (const resp of allResponses) {
-      const correct = resp.answer_id === correctAnswerId;
-      await supabase
-        .from("game_responses")
-        .update({ is_correct: correct, score: correct ? 10 : 0 })
-        .eq("id", resp.id);
-    }
+    // Call server-side RPC to resolve scores (host-only, validated server-side)
+    await supabase.rpc("resolve_king_scores", {
+      p_session_id: sessionId,
+      p_question_id: questionId,
+      p_king_participant_id: kingId,
+    });
   }, [isKingOrTribeMode, sessionId, questions, quizMode, kingParticipantId, getCurrentKingId]);
 
   // Track king answer locally for player feedback

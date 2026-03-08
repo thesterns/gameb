@@ -276,7 +276,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      resolve_king_scores: {
+        Args: {
+          p_king_participant_id: string
+          p_question_id: string
+          p_session_id: string
+        }
+        Returns: undefined
+      }
+      submit_answer: {
+        Args: {
+          p_answer_id: string
+          p_participant_id: string
+          p_question_id: string
+          p_session_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
