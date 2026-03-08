@@ -201,6 +201,10 @@ const GameLobby = () => {
               )}
             </button>
             <p className="text-xs text-muted-foreground">לחץ להעתקה</p>
+            <Button variant="outline" size="sm" className="mx-auto" onClick={handleShare}>
+              <Share2 className="!size-4" />
+              שתף קישור הצטרפות
+            </Button>
           </div>
 
           {/* King mode instruction */}
