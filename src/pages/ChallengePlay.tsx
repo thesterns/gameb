@@ -354,25 +354,34 @@ const ChallengePlay = () => {
             </div>
           )}
 
-          {/* Host: show all participants and their assignments */}
+          {/* Host: show participants with sentence status, no dimension values */}
           {isHost && (
             <div className="space-y-4">
               <h3 className="font-heading font-bold text-lg flex items-center gap-2">
                 <Users className="size-5" />
-                משתתפים ({participantsWithAssignments.length})
+                משתתפים ({sentences.length}/{participantsWithAssignments.length} שלחו)
               </h3>
               {participantsWithAssignments.map((p) => {
                 const pSentence = sentences.find((s) => s.participant_id === p.id);
                 return (
-                  <div key={p.id} className="border border-border rounded-2xl p-4 space-y-2">
+                  <motion.div
+                    key={p.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="border border-border rounded-2xl p-4 space-y-2"
+                  >
                     <div className="flex items-center justify-between">
                       <h4 className="font-heading font-bold text-foreground">{p.player_name}</h4>
-                      {pSentence && <CheckCircle className="size-4 text-accent" />}
+                      {pSentence ? (
+                        <CheckCircle className="size-4 text-accent" />
+                      ) : (
+                        <span className="text-xs text-muted-foreground">ממתין...</span>
+                      )}
                     </div>
-                    {p.assignments.length > 0 ? renderAssignments(p.assignments) : (
-                      <p className="text-sm text-muted-foreground">לא הוקצו ערכים</p>
+                    {pSentence && (
+                      <p className="text-sm text-muted-foreground">{pSentence.sentence}</p>
                     )}
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
