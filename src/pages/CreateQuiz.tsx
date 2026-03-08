@@ -333,8 +333,6 @@ const CreateQuiz = () => {
           await supabase.from("quizzes").update({ image_url: quizImgUrl } as any).eq("id", quiz.id);
         }
 
-        if (quizErr || !quiz) throw quizErr;
-
         for (let i = 0; i < questions.length; i++) {
           const q = questions[i];
           let imageUrl: string | null = null;
