@@ -249,6 +249,9 @@ const GamePlay = () => {
         console.log("[Leaderboard] Received hide_leaderboard broadcast");
         setShowLeaderboard(false);
       })
+      .on("broadcast", { event: "dismiss_intro" }, () => {
+        setShowIntroSlide(false);
+      })
       .subscribe((status) => {
         console.log("[Leaderboard] Channel subscription status:", status);
         if (status === "SUBSCRIBED") {
