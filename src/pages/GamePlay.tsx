@@ -16,6 +16,8 @@ interface Question {
   sort_order: number;
   image_url?: string;
   youtube_url?: string;
+  double_points?: boolean;
+  custom_time?: number;
 }
 
 interface Answer {
