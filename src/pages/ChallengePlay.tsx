@@ -421,10 +421,12 @@ const ChallengePlay = () => {
         <QuizLogo logoUrl={challenge.logo_url} logoText={challenge.logo_text} size="md" className="mb-4" />
 
         <div className="text-center mb-6">
-          <div className="flex items-center justify-center gap-2 text-primary-foreground/70 text-sm mb-2">
-            <Target className="size-4" />
-            <span>אתגר</span>
-          </div>
+          {!isHost && (
+            <div className="flex items-center justify-center gap-2 text-primary-foreground/70 text-sm mb-2">
+              <Target className="size-4" />
+              <span>אתגר</span>
+            </div>
+          )}
           <h1 className="text-3xl font-heading font-bold text-primary-foreground">
             {challenge.title}
           </h1>
