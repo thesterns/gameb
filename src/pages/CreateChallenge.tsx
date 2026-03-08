@@ -89,7 +89,7 @@ const CreateChallenge = () => {
         .single();
       if (error || !data) {
         toast.error("לא ניתן לטעון את האתגר");
-        navigate("/dashboard");
+        navigate("/my-challenges");
         return;
       }
       setTitle(data.title);
