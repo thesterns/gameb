@@ -52,6 +52,7 @@ const JoinGame = () => {
   const handleCodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (code.length !== 5) return;
+    setCodeError("");
 
     const { data: session, error } = await supabase
       .from("game_sessions")
@@ -60,12 +61,12 @@ const JoinGame = () => {
       .single();
 
     if (error || !session) {
-      toast.error("קוד משחק לא נמצא");
+      setCodeError("קוד משחק לא נמצא, נסו שוב");
       return;
     }
 
     if (session.status !== "lobby") {
-      toast.error("המשחק כבר התחיל");
+      setCodeError("המשחק כבר התחיל או הסתיים");
       return;
     }
 
