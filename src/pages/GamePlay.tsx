@@ -1081,6 +1081,86 @@ const GamePlay = () => {
         )}
       </div>
 
+      {/* Statistics overlay */}
+      <AnimatePresence>
+        {showStats && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className={`fixed inset-0 z-50 ${t.bg} flex items-center justify-center px-4`}
+            dir="rtl"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="w-full max-w-md"
+            >
+              <div className="text-center mb-4">
+                <BarChart3 className="size-12 text-primary mx-auto mb-2" />
+                <h2 className={`text-2xl font-heading font-bold ${t.text}`}>התפלגות תשובות</h2>
+                <p className={`${t.textSecondary} text-sm`}>שאלה {currentIndex + 1}: {questions[currentIndex]?.text}</p>
+              </div>
+
+              <div className="bg-card rounded-3xl p-6 shadow-elevated space-y-4">
+                {statsData.map((item, idx) => {
+                  const maxCount = Math.max(...statsData.map(s => s.count), 1);
+                  const pct = Math.round((item.count / participantCount) * 100) || 0;
+                  return (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.08 }}
+                      className="space-y-1"
+                    >
+                      <div className="flex justify-between text-sm">
+                        <span className="font-heading font-semibold text-foreground truncate max-w-[70%]">{item.text}</span>
+                        <span className="text-muted-foreground font-heading">{item.count} ({pct}%)</span>
+                      </div>
+                      <div className="h-6 bg-muted/30 rounded-full overflow-hidden">
+                        <motion.div
+                          className={`h-full rounded-full ${item.colorClass}`}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${maxCount > 0 ? (item.count / maxCount) * 100 : 0}%` }}
+                          transition={{ delay: idx * 0.08 + 0.2, duration: 0.5, ease: "easeOut" }}
+                        />
+                      </div>
+                    </motion.div>
+                  );
+                })}
+                {statsData.length === 0 && (
+                  <p className="text-center text-muted-foreground py-4">אין נתונים עדיין</p>
+                )}
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="mt-4 flex gap-3"
+              >
+                <Button variant="outline" size="lg" className="flex-1" onClick={() => {
+                  setShowStats(false);
+                  handleShowLeaderboard();
+                }}>
+                  <Trophy className="!size-4" />
+                  לוח נקודות
+                </Button>
+                <Button variant="hero" size="lg" className="flex-1" onClick={() => {
+                  setShowStats(false);
+                  handleNextQuestion();
+                }}>
+                  <ArrowLeft className="!size-4" />
+                  {currentIndex + 1 >= questions.length ? "סיים משחק" : "שאלה הבאה"}
+                </Button>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Leaderboard overlay */}
       <AnimatePresence>
         {showLeaderboard && (
