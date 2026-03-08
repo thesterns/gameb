@@ -78,6 +78,45 @@ export type Database = {
           },
         ]
       }
+      challenge_sentences: {
+        Row: {
+          created_at: string
+          id: string
+          participant_id: string
+          sentence: string
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          participant_id: string
+          sentence: string
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          participant_id?: string
+          sentence?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_sentences_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "game_participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_sentences_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       challenges: {
         Row: {
           created_at: string
