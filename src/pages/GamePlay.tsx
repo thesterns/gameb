@@ -499,6 +499,22 @@ const GamePlay = () => {
     }
   }, [timeUp, kingAnswerId, isKingOrTribeMode, isHost, selectedAnswerId, isCurrentPlayerKing]);
 
+  // Auto-advance: when enabled and timeUp, advance after 4 seconds
+  useEffect(() => {
+    if (!autoAdvance || !isHost || !timeUp || gameFinished || showIntroSlide || showLeaderboard) return;
+    
+    // Clear any existing timer
+    if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current);
+    
+    autoAdvanceTimerRef.current = setTimeout(() => {
+      handleNextQuestion();
+    }, 4000);
+
+    return () => {
+      if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current);
+    };
+  }, [autoAdvance, isHost, timeUp, gameFinished, showIntroSlide, showLeaderboard, currentIndex]);
+
   const handleShowLeaderboard = async () => {
     if (!isHost || !sessionId) return;
 
