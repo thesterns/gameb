@@ -24,6 +24,8 @@ const MyQuizzes = () => {
   const navigate = useNavigate();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [modeFilter, setModeFilter] = useState<string>("all");
 
   useEffect(() => {
     const fetchQuizzes = async () => {
