@@ -236,7 +236,7 @@ const GamePlay = () => {
       const q = questions[currentIndex];
       const { data } = await supabase
         .from("answers")
-        .select("id, text, is_correct, sort_order")
+        .select("id, text, sort_order")
         .eq("question_id", q.id)
         .order("sort_order");
 
@@ -247,6 +247,8 @@ const GamePlay = () => {
       setResponseCount(0);
       setKingAnswerId(null);
       setWaitingForKing(false);
+      setMyAnswerCorrect(null);
+      setRevealedCorrectAnswerId(null);
     };
 
     loadAnswers();
