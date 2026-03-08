@@ -469,6 +469,36 @@ const CreateQuiz = () => {
                 maxLength={500}
               />
 
+              {/* Image upload */}
+              {q.imagePreview ? (
+                <div className="relative rounded-xl overflow-hidden border border-border">
+                  <img src={q.imagePreview} alt="תמונת שאלה" className="w-full max-h-48 object-contain bg-muted/30" />
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 left-2 size-7 rounded-full"
+                    onClick={() => removeImage(q.id)}
+                  >
+                    <X className="!size-3.5" />
+                  </Button>
+                </div>
+              ) : (
+                <label className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors border border-dashed border-border rounded-xl p-3 justify-center">
+                  <ImagePlus className="size-4" />
+                  <span>הוסף תמונה (אופציונלי)</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleImageSelect(q.id, file);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              )}
+
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">
                   תשובות ({q.answers.length}/8) — סמן תשובות נכונות
