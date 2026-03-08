@@ -331,7 +331,7 @@ const CreateQuiz = () => {
         // Create new quiz
         const { data: quiz, error: quizErr } = await supabase
           .from("quizzes")
-          .insert({ title: title.trim(), description: description.trim() || null, user_id: user.id, mode, theme, time_per_question: timePerQuestion } as any)
+          .insert({ title: title.trim(), description: description.trim() || null, user_id: user.id, mode, theme, time_per_question: timePerQuestion, youtube_url: quizYoutubeUrl.trim() || null } as any)
           .select()
           .single();
 
