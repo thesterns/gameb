@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Gamepad2, LogOut, BookOpen, Crown, Brain, Users, Play, Target, Edit } from "lucide-react";
 import { toast } from "sonner";
+import ChallengeHistoryDialog from "@/components/ChallengeHistoryDialog";
 
 interface Quiz {
   id: string;
@@ -302,6 +303,7 @@ const Dashboard = () => {
                       <Play className="!size-4" />
                       התחל משחק
                     </Button>
+                    <ChallengeHistoryDialog challengeId={challenge.id} challengeTitle={challenge.title} />
                   </motion.div>
                 ))}
               </div>

@@ -117,6 +117,55 @@ export type Database = {
           },
         ]
       }
+      challenge_votes: {
+        Row: {
+          created_at: string
+          id: string
+          session_id: string
+          target_participant_id: string
+          vote_type: string
+          voter_participant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          session_id: string
+          target_participant_id: string
+          vote_type: string
+          voter_participant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          session_id?: string
+          target_participant_id?: string
+          vote_type?: string
+          voter_participant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_votes_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_votes_target_participant_id_fkey"
+            columns: ["target_participant_id"]
+            isOneToOne: false
+            referencedRelation: "game_participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_votes_voter_participant_id_fkey"
+            columns: ["voter_participant_id"]
+            isOneToOne: false
+            referencedRelation: "game_participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       challenges: {
         Row: {
           created_at: string
