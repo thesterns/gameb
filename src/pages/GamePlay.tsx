@@ -642,7 +642,7 @@ const GamePlay = () => {
       : answers.find((a) => a.is_correct);
 
   return (
-    <div className="min-h-screen gradient-hero flex flex-col" dir="rtl">
+    <div className={`min-h-screen ${t.bg} flex flex-col`} dir="rtl">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2 text-primary-foreground/80 text-sm">
