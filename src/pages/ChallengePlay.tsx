@@ -485,7 +485,7 @@ const ChallengePlay = () => {
               {myAssignments.length > 0 && (
                 <div className="space-y-3">
                   <h3 className="font-heading font-bold text-lg text-center">🎯 הערכים שלך</h3>
-                  {renderAssignments(myAssignments)}
+                  {renderAssignments(myAssignments, !submitted || editing)}
                 </div>
               )}
 
