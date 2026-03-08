@@ -1026,7 +1026,7 @@ const GamePlay = () => {
         )}
 
         {/* Host: leaderboard + next question buttons */}
-        {isHost && (timeUp || responseCount >= participantCount) && !showLeaderboard && (
+        {isHost && !showLeaderboard && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
             <Button variant="game" size="xl" onClick={handleShowLeaderboard}>
               <Trophy className="!size-5" />
