@@ -300,10 +300,16 @@ const CreateQuiz = () => {
           finalQuizImageUrl = await uploadQuestionImage(quizImageFile, quizId, 999);
         }
 
+        // Upload logo if needed
+        let finalLogoUrl = logoUrl || null;
+        if (logoFile) {
+          finalLogoUrl = await uploadQuestionImage(logoFile, quizId, 998);
+        }
+
         // Update existing quiz
         const { error: quizErr } = await supabase
           .from("quizzes")
-          .update({ title: title.trim(), description: description.trim() || null, mode, theme, time_per_question: timePerQuestion, image_url: finalQuizImageUrl, youtube_url: quizYoutubeUrl.trim() || null } as any)
+          .update({ title: title.trim(), description: description.trim() || null, mode, theme, time_per_question: timePerQuestion, image_url: finalQuizImageUrl, youtube_url: quizYoutubeUrl.trim() || null, logo_url: finalLogoUrl, logo_text: logoText.trim() || null } as any)
           .eq("id", quizId);
 
         if (quizErr) throw quizErr;
