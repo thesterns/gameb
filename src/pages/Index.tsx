@@ -49,6 +49,16 @@ const item = {
 const Index = () => {
   const navigate = useNavigate();
 
+  // Redirect authenticated users (e.g. after OAuth callback) to dashboard
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION")) {
+        navigate("/dashboard");
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
   return (
     <div className="min-h-screen bg-background overflow-hidden">
       {/* Navbar */}
