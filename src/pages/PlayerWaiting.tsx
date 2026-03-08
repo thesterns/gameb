@@ -46,13 +46,14 @@ const PlayerWaiting = () => {
 
       const { data: quiz } = await supabase
         .from("quizzes")
-        .select("title, description, image_url")
+        .select("title, description, image_url, youtube_url")
         .eq("id", session.quiz_id)
         .single();
 
       setQuizTitle(quiz?.title || "חידון");
       setQuizDescription(quiz?.description || "");
       setQuizImageUrl(quiz?.image_url || null);
+      setQuizYoutubeUrl(quiz?.youtube_url || null);
 
       const { data: existingParticipants } = await supabase
         .from("game_participants")
