@@ -491,7 +491,9 @@ const GamePlay = () => {
 
     const isCorrect = selectedAnswerId === kingAnswerId;
     if (isCorrect) {
-      setScore((prev) => prev + 10);
+      const currentQ = questions[currentIndex];
+      const pts = currentQ?.double_points ? 20 : 10;
+      setScore((prev) => prev + pts);
     }
   }, [timeUp, kingAnswerId, isKingOrTribeMode, isHost, selectedAnswerId, isCurrentPlayerKing]);
 
