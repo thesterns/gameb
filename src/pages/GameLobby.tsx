@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Users, Play, Copy, Check, Crown, Share2, QrCode, X } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
+import YouTubeEmbed from "@/components/YouTubeEmbed";
 
 interface Participant {
   id: string;
