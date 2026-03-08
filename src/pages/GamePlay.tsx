@@ -663,7 +663,7 @@ const GamePlay = () => {
           </div>
         )}
         {isHost && (
-          <div className="flex items-center gap-1 text-primary-foreground/80 text-sm">
+          <div className={`flex items-center gap-1 ${t.textSecondary} text-sm`}>
             <Users className="size-4" />
             <span>
               {responseCount}/{participantCount} ענו
