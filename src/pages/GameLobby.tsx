@@ -19,6 +19,8 @@ const GameLobby = () => {
   const navigate = useNavigate();
   const [quizTitle, setQuizTitle] = useState("");
   const [quizMode, setQuizMode] = useState("genius");
+  const [quizYoutubeUrl, setQuizYoutubeUrl] = useState<string | null>(null);
+  const [quizImageUrl, setQuizImageUrl] = useState<string | null>(null);
   const [joinCode, setJoinCode] = useState("");
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [kingParticipantId, setKingParticipantId] = useState<string | null>(null);
