@@ -35,6 +35,7 @@ const App = () => (
           <Route path="/join/:directLink" element={<JoinGame />} />
           <Route path="/game/:sessionId/lobby" element={<GameLobby />} />
           <Route path="/game/:sessionId/waiting" element={<PlayerWaiting />} />
+          <Route path="/game/:sessionId/play" element={<GamePlay />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

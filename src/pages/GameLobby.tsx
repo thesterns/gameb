@@ -109,7 +109,7 @@ const GameLobby = () => {
       return;
     }
 
-    navigate(`/game/${sessionId}/play`);
+    navigate(`/game/${sessionId}/play`, { state: { isHost: true } });
   };
 
   if (loading) {
