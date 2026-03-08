@@ -573,6 +573,18 @@ const GamePlay = () => {
     );
   }
 
+  // If no identity after refresh, redirect appropriately
+  if (!isHost && !playerName) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4" dir="rtl">
+        <p className="text-muted-foreground">הסשן פג תוקף. יש להצטרף מחדש.</p>
+        <Button variant="hero" onClick={() => navigate("/join")}>
+          חזרה להצטרפות
+        </Button>
+      </div>
+    );
+  }
+
   const t = themeClasses[quizTheme];
 
   if (gameFinished) {
