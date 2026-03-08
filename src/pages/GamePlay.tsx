@@ -105,6 +105,10 @@ const GamePlay = () => {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [midGameLeaderboard, setMidGameLeaderboard] = useState<{ player_name: string; total_score: number }[]>([]);
 
+  // Auto-advance state
+  const [autoAdvance, setAutoAdvance] = useState(false);
+  const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Determine current king for tribe mode
   const getCurrentKingId = useCallback(
     (index: number) => {
