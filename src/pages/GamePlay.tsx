@@ -233,15 +233,20 @@ const GamePlay = () => {
     const channel = supabase.channel(`leaderboard-${sessionId}`);
     channel
       .on("broadcast", { event: "show_leaderboard" }, (payload) => {
+        console.log("[Leaderboard] Received show_leaderboard broadcast", payload);
         setShowLeaderboard(true);
         setMidGameLeaderboard(payload.payload.leaderboard || []);
       })
       .on("broadcast", { event: "hide_leaderboard" }, () => {
+        console.log("[Leaderboard] Received hide_leaderboard broadcast");
         setShowLeaderboard(false);
       })
-      .subscribe();
-
-    leaderboardChannelRef.current = channel;
+      .subscribe((status) => {
+        console.log("[Leaderboard] Channel subscription status:", status);
+        if (status === "SUBSCRIBED") {
+          leaderboardChannelRef.current = channel;
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
