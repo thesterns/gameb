@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, Plus, Target, Edit, Trash2, Play } from "lucide-react";
+import { ArrowRight, Plus, Target, Edit, Trash2, Play, Copy } from "lucide-react";
 import ChallengeHistoryDialog from "@/components/ChallengeHistoryDialog";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -47,6 +47,38 @@ const MyChallenges = () => {
     if (error) { toast.error("שגיאה במחיקה"); return; }
     setChallenges((prev) => prev.filter((c) => c.id !== id));
     toast.success("האתגר נמחק");
+  };
+
+  const handleDuplicate = async (challenge: Challenge) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Duplicate the challenge
+      const { data: newChallenge, error } = await supabase
+        .from("challenges")
+        .insert({ title: `${challenge.title} (עותק)`, description: challenge.description, user_id: user.id })
+        .select()
+        .single();
+      if (error || !newChallenge) throw error;
+
+      // Duplicate dimension items
+      const { data: items } = await supabase
+        .from("challenge_dimension_items")
+        .select("dimension, value, sort_order")
+        .eq("challenge_id", challenge.id);
+
+      if (items && items.length > 0) {
+        await supabase.from("challenge_dimension_items").insert(
+          items.map((item) => ({ ...item, challenge_id: newChallenge.id }))
+        );
+      }
+
+      setChallenges((prev) => [{ id: newChallenge.id, title: newChallenge.title, description: newChallenge.description, created_at: newChallenge.created_at }, ...prev]);
+      toast.success("האתגר שוכפל בהצלחה");
+    } catch {
+      toast.error("שגיאה בשכפול האתגר");
+    }
   };
 
   const handleOpenStartDialog = (challenge: Challenge) => {
@@ -135,6 +167,9 @@ const MyChallenges = () => {
                   <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/challenge/${challenge.id}/edit`)}>
                     <Edit className="!size-4" />
                     ערוך
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleDuplicate(challenge)}>
+                    <Copy className="!size-4" />
                   </Button>
                   <Button variant="ghost" size="sm" onClick={() => handleDelete(challenge.id)} className="text-destructive hover:text-destructive">
                     <Trash2 className="!size-4" />
