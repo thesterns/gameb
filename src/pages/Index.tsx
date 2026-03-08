@@ -136,11 +136,11 @@ const Index = () => {
               <Button
                 variant="hero"
                 size="xl"
-                disabled={joinCode.length !== 5}
-                onClick={() => navigate(`/join/${joinCode}`)}
+                disabled={joinCode.length !== 5 || joiningGame}
+                onClick={handleJoinFromHome}
               >
                 <ArrowLeft className="!size-5" />
-                הצטרפו למשחק
+                {joiningGame ? "בודק..." : "הצטרפו למשחק"}
               </Button>
             </div>
           </motion.div>
