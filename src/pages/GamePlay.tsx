@@ -1056,6 +1056,9 @@ const GameFinished = ({
   quizMode,
   kingParticipantId,
   quizTheme,
+  quizYoutubeUrl,
+  quizImageUrl,
+  quizTitle,
 }: {
   sessionId: string;
   isHost: boolean;
@@ -1064,6 +1067,9 @@ const GameFinished = ({
   quizMode: string;
   kingParticipantId: string | null;
   quizTheme: GameTheme;
+  quizYoutubeUrl: string | null;
+  quizImageUrl: string | null;
+  quizTitle: string;
 }) => {
   const navigate = useNavigate();
   const t = themeClasses[quizTheme];
