@@ -16,6 +16,8 @@ const PlayerWaiting = () => {
   const navigate = useNavigate();
   const playerName = (location.state as { playerName?: string })?.playerName || "";
   const [quizTitle, setQuizTitle] = useState("");
+  const [quizDescription, setQuizDescription] = useState("");
+  const [quizImageUrl, setQuizImageUrl] = useState<string | null>(null);
   const [joinCode, setJoinCode] = useState("");
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
