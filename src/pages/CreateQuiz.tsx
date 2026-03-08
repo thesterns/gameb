@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowRight, Plus, Trash2, GripVertical, Check, Info, ImagePlus, X, Youtube } from "lucide-react";
+import { ArrowRight, Plus, Trash2, GripVertical, Check, Info, ImagePlus, X, Youtube, Zap, Clock } from "lucide-react";
 import YouTubeEmbed, { isValidYouTubeUrl } from "@/components/YouTubeEmbed";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -32,6 +32,8 @@ interface Question {
   imageFile?: File;
   imagePreview?: string;
   youtube_url?: string;
+  double_points: boolean;
+  custom_time?: number;
 }
 
 const generateId = () => crypto.randomUUID();
@@ -46,6 +48,7 @@ const createDefaultQuestion = (): Question => ({
   id: generateId(),
   text: "",
   answers: [createDefaultAnswer(), createDefaultAnswer()],
+  double_points: false,
 });
 
 const modeDescriptions: Record<string, { label: string; description: string }> = {
@@ -135,7 +138,7 @@ const CreateQuiz = () => {
 
       const { data: dbQuestions } = await supabase
         .from("questions")
-        .select("id, text, sort_order, image_url")
+        .select("id, text, sort_order, image_url, double_points, custom_time")
         .eq("quiz_id", quizId)
         .order("sort_order");
 
@@ -159,6 +162,8 @@ const CreateQuiz = () => {
             image_url: (q as any).image_url || undefined,
             imagePreview: (q as any).image_url || undefined,
             youtube_url: (q as any).youtube_url || undefined,
+            double_points: (q as any).double_points || false,
+            custom_time: (q as any).custom_time || undefined,
           });
         }
         setQuestions(loadedQuestions);
@@ -326,7 +331,7 @@ const CreateQuiz = () => {
           }
           const { data: dbQ, error: qErr } = await supabase
             .from("questions")
-            .insert({ quiz_id: quizId, text: q.text.trim(), sort_order: i, image_url: imageUrl, youtube_url: q.youtube_url?.trim() || null } as any)
+            .insert({ quiz_id: quizId, text: q.text.trim(), sort_order: i, image_url: imageUrl, youtube_url: q.youtube_url?.trim() || null, double_points: q.double_points, custom_time: q.custom_time || null } as any)
             .select()
             .single();
 
@@ -374,7 +379,7 @@ const CreateQuiz = () => {
           }
           const { data: dbQ, error: qErr } = await supabase
             .from("questions")
-            .insert({ quiz_id: quiz.id, text: q.text.trim(), sort_order: i, image_url: imageUrl, youtube_url: q.youtube_url?.trim() || null } as any)
+            .insert({ quiz_id: quiz.id, text: q.text.trim(), sort_order: i, image_url: imageUrl, youtube_url: q.youtube_url?.trim() || null, double_points: q.double_points, custom_time: q.custom_time || null } as any)
             .select()
             .single();
 
@@ -652,7 +657,47 @@ const CreateQuiz = () => {
                 maxLength={500}
               />
 
-              {/* Image upload */}
+              {/* Per-question settings: double points & custom time */}
+              <div className="flex flex-wrap items-center gap-4 rounded-xl bg-muted/30 p-3">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <Checkbox
+                    checked={q.double_points}
+                    onCheckedChange={(checked) =>
+                      setQuestions((prev) =>
+                        prev.map((qq) => qq.id === q.id ? { ...qq, double_points: !!checked } : qq)
+                      )
+                    }
+                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                  />
+                  <Zap className="size-4 text-primary" />
+                  <span className="text-sm font-medium">ניקוד כפול</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <Clock className="size-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-muted-foreground">זמן מענה:</span>
+                  <Input
+                    type="number"
+                    min={5}
+                    max={120}
+                    placeholder={`${timePerQuestion}`}
+                    value={q.custom_time ?? ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setQuestions((prev) =>
+                        prev.map((qq) =>
+                          qq.id === q.id
+                            ? { ...qq, custom_time: val ? Math.min(120, Math.max(5, Number(val) || 5)) : undefined }
+                            : qq
+                        )
+                      );
+                    }}
+                    className="w-20 h-8 text-sm"
+                  />
+                  <span className="text-xs text-muted-foreground">שניות</span>
+                </div>
+              </div>
+
+
               {q.imagePreview ? (
                 <div className="relative rounded-xl overflow-hidden border border-border">
                   <img src={q.imagePreview} alt="תמונת שאלה" className="w-full max-h-48 object-contain bg-muted/30" />

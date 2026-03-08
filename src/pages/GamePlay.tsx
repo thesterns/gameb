@@ -16,6 +16,8 @@ interface Question {
   sort_order: number;
   image_url?: string;
   youtube_url?: string;
+  double_points?: boolean;
+  custom_time?: number;
 }
 
 interface Answer {
@@ -179,7 +181,7 @@ const GamePlay = () => {
 
       const { data: qs } = await supabase
         .from("questions")
-        .select("id, text, sort_order, image_url, youtube_url")
+        .select("id, text, sort_order, image_url, youtube_url, double_points, custom_time")
         .eq("quiz_id", session.quiz_id)
         .order("sort_order");
 
@@ -243,7 +245,9 @@ const GamePlay = () => {
       setAnswers(data || []);
       setSelectedAnswerId(null);
       setTimeUp(false);
-      setTimeLeft(totalTime);
+      const currentQuestion = questions[currentIndex];
+      const questionTime = currentQuestion?.custom_time || totalTime;
+      setTimeLeft(questionTime);
       setResponseCount(0);
       setKingAnswerId(null);
       setWaitingForKing(false);
@@ -487,7 +491,9 @@ const GamePlay = () => {
 
     const isCorrect = selectedAnswerId === kingAnswerId;
     if (isCorrect) {
-      setScore((prev) => prev + 10);
+      const currentQ = questions[currentIndex];
+      const pts = currentQ?.double_points ? 20 : 10;
+      setScore((prev) => prev + pts);
     }
   }, [timeUp, kingAnswerId, isKingOrTribeMode, isHost, selectedAnswerId, isCurrentPlayerKing]);
 
@@ -851,10 +857,23 @@ const GamePlay = () => {
         </div>
       )}
 
+      {/* Double points indicator */}
+      {questions[currentIndex]?.double_points && (
+        <div className="px-4 flex justify-center">
+          <div className="bg-primary/20 text-primary rounded-full px-4 py-1 text-sm font-heading font-bold flex items-center gap-1.5 animate-pulse">
+            ⚡ ניקוד כפול!
+          </div>
+        </div>
+      )}
+
       {/* Timer bar */}
       <div className="px-4">
         <Progress
-          value={totalTime > 0 ? (timeLeft / totalTime) * 100 : 0}
+          value={(() => {
+            const currentQ = questions[currentIndex];
+            const qTime = currentQ?.custom_time || totalTime;
+            return qTime > 0 ? (timeLeft / qTime) * 100 : 0;
+          })()}
           className={`h-2 ${t.progressBg}`}
         />
       </div>

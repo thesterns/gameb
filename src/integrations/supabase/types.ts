@@ -188,6 +188,8 @@ export type Database = {
       questions: {
         Row: {
           created_at: string
+          custom_time: number | null
+          double_points: boolean
           id: string
           image_url: string | null
           quiz_id: string
@@ -197,6 +199,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          custom_time?: number | null
+          double_points?: boolean
           id?: string
           image_url?: string | null
           quiz_id: string
@@ -206,6 +210,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          custom_time?: number | null
+          double_points?: boolean
           id?: string
           image_url?: string | null
           quiz_id?: string
