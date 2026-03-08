@@ -189,6 +189,18 @@ const PlayerWaiting = () => {
             <Loader2 className="size-5 animate-spin" />
             <span className="text-sm font-medium">ממתין לתחילת המשחק...</span>
           </div>
+
+          {/* Back to home */}
+          <div className="text-center">
+            <Button
+              variant="ghost"
+              className="text-muted-foreground"
+              onClick={() => navigate("/")}
+            >
+              <Home className="size-4" />
+              חזרה לדף הבית
+            </Button>
+          </div>
         </div>
       </motion.div>
     </div>
