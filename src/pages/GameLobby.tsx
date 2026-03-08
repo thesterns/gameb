@@ -178,18 +178,21 @@ const GameLobby = () => {
             byDimension[item.dimension].push(item.value);
           }
 
-          // Assign one random value per dimension per participant
+          // Assign one random value per dimension per participant (each picks independently)
           const assignments: { session_id: string; participant_id: string; dimension: string; value: string }[] = [];
-          for (const p of participants) {
-            for (const [dimension, values] of Object.entries(byDimension)) {
-              const randomValue = values[Math.floor(Math.random() * values.length)];
+          for (const [dimension, values] of Object.entries(byDimension)) {
+            // Shuffle a copy for fair distribution
+            const shuffled = [...values].sort(() => Math.random() - 0.5);
+            participants.forEach((p, i) => {
+              // Cycle through shuffled values so adjacent players get different ones when possible
+              const randomValue = shuffled[i % shuffled.length];
               assignments.push({
                 session_id: sessionId!,
                 participant_id: p.id,
                 dimension,
                 value: randomValue,
               });
-            }
+            });
           }
 
           if (assignments.length > 0) {

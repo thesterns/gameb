@@ -285,14 +285,14 @@ const ChallengePlay = () => {
                 </div>
               )}
 
-              {myAssignments.length === 0 && (
+              {myAssignments.length === 0 && !myParticipantId && (
                 <div className="text-center py-4">
                   <p className="text-muted-foreground">לא הוקצו ערכים</p>
                 </div>
               )}
 
-              {/* Sentence input */}
-              {myAssignments.length > 0 && (
+              {/* Sentence input - always show for identified players */}
+              {myParticipantId && (
                 <div className="space-y-3">
                   <h3 className="font-heading font-bold text-sm text-muted-foreground text-center">
                     כתבו משפט שמשלב את כל הערכים שקיבלתם
