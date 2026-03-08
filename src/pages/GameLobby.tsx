@@ -23,6 +23,7 @@ const GameLobby = () => {
   const [kingParticipantId, setKingParticipantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [showQR, setShowQR] = useState(false);
 
   useEffect(() => {
     if (!sessionId) return;
