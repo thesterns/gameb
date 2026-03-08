@@ -619,7 +619,7 @@ const GamePlay = () => {
           )}
           {!isHost && (
             <motion.p
-              className="text-primary-foreground/60 font-heading font-semibold"
+              className={`${t.textSecondary} font-heading font-semibold`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6 }}
