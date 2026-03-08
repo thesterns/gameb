@@ -179,7 +179,7 @@ const GamePlay = () => {
 
   // Player leaderboard popup
   const [showPlayerLeaderboard, setShowPlayerLeaderboard] = useState(false);
-  const [playerLeaderboardData, setPlayerLeaderboardData] = useState<{ player_name: string; total_score: number }[]>([]);
+  const [playerLeaderboardData, setPlayerLeaderboardData] = useState<LeaderboardEntry[]>([]);
 
   // Statistics overlay
   const [showStats, setShowStats] = useState(false);
