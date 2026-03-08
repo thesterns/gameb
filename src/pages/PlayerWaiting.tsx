@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Loader2 } from "lucide-react";
+import { Users, Loader2, Home } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Participant {
   id: string;
@@ -188,6 +189,18 @@ const PlayerWaiting = () => {
           <div className="flex items-center justify-center gap-3 text-muted-foreground py-4">
             <Loader2 className="size-5 animate-spin" />
             <span className="text-sm font-medium">ממתין לתחילת המשחק...</span>
+          </div>
+
+          {/* Back to home */}
+          <div className="text-center">
+            <Button
+              variant="ghost"
+              className="text-muted-foreground"
+              onClick={() => navigate("/")}
+            >
+              <Home className="size-4" />
+              חזרה לדף הבית
+            </Button>
           </div>
         </div>
       </motion.div>
