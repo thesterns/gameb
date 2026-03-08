@@ -156,6 +156,7 @@ const GamePlay = () => {
       setQuizTitle(quiz?.title || "");
       setQuizDescription((quiz as any)?.description || "");
       setQuizImageUrl((quiz as any)?.image_url || null);
+      setQuizYoutubeUrl((quiz as any)?.youtube_url || null);
 
       const { data: qs } = await supabase
         .from("questions")
