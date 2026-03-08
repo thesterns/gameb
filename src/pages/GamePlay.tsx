@@ -433,51 +433,46 @@ const GamePlay = () => {
     ]
   );
 
-  // When time is up in king/tribe mode, update scores based on king's answer
-  useEffect(() => {
-    if (!timeUp || !isKingOrTribeMode || !isHost || !sessionId) return;
-    if (questions.length === 0 || currentIndex >= questions.length) return;
+  // Update scores for king/tribe mode - called before advancing questions
+  const updateKingTribeScores = useCallback(async (questionIndex: number) => {
+    if (!isKingOrTribeMode || !sessionId || !questions.length || questionIndex >= questions.length) return;
 
-    const questionId = questions[currentIndex].id;
+    const questionId = questions[questionIndex].id;
+    const kingId = quizMode === "king" ? kingParticipantId : getCurrentKingId(questionIndex);
+    if (!kingId) return;
 
-    const updateScores = async () => {
-      // Find king's response to get the "correct" answer
-      const { data: kingResponse } = await supabase
+    // Find king's response to get the "correct" answer
+    const { data: kingResponse } = await supabase
+      .from("game_responses")
+      .select("answer_id")
+      .eq("session_id", sessionId)
+      .eq("question_id", questionId)
+      .eq("participant_id", kingId)
+      .single();
+
+    if (!kingResponse?.answer_id) return;
+
+    const correctAnswerId = kingResponse.answer_id;
+
+    // Get all non-king responses for this question
+    const { data: allResponses } = await supabase
+      .from("game_responses")
+      .select("id, participant_id, answer_id")
+      .eq("session_id", sessionId)
+      .eq("question_id", questionId)
+      .neq("participant_id", kingId);
+
+    if (!allResponses) return;
+
+    // Update each response
+    for (const resp of allResponses) {
+      const correct = resp.answer_id === correctAnswerId;
+      await supabase
         .from("game_responses")
-        .select("answer_id")
-        .eq("session_id", sessionId)
-        .eq("question_id", questionId)
-        .eq("participant_id", currentKingId!)
-        .single();
-
-      if (!kingResponse?.answer_id) return;
-
-      const correctAnswerId = kingResponse.answer_id;
-
-      // Get all non-king responses for this question
-      const { data: allResponses } = await supabase
-        .from("game_responses")
-        .select("id, participant_id, answer_id")
-        .eq("session_id", sessionId)
-        .eq("question_id", questionId)
-        .neq("participant_id", currentKingId!);
-
-      if (!allResponses) return;
-
-      // Update each response
-      for (const resp of allResponses) {
-        const correct = resp.answer_id === correctAnswerId;
-        await supabase
-          .from("game_responses")
-          .update({ is_correct: correct, score: correct ? 10 : 0 })
-          .eq("id", resp.id);
-      }
-    };
-
-    if (currentKingId) {
-      updateScores();
+        .update({ is_correct: correct, score: correct ? 10 : 0 })
+        .eq("id", resp.id);
     }
-  }, [timeUp, isKingOrTribeMode, isHost, sessionId, questions, currentIndex, currentKingId]);
+  }, [isKingOrTribeMode, sessionId, questions, quizMode, kingParticipantId, getCurrentKingId]);
 
   // Track king answer locally for player feedback
   useEffect(() => {
