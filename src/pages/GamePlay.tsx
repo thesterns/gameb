@@ -1090,7 +1090,7 @@ const GamePlay = () => {
             }`}
           >
             {selectedAnswerId === kingAnswerId
-              ? "תשובה נכונה! +10 נקודות 🎉"
+              ? `תשובה נכונה! 🎉${correctStreak >= 3 ? ` 🔥 רצף של ${correctStreak}!` : ""}`
               : `תשובה שגויה. התשובה הנכונה: ${correctAnswerForDisplay?.text || "?"}`}
           </motion.p>
         )}
