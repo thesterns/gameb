@@ -135,7 +135,7 @@ const ChallengePlay = () => {
     )
   );
 
-
+  useEffect(() => {
     if (!sessionId) return;
 
     const load = async () => {
