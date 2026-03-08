@@ -7,6 +7,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { LogIn, Mail, Lock } from "lucide-react";
+import SocialAuthButtons from "@/components/SocialAuthButtons";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -83,7 +84,8 @@ const Login = () => {
             {loading ? "מתחבר..." : "התחברות"}
           </Button>
 
-          <p className="text-center text-sm text-muted-foreground">
+          <SocialAuthButtons />
+
             אין לך חשבון?{" "}
             <Link to="/register" className="text-primary font-semibold hover:underline">
               הרשמה
