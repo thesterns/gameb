@@ -1162,6 +1162,7 @@ const GameFinished = ({
         animate={{ opacity: 1, scale: 1 }}
       >
         <div className="text-center mb-6">
+          <QuizLogo logoUrl={quizLogoUrl} logoText={quizLogoText} size="lg" className="mb-3" />
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
