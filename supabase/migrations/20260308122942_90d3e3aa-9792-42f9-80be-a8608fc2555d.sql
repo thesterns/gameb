@@ -1,0 +1,1 @@
+ALTER TABLE public.quizzes ADD COLUMN time_per_question integer NOT NULL DEFAULT 30;

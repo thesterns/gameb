@@ -84,6 +84,7 @@ export type Database = {
           description: string | null
           id: string
           mode: string
+          time_per_question: number
           title: string
           updated_at: string
           user_id: string
@@ -93,6 +94,7 @@ export type Database = {
           description?: string | null
           id?: string
           mode?: string
+          time_per_question?: number
           title: string
           updated_at?: string
           user_id: string
@@ -102,6 +104,7 @@ export type Database = {
           description?: string | null
           id?: string
           mode?: string
+          time_per_question?: number
           title?: string
           updated_at?: string
           user_id?: string
