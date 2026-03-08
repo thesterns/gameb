@@ -59,7 +59,7 @@ const JoinGame = () => {
       return;
     }
 
-    navigate(`/game/${sessionId}/waiting`);
+    navigate(`/game/${sessionId}/waiting`, { state: { playerName: name.trim() } });
   };
 
   return (

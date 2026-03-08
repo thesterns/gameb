@@ -11,6 +11,7 @@ import JoinGame from "./pages/JoinGame";
 import CreateQuiz from "./pages/CreateQuiz";
 import MyQuizzes from "./pages/MyQuizzes";
 import GameLobby from "./pages/GameLobby";
+import PlayerWaiting from "./pages/PlayerWaiting";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
