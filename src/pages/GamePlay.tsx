@@ -245,7 +245,9 @@ const GamePlay = () => {
       setAnswers(data || []);
       setSelectedAnswerId(null);
       setTimeUp(false);
-      setTimeLeft(totalTime);
+      const currentQuestion = questions[currentIndex];
+      const questionTime = currentQuestion?.custom_time || totalTime;
+      setTimeLeft(questionTime);
       setResponseCount(0);
       setKingAnswerId(null);
       setWaitingForKing(false);
