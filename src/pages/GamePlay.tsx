@@ -448,27 +448,25 @@ const GamePlay = () => {
     setShowLeaderboard(true);
 
     // Broadcast to all players
-    const channel = supabase.channel(`leaderboard-${sessionId}`);
-    await channel.subscribe();
-    await channel.send({
-      type: "broadcast",
-      event: "show_leaderboard",
-      payload: { leaderboard: sorted },
-    });
-    supabase.removeChannel(channel);
+    if (leaderboardChannelRef.current) {
+      await leaderboardChannelRef.current.send({
+        type: "broadcast",
+        event: "show_leaderboard",
+        payload: { leaderboard: sorted },
+      });
+    }
   };
 
   const handleHideLeaderboard = async () => {
     setShowLeaderboard(false);
 
-    const channel = supabase.channel(`leaderboard-${sessionId}`);
-    await channel.subscribe();
-    await channel.send({
-      type: "broadcast",
-      event: "hide_leaderboard",
-      payload: {},
-    });
-    supabase.removeChannel(channel);
+    if (leaderboardChannelRef.current) {
+      await leaderboardChannelRef.current.send({
+        type: "broadcast",
+        event: "hide_leaderboard",
+        payload: {},
+      });
+    }
   };
 
   const handleNextQuestion = async () => {
