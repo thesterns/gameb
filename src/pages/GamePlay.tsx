@@ -567,7 +567,7 @@ const GamePlay = () => {
             />
           )}
           <motion.h1
-            className="text-4xl font-heading font-bold text-primary-foreground mb-3"
+            className={`text-4xl font-heading font-bold ${t.text} mb-3`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
