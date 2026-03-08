@@ -276,7 +276,33 @@ const GamePlay = () => {
     };
   }, [loading, currentIndex, questions, timeUp]);
 
-  // Listen for session changes (current_question_index, status)
+  // Host broadcasts correct answer when time expires (genius mode)
+  useEffect(() => {
+    if (!timeUp || !isHost || isKingOrTribeMode || !leaderboardChannelRef.current) return;
+    if (!questions.length || currentIndex >= questions.length) return;
+
+    const questionId = questions[currentIndex].id;
+    const broadcastCorrectAnswer = async () => {
+      const { data } = await supabase
+        .from("answers")
+        .select("id")
+        .eq("question_id", questionId)
+        .eq("is_correct", true)
+        .single();
+
+      if (data && leaderboardChannelRef.current) {
+        setRevealedCorrectAnswerId(data.id);
+        await leaderboardChannelRef.current.send({
+          type: "broadcast",
+          event: "reveal_correct_answer",
+          payload: { correct_answer_id: data.id },
+        });
+      }
+    };
+    broadcastCorrectAnswer();
+  }, [timeUp, isHost, isKingOrTribeMode, questions, currentIndex]);
+
+
   useEffect(() => {
     if (!sessionId) return;
 
