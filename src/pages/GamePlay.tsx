@@ -21,7 +21,6 @@ interface Question {
 interface Answer {
   id: string;
   text: string;
-  is_correct: boolean;
   sort_order: number;
 }
 
@@ -100,6 +99,8 @@ const GamePlay = () => {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [kingAnswerId, setKingAnswerId] = useState<string | null>(null);
   const [waitingForKing, setWaitingForKing] = useState(false);
+  const [myAnswerCorrect, setMyAnswerCorrect] = useState<boolean | null>(null);
+  const [revealedCorrectAnswerId, setRevealedCorrectAnswerId] = useState<string | null>(null);
 
   // Leaderboard state
   const [showLeaderboard, setShowLeaderboard] = useState(false);
@@ -235,7 +236,7 @@ const GamePlay = () => {
       const q = questions[currentIndex];
       const { data } = await supabase
         .from("answers")
-        .select("id, text, is_correct, sort_order")
+        .select("id, text, sort_order")
         .eq("question_id", q.id)
         .order("sort_order");
 
@@ -246,6 +247,8 @@ const GamePlay = () => {
       setResponseCount(0);
       setKingAnswerId(null);
       setWaitingForKing(false);
+      setMyAnswerCorrect(null);
+      setRevealedCorrectAnswerId(null);
     };
 
     loadAnswers();
@@ -273,7 +276,34 @@ const GamePlay = () => {
     };
   }, [loading, currentIndex, questions, timeUp]);
 
-  // Listen for session changes (current_question_index, status)
+  // Host broadcasts correct answer when time expires (genius mode)
+  useEffect(() => {
+    const isKingOrTribe = quizMode === "king" || quizMode === "tribe";
+    if (!timeUp || !isHost || isKingOrTribe || !leaderboardChannelRef.current) return;
+    if (!questions.length || currentIndex >= questions.length) return;
+
+    const questionId = questions[currentIndex].id;
+    const broadcastCorrectAnswer = async () => {
+      const { data } = await supabase
+        .from("answers")
+        .select("id")
+        .eq("question_id", questionId)
+        .eq("is_correct", true)
+        .single();
+
+      if (data && leaderboardChannelRef.current) {
+        setRevealedCorrectAnswerId(data.id);
+        await leaderboardChannelRef.current.send({
+          type: "broadcast",
+          event: "reveal_correct_answer",
+          payload: { correct_answer_id: data.id },
+        });
+      }
+    };
+    broadcastCorrectAnswer();
+  }, [timeUp, isHost, quizMode, questions, currentIndex]);
+
+
   useEffect(() => {
     if (!sessionId) return;
 
@@ -324,6 +354,9 @@ const GamePlay = () => {
       })
       .on("broadcast", { event: "dismiss_intro" }, () => {
         setShowIntroSlide(false);
+      })
+      .on("broadcast", { event: "reveal_correct_answer" }, (payload) => {
+        setRevealedCorrectAnswerId(payload.payload.correct_answer_id);
       })
       .subscribe((status) => {
         console.log("[Leaderboard] Channel subscription status:", status);
@@ -413,6 +446,7 @@ const GamePlay = () => {
       } else {
         // For genius mode, server returns the computed result
         const result = data as { is_correct: boolean; score: number } | null;
+        setMyAnswerCorrect(result?.is_correct ?? false);
         if (result?.is_correct) {
           setScore((prev) => prev + result.score);
         }
@@ -751,11 +785,13 @@ const GamePlay = () => {
   const currentQuestion = questions[currentIndex];
   if (!currentQuestion) return null;
 
-  // In genius mode, correct answer is pre-set. In king/tribe, it's the king's choice.
+  // In genius mode, correct answer is revealed via broadcast. In king/tribe, it's the king's choice.
   const correctAnswerForDisplay =
     isKingOrTribeMode && kingAnswerId
       ? answers.find((a) => a.id === kingAnswerId)
-      : answers.find((a) => a.is_correct);
+      : revealedCorrectAnswerId
+      ? answers.find((a) => a.id === revealedCorrectAnswerId)
+      : null;
 
   return (
     <div className={`min-h-screen ${t.bg} flex flex-col`} dir="rtl">
@@ -879,7 +915,7 @@ const GamePlay = () => {
             const isSelected = selectedAnswerId === answer.id;
             // King never sees correct/wrong feedback on their own answers
             const isKingViewing = isCurrentPlayerKing;
-            const showCorrectGenius = timeUp && !isKingOrTribeMode && answer.is_correct;
+            const showCorrectGenius = timeUp && !isKingOrTribeMode && revealedCorrectAnswerId === answer.id;
             // Players in king/tribe mode only see feedback AFTER king has chosen
             const showCorrectKing =
               timeUp && isKingOrTribeMode && !isKingViewing && kingAnswerId && answer.id === kingAnswerId;
@@ -956,12 +992,12 @@ const GamePlay = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className={`font-heading font-semibold ${
-              answers.find((a) => a.id === selectedAnswerId)?.is_correct
+              myAnswerCorrect
                 ? "text-[hsl(var(--accent))]"
                 : "text-destructive-foreground"
             }`}
           >
-            {answers.find((a) => a.id === selectedAnswerId)?.is_correct
+            {myAnswerCorrect
               ? "תשובה נכונה! +10 נקודות 🎉"
               : `תשובה שגויה. התשובה הנכונה: ${correctAnswerForDisplay?.text || "?"}`}
           </motion.p>
