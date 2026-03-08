@@ -46,6 +46,45 @@ export type Database = {
           },
         ]
       }
+      challenges: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          logo_text: string | null
+          logo_url: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          youtube_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          logo_text?: string | null
+          logo_url?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          youtube_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          logo_text?: string | null
+          logo_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          youtube_url?: string | null
+        }
+        Relationships: []
+      }
       game_participants: {
         Row: {
           id: string
