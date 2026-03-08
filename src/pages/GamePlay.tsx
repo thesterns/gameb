@@ -698,10 +698,10 @@ const GamePlay = () => {
         <motion.div
           className={`w-20 h-20 rounded-full flex items-center justify-center text-3xl font-heading font-bold ${
             timeUp
-              ? "bg-destructive/20 text-destructive"
+              ? t.timerDanger
               : timeLeft <= 5
-              ? "bg-destructive/20 text-destructive animate-pulse"
-              : "bg-primary-foreground/10 text-primary-foreground"
+              ? `${t.timerDanger} animate-pulse`
+              : `${t.timerBg} ${t.timerText}`
           }`}
           key={timeLeft}
           initial={{ scale: 1.1 }}
