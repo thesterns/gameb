@@ -11,6 +11,7 @@ import JoinGame from "./pages/JoinGame";
 import CreateQuiz from "./pages/CreateQuiz";
 import MyQuizzes from "./pages/MyQuizzes";
 import GameLobby from "./pages/GameLobby";
+import PlayerWaiting from "./pages/PlayerWaiting";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/join" element={<JoinGame />} />
           <Route path="/join/:directLink" element={<JoinGame />} />
           <Route path="/game/:sessionId/lobby" element={<GameLobby />} />
+          <Route path="/game/:sessionId/waiting" element={<PlayerWaiting />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
