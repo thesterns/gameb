@@ -621,6 +621,8 @@ const CreateQuiz = () => {
             </div>
           </div>
           </div>
+        </motion.div>
+
         {/* Shuffle buttons */}
         <div className="flex flex-wrap gap-2">
           <Button
