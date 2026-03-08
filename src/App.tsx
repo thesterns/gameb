@@ -16,6 +16,7 @@ import GameLobby from "./pages/GameLobby";
 import PlayerWaiting from "./pages/PlayerWaiting";
 import GamePlay from "./pages/GamePlay";
 import CreateChallenge from "./pages/CreateChallenge";
+import MyChallenges from "./pages/MyChallenges";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
