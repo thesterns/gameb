@@ -531,7 +531,7 @@ const ChallengePlay = () => {
                       </div>
                     </div>
                     {pSentence && (
-                      <p className="text-sm text-muted-foreground">{pSentence.sentence}</p>
+                      <p className="text-base font-medium text-foreground leading-relaxed">{pSentence.sentence}</p>
                     )}
                   </motion.div>
                 );

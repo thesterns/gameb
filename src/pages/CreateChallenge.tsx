@@ -282,7 +282,7 @@ const CreateChallenge = () => {
                     <Input
                       value={newItems[dim.key]}
                       onChange={(e) => setNewItems((prev) => ({ ...prev, [dim.key]: e.target.value }))}
-                      placeholder={`הוסיפו ${dim.label}...`}
+                      placeholder={`הוסיפו ${dim.label}... (ניתן להפריד בפסיקים)`}
                       className="text-right flex-1"
                       maxLength={200}
                       onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addDimensionItem(dim.key); } }}
