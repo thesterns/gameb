@@ -536,6 +536,7 @@ const GamePlay = () => {
         score={score}
         quizMode={quizMode}
         kingParticipantId={currentKingId}
+        quizTheme={quizTheme}
       />
     );
   }
