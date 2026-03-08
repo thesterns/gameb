@@ -466,7 +466,7 @@ const ChallengePlay = () => {
                               <span className="text-xs font-bold text-muted-foreground">{scores[s.participant_id]} נק׳</span>
                             )}
                           </div>
-                          <p className="text-sm text-muted-foreground">{s.sentence}</p>
+                          <p className="text-base font-medium text-foreground leading-relaxed">{s.sentence}</p>
                           <div className="flex gap-1.5">
                             {voteOptions.map((vt) => {
                               const meta = VOTE_META[vt];
