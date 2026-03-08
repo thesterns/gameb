@@ -110,9 +110,12 @@ const CreateChallenge = () => {
   };
 
   const addDimensionItem = (dim: DimensionKey) => {
-    const val = newItems[dim].trim();
-    if (!val) return;
-    setDimensions((prev) => ({ ...prev, [dim]: [...prev[dim], val] }));
+    const raw = newItems[dim].trim();
+    if (!raw) return;
+    // Support comma-separated values for bulk add
+    const values = raw.split(",").map((v) => v.trim()).filter(Boolean);
+    if (values.length === 0) return;
+    setDimensions((prev) => ({ ...prev, [dim]: [...prev[dim], ...values] }));
     setNewItems((prev) => ({ ...prev, [dim]: "" }));
   };
 
@@ -279,7 +282,7 @@ const CreateChallenge = () => {
                     <Input
                       value={newItems[dim.key]}
                       onChange={(e) => setNewItems((prev) => ({ ...prev, [dim.key]: e.target.value }))}
-                      placeholder={`הוסיפו ${dim.label}...`}
+                      placeholder={`הוסיפו ${dim.label}... (ניתן להפריד בפסיקים)`}
                       className="text-right flex-1"
                       maxLength={200}
                       onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addDimensionItem(dim.key); } }}
