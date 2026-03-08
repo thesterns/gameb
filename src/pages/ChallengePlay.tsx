@@ -73,6 +73,7 @@ const ChallengePlay = () => {
   const [sentences, setSentences] = useState<SentenceEntry[]>([]);
   const [votes, setVotes] = useState<Vote[]>([]);
   const [loading, setLoading] = useState(true);
+  const [enableVoting, setEnableVoting] = useState(true);
   const [editing, setEditing] = useState(false);
   const [editSentence, setEditSentence] = useState("");
 
