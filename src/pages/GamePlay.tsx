@@ -64,6 +64,10 @@ const GamePlay = () => {
   const [kingAnswerId, setKingAnswerId] = useState<string | null>(null);
   const [waitingForKing, setWaitingForKing] = useState(false);
 
+  // Leaderboard state
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [midGameLeaderboard, setMidGameLeaderboard] = useState<{ player_name: string; total_score: number }[]>([]);
+
   // Determine current king for tribe mode
   const getCurrentKingId = useCallback(
     (index: number) => {
