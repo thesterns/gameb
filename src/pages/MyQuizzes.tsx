@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Plus, Trash2, Pencil, Copy, Search, Play } from "lucide-react";
+import { ArrowRight, Plus, Trash2, Pencil, Copy, Search, Play, History } from "lucide-react";
+import GameHistoryDialog from "@/components/GameHistoryDialog";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import {
@@ -34,6 +35,7 @@ const MyQuizzes = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [modeFilter, setModeFilter] = useState<string>("all");
+  const [historyQuiz, setHistoryQuiz] = useState<{ id: string; title: string } | null>(null);
 
   const filteredQuizzes = useMemo(() => {
     return quizzes.filter((q) => {
@@ -256,6 +258,14 @@ const MyQuizzes = () => {
                 <Button
                   variant="ghost"
                   size="icon"
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={() => setHistoryQuiz({ id: quiz.id, title: quiz.title })}
+                >
+                  <History className="!size-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="text-destructive hover:text-destructive"
                   onClick={() => handleDelete(quiz.id)}
                 >
@@ -266,6 +276,14 @@ const MyQuizzes = () => {
           ))
         )}
       </main>
+      {historyQuiz && (
+        <GameHistoryDialog
+          quizId={historyQuiz.id}
+          quizTitle={historyQuiz.title}
+          open={!!historyQuiz}
+          onOpenChange={(open) => !open && setHistoryQuiz(null)}
+        />
+      )}
     </div>
   );
 };
