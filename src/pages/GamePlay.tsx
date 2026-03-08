@@ -651,7 +651,7 @@ const GamePlay = () => {
           </span>
         </div>
         {!isHost && !isCurrentPlayerKing && (
-          <div className="flex items-center gap-1 text-primary-foreground font-heading font-bold">
+          <div className={`flex items-center gap-1 ${t.text} font-heading font-bold`}>
             <Trophy className="size-4" />
             <span>{score}</span>
           </div>
