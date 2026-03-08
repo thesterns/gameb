@@ -64,6 +64,10 @@ const GamePlay = () => {
   const [kingAnswerId, setKingAnswerId] = useState<string | null>(null);
   const [waitingForKing, setWaitingForKing] = useState(false);
 
+  // Leaderboard state
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [midGameLeaderboard, setMidGameLeaderboard] = useState<{ player_name: string; total_score: number }[]>([]);
+
   // Determine current king for tribe mode
   const getCurrentKingId = useCallback(
     (index: number) => {
@@ -213,6 +217,26 @@ const GamePlay = () => {
           }
         }
       )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [sessionId]);
+
+  // Listen for leaderboard broadcast
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const channel = supabase.channel(`leaderboard-${sessionId}`);
+    channel
+      .on("broadcast", { event: "show_leaderboard" }, (payload) => {
+        setShowLeaderboard(true);
+        setMidGameLeaderboard(payload.payload.leaderboard || []);
+      })
+      .on("broadcast", { event: "hide_leaderboard" }, () => {
+        setShowLeaderboard(false);
+      })
       .subscribe();
 
     return () => {
@@ -394,8 +418,61 @@ const GamePlay = () => {
     }
   }, [timeUp, kingAnswerId, isKingOrTribeMode, isHost, selectedAnswerId, isCurrentPlayerKing]);
 
+  const handleShowLeaderboard = async () => {
+    if (!isHost || !sessionId) return;
+
+    // Load current scores
+    const { data } = await supabase
+      .from("game_responses")
+      .select("participant_id, score, game_participants!inner(player_name)")
+      .eq("session_id", sessionId);
+
+    if (!data) return;
+
+    const scores: Record<string, { player_name: string; total_score: number }> = {};
+    for (const row of data) {
+      const pid = row.participant_id;
+      if (quizMode === "king" && pid === currentKingId) continue;
+      const name = (row.game_participants as any)?.player_name || "?";
+      if (!scores[pid]) scores[pid] = { player_name: name, total_score: 0 };
+      scores[pid].total_score += row.score;
+    }
+
+    const sorted = Object.values(scores).sort((a, b) => b.total_score - a.total_score);
+    setMidGameLeaderboard(sorted);
+    setShowLeaderboard(true);
+
+    // Broadcast to all players
+    const channel = supabase.channel(`leaderboard-${sessionId}`);
+    await channel.subscribe();
+    await channel.send({
+      type: "broadcast",
+      event: "show_leaderboard",
+      payload: { leaderboard: sorted },
+    });
+    supabase.removeChannel(channel);
+  };
+
+  const handleHideLeaderboard = async () => {
+    setShowLeaderboard(false);
+
+    const channel = supabase.channel(`leaderboard-${sessionId}`);
+    await channel.subscribe();
+    await channel.send({
+      type: "broadcast",
+      event: "hide_leaderboard",
+      payload: {},
+    });
+    supabase.removeChannel(channel);
+  };
+
   const handleNextQuestion = async () => {
     if (!isHost || !sessionId) return;
+
+    // Hide leaderboard first if shown
+    if (showLeaderboard) {
+      await handleHideLeaderboard();
+    }
 
     const nextIndex = currentIndex + 1;
 
@@ -642,9 +719,13 @@ const GamePlay = () => {
           </motion.p>
         )}
 
-        {/* Host: next question button */}
-        {isHost && (timeUp || responseCount >= participantCount) && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        {/* Host: leaderboard + next question buttons */}
+        {isHost && (timeUp || responseCount >= participantCount) && !showLeaderboard && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
+            <Button variant="game" size="xl" onClick={handleShowLeaderboard}>
+              <Trophy className="!size-5" />
+              לוח נקודות
+            </Button>
             <Button variant="hero" size="xl" onClick={handleNextQuestion}>
               <ArrowLeft className="!size-5" />
               {currentIndex + 1 >= questions.length ? "סיים משחק" : "שאלה הבאה"}
@@ -652,6 +733,82 @@ const GamePlay = () => {
           </motion.div>
         )}
       </div>
+
+      {/* Leaderboard overlay */}
+      <AnimatePresence>
+        {showLeaderboard && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 gradient-hero flex items-center justify-center px-4"
+            dir="rtl"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="w-full max-w-md"
+            >
+              <div className="text-center mb-4">
+                <Trophy className="size-12 text-[hsl(var(--answer-yellow))] mx-auto mb-2" />
+                <h2 className="text-2xl font-heading font-bold text-primary-foreground">לוח נקודות</h2>
+                <p className="text-primary-foreground/60 text-sm">אחרי שאלה {currentIndex + 1} מתוך {questions.length}</p>
+              </div>
+
+              <div className="bg-card rounded-3xl p-6 shadow-elevated space-y-3 max-h-[60vh] overflow-y-auto">
+                {midGameLeaderboard.map((entry, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className={`flex items-center justify-between p-3 rounded-xl ${
+                      idx === 0
+                        ? "bg-[hsl(var(--answer-yellow))]/10 ring-1 ring-[hsl(var(--answer-yellow))]/30"
+                        : idx === 1
+                        ? "bg-muted/40"
+                        : idx === 2
+                        ? "bg-[hsl(var(--answer-orange))]/10"
+                        : "bg-muted/20"
+                    } ${entry.player_name === playerName ? "ring-2 ring-primary" : ""}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg font-heading font-bold text-muted-foreground w-6">
+                        {idx < 3 ? ["🥇", "🥈", "🥉"][idx] : idx + 1}
+                      </span>
+                      <span className="font-heading font-semibold text-foreground">
+                        {entry.player_name}
+                      </span>
+                    </div>
+                    <span className="font-heading font-bold text-foreground">{entry.total_score} נק׳</span>
+                  </motion.div>
+                ))}
+                {midGameLeaderboard.length === 0 && (
+                  <p className="text-center text-muted-foreground py-4">אין נתונים עדיין</p>
+                )}
+              </div>
+
+              {isHost && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="mt-4"
+                >
+                  <Button variant="hero" size="xl" className="w-full" onClick={async () => {
+                    await handleHideLeaderboard();
+                    handleNextQuestion();
+                  }}>
+                    <ArrowLeft className="!size-5" />
+                    {currentIndex + 1 >= questions.length ? "סיים משחק" : "שאלה הבאה"}
+                  </Button>
+                </motion.div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
