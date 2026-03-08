@@ -208,6 +208,16 @@ const ChallengePlay = () => {
           });
         }
       )
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "challenge_sentences", filter: `session_id=eq.${sessionId}` },
+        (payload) => {
+          const updated = payload.new as { participant_id: string; sentence: string };
+          setSentences((prev) =>
+            prev.map((s) =>
+              s.participant_id === updated.participant_id ? { ...s, sentence: updated.sentence } : s
+            )
+          );
+        }
+      )
       .subscribe();
 
     // Realtime for votes
