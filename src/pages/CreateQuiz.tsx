@@ -515,6 +515,53 @@ const CreateQuiz = () => {
                 <p className="text-xs text-destructive">קישור יוטיוב לא תקין</p>
               )}
             </div>
+            {/* Logo */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground">לוגו למשחק (לא חובה)</label>
+              <p className="text-xs text-muted-foreground">יוצג בכל השאלות, בשקופית הפתיחה ובתוצאות</p>
+              <div className="flex items-start gap-4">
+                {logoPreview ? (
+                  <div className="relative shrink-0">
+                    <img src={logoPreview} alt="לוגו" className="w-16 h-16 object-contain rounded-xl border border-border bg-muted/30" />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -left-2 size-5 rounded-full"
+                      onClick={() => { setLogoFile(null); setLogoPreview(undefined); setLogoUrl(undefined); }}
+                    >
+                      <X className="!size-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <label className="flex items-center justify-center cursor-pointer border border-dashed border-border rounded-xl w-16 h-16 hover:border-foreground/30 transition-colors shrink-0">
+                    <ImagePlus className="size-5 text-muted-foreground" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          if (!file.type.startsWith("image/")) { toast.error("יש לבחור קובץ תמונה בלבד"); return; }
+                          if (file.size > 5 * 1024 * 1024) { toast.error("גודל התמונה מוגבל ל-5MB"); return; }
+                          setLogoFile(file);
+                          setLogoPreview(URL.createObjectURL(file));
+                        }
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                )}
+                <div className="flex-1">
+                  <Input
+                    placeholder="טקסט כותרת (יוצג ליד הלוגו)"
+                    value={logoText}
+                    onChange={(e) => setLogoText(e.target.value)}
+                    maxLength={100}
+                  />
+                </div>
+              </div>
+            </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">סוג משחק *</label>
               <Select value={mode} onValueChange={setMode} dir="rtl">
