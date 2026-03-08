@@ -172,10 +172,10 @@ const Index = () => {
           viewport={{ once: true }}
         >
           <h3 className="text-3xl md:text-4xl font-heading font-bold mb-4">
-            למה QuizMaster?
+            למה לך תדע?
           </h3>
           <p className="text-muted-foreground text-lg">
-            הכלי המושלם ליצירת חידונים אינטראקטיביים
+            הכלי המושלם ליצירת משחקים אינטראקטיביים
           </p>
         </motion.div>
 
