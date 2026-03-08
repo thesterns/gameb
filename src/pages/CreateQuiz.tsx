@@ -621,7 +621,47 @@ const CreateQuiz = () => {
             </div>
           </div>
           </div>
-        </motion.div>
+        {/* Shuffle buttons */}
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setQuestions((prev) => {
+                const shuffled = [...prev];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                  const j = Math.floor(Math.random() * (i + 1));
+                  [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                return shuffled;
+              });
+              toast.success("סדר השאלות עורבב!");
+            }}
+          >
+            <Shuffle className="!size-4" />
+            ערבב סדר שאלות
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setQuestions((prev) =>
+                prev.map((q) => {
+                  const shuffled = [...q.answers];
+                  for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                  }
+                  return { ...q, answers: shuffled };
+                })
+              );
+              toast.success("סדר התשובות עורבב!");
+            }}
+          >
+            <Shuffle className="!size-4" />
+            ערבב סדר תשובות
+          </Button>
+        </div>
 
         <AnimatePresence mode="popLayout">
           {questions.map((q, qIndex) => (
