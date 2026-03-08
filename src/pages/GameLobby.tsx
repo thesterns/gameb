@@ -7,6 +7,7 @@ import { ArrowRight, Users, Play, Copy, Check, Crown, Share2, QrCode, X } from "
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
+import QuizLogo from "@/components/QuizLogo";
 
 interface Participant {
   id: string;
