@@ -86,6 +86,7 @@ const Login = () => {
 
           <SocialAuthButtons />
 
+          <p className="text-center text-sm text-muted-foreground">
             אין לך חשבון?{" "}
             <Link to="/register" className="text-primary font-semibold hover:underline">
               הרשמה

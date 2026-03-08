@@ -114,6 +114,8 @@ const Register = () => {
             {loading ? "נרשם..." : "הרשמה"}
           </Button>
 
+          <SocialAuthButtons />
+
           <p className="text-center text-sm text-muted-foreground">
             כבר יש לך חשבון?{" "}
             <Link to="/login" className="text-primary font-semibold hover:underline">
