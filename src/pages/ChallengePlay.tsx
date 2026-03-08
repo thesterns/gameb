@@ -3,9 +3,11 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Target, Users, Clock, MapPin, User, Package, Sparkles } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowRight, Target, Users, Clock, MapPin, User, Package, Sparkles, Send, CheckCircle } from "lucide-react";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
 import QuizLogo from "@/components/QuizLogo";
+import { toast } from "sonner";
 
 const DIMENSION_META: Record<string, { label: string; icon: typeof Clock; color: string }> = {
   time: { label: "זמן", icon: Clock, color: "text-[hsl(var(--answer-blue))]" },
@@ -18,6 +20,12 @@ const DIMENSION_META: Record<string, { label: string; icon: typeof Clock; color:
 interface Assignment {
   dimension: string;
   value: string;
+}
+
+interface SentenceEntry {
+  participant_id: string;
+  player_name: string;
+  sentence: string;
 }
 
 interface ParticipantWithAssignments {
@@ -44,6 +52,10 @@ const ChallengePlay = () => {
   const [participantsWithAssignments, setParticipantsWithAssignments] = useState<ParticipantWithAssignments[]>([]);
   const [myAssignments, setMyAssignments] = useState<Assignment[]>([]);
   const [myParticipantId, setMyParticipantId] = useState<string | null>(null);
+  const [sentence, setSentence] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [sentences, setSentences] = useState<SentenceEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -93,7 +105,7 @@ const ChallengePlay = () => {
 
       setParticipantsWithAssignments(pwa);
 
-      // Find current player's assignments (by name match for non-host)
+      // Find current player
       if (!isHost && playerName) {
         const myP = pwa.find((p) => p.player_name === playerName);
         if (myP) {
@@ -102,11 +114,94 @@ const ChallengePlay = () => {
         }
       }
 
+      // Load existing sentences
+      const { data: existingSentences } = await supabase
+        .from("challenge_sentences")
+        .select("participant_id, sentence")
+        .eq("session_id", sessionId);
+
+      if (existingSentences) {
+        const nameMap: Record<string, string> = {};
+        for (const p of parts || []) nameMap[p.id] = p.player_name;
+
+        const entries: SentenceEntry[] = existingSentences.map((s) => ({
+          participant_id: s.participant_id,
+          player_name: nameMap[s.participant_id] || "",
+          sentence: s.sentence,
+        }));
+        setSentences(entries);
+
+        // Check if current player already submitted
+        if (!isHost && playerName) {
+          const myP = pwa.find((p) => p.player_name === playerName);
+          if (myP && existingSentences.some((s) => s.participant_id === myP.id)) {
+            setSubmitted(true);
+            const mySentence = existingSentences.find((s) => s.participant_id === myP.id);
+            if (mySentence) setSentence(mySentence.sentence);
+          }
+        }
+      }
+
       setLoading(false);
     };
 
     load();
+
+    // Realtime subscription for new sentences
+    const channel = supabase
+      .channel(`challenge-sentences-${sessionId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "challenge_sentences",
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          const newS = payload.new as { participant_id: string; sentence: string };
+          setParticipantsWithAssignments((prev) => {
+            const player = prev.find((p) => p.id === newS.participant_id);
+            if (!player) return prev;
+            setSentences((prevSentences) => {
+              if (prevSentences.some((s) => s.participant_id === newS.participant_id)) return prevSentences;
+              return [...prevSentences, {
+                participant_id: newS.participant_id,
+                player_name: player.player_name,
+                sentence: newS.sentence,
+              }];
+            });
+            return prev;
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [sessionId, navigate, isHost, playerName]);
+
+  const handleSubmitSentence = async () => {
+    if (!sentence.trim() || !myParticipantId || !sessionId) return;
+    setSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from("challenge_sentences")
+        .insert({
+          session_id: sessionId,
+          participant_id: myParticipantId,
+          sentence: sentence.trim(),
+        });
+      if (error) throw error;
+      setSubmitted(true);
+      toast.success("המשפט נשלח!");
+    } catch {
+      toast.error("שגיאה בשליחה");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (loading || !challenge) {
     return (
@@ -145,6 +240,13 @@ const ChallengePlay = () => {
     );
   };
 
+  // Sentences visible to a player: only after they submitted
+  const visibleSentences = isHost
+    ? sentences
+    : submitted
+      ? sentences
+      : [];
+
   return (
     <div className="min-h-screen gradient-hero flex items-center justify-center px-4 py-8">
       <motion.div
@@ -173,35 +275,106 @@ const ChallengePlay = () => {
             <img src={challenge.image_url} alt={challenge.title} className="w-full max-h-64 object-contain rounded-2xl" />
           )}
 
-          {/* Player view: show their own assignments */}
-          {!isHost && myAssignments.length > 0 && (
+          {/* Player view: assignments + sentence input */}
+          {!isHost && (
+            <>
+              {myAssignments.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-heading font-bold text-lg text-center">🎯 הערכים שלך</h3>
+                  {renderAssignments(myAssignments)}
+                </div>
+              )}
+
+              {myAssignments.length === 0 && (
+                <div className="text-center py-4">
+                  <p className="text-muted-foreground">לא הוקצו ערכים</p>
+                </div>
+              )}
+
+              {/* Sentence input */}
+              {myAssignments.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-heading font-bold text-sm text-muted-foreground text-center">
+                    כתבו משפט שמשלב את כל הערכים שקיבלתם
+                  </h3>
+                  {submitted ? (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="bg-accent/10 border border-accent/30 rounded-xl p-4 text-center space-y-2"
+                    >
+                      <CheckCircle className="size-6 text-accent mx-auto" />
+                      <p className="font-heading font-bold text-foreground">המשפט נשלח!</p>
+                      <p className="text-sm text-muted-foreground italic">"{sentence}"</p>
+                    </motion.div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Textarea
+                        value={sentence}
+                        onChange={(e) => setSentence(e.target.value)}
+                        placeholder="כתבו את המשפט שלכם כאן..."
+                        className="text-right min-h-[100px]"
+                        maxLength={500}
+                      />
+                      <Button
+                        variant="hero"
+                        className="w-full"
+                        onClick={handleSubmitSentence}
+                        disabled={!sentence.trim() || submitting}
+                      >
+                        <Send className="!size-4" />
+                        {submitting ? "שולח..." : "שלח משפט"}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Sentences display */}
+          {visibleSentences.length > 0 && (
             <div className="space-y-3">
-              <h3 className="font-heading font-bold text-lg text-center">🎯 הערכים שלך</h3>
-              {renderAssignments(myAssignments)}
+              <h3 className="font-heading font-bold text-lg flex items-center gap-2">
+                📝 משפטים ({visibleSentences.length}/{participantsWithAssignments.length})
+              </h3>
+              <AnimatePresence>
+                {visibleSentences.map((s) => (
+                  <motion.div
+                    key={s.participant_id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-muted/30 rounded-xl p-4 space-y-1"
+                  >
+                    <p className="font-heading font-bold text-sm text-foreground">{s.player_name}</p>
+                    <p className="text-sm text-muted-foreground">{s.sentence}</p>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           )}
 
-          {!isHost && myAssignments.length === 0 && (
-            <div className="text-center py-4">
-              <p className="text-muted-foreground">לא הוקצו ערכים</p>
-            </div>
-          )}
-
-          {/* Host view: show all participants and their assignments */}
+          {/* Host: show all participants and their assignments */}
           {isHost && (
             <div className="space-y-4">
               <h3 className="font-heading font-bold text-lg flex items-center gap-2">
                 <Users className="size-5" />
                 משתתפים ({participantsWithAssignments.length})
               </h3>
-              {participantsWithAssignments.map((p) => (
-                <div key={p.id} className="border border-border rounded-2xl p-4 space-y-2">
-                  <h4 className="font-heading font-bold text-foreground">{p.player_name}</h4>
-                  {p.assignments.length > 0 ? renderAssignments(p.assignments) : (
-                    <p className="text-sm text-muted-foreground">לא הוקצו ערכים</p>
-                  )}
-                </div>
-              ))}
+              {participantsWithAssignments.map((p) => {
+                const pSentence = sentences.find((s) => s.participant_id === p.id);
+                return (
+                  <div key={p.id} className="border border-border rounded-2xl p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-heading font-bold text-foreground">{p.player_name}</h4>
+                      {pSentence && <CheckCircle className="size-4 text-accent" />}
+                    </div>
+                    {p.assignments.length > 0 ? renderAssignments(p.assignments) : (
+                      <p className="text-sm text-muted-foreground">לא הוקצו ערכים</p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
