@@ -2,12 +2,32 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowRight, ImagePlus, X, Youtube, Save } from "lucide-react";
+import { ArrowRight, ImagePlus, X, Youtube, Save, Plus, Trash2, Clock, MapPin, User, Package, Sparkles } from "lucide-react";
 import YouTubeEmbed, { isValidYouTubeUrl } from "@/components/YouTubeEmbed";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+const DIMENSIONS = [
+  { key: "time", label: "זמן", icon: Clock, color: "text-[hsl(var(--answer-blue))]", border: "border-[hsl(var(--answer-blue))]" },
+  { key: "place", label: "מקום", icon: MapPin, color: "text-[hsl(var(--answer-green))]", border: "border-[hsl(var(--answer-green))]" },
+  { key: "person", label: "אדם", icon: User, color: "text-[hsl(var(--answer-red))]", border: "border-[hsl(var(--answer-red))]" },
+  { key: "object", label: "חפץ", icon: Package, color: "text-[hsl(var(--answer-yellow))]", border: "border-[hsl(var(--answer-yellow))]" },
+  { key: "extra", label: "נוסף", icon: Sparkles, color: "text-[hsl(var(--answer-purple))]", border: "border-[hsl(var(--answer-purple))]" },
+] as const;
+
+type DimensionKey = typeof DIMENSIONS[number]["key"];
+
+type DimensionsState = Record<DimensionKey, string[]>;
+
+const emptyDimensions = (): DimensionsState => ({
+  time: [],
+  place: [],
+  person: [],
+  object: [],
+  extra: [],
+});
 
 const CreateChallenge = () => {
   const navigate = useNavigate();
@@ -24,6 +44,8 @@ const CreateChallenge = () => {
   const [logoPreview, setLogoPreview] = useState<string | undefined>();
   const [logoUrl, setLogoUrl] = useState<string | undefined>();
   const [logoText, setLogoText] = useState("");
+  const [dimensions, setDimensions] = useState<DimensionsState>(emptyDimensions());
+  const [newItems, setNewItems] = useState<Record<DimensionKey, string>>({ time: "", place: "", person: "", object: "", extra: "" });
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(isEdit);
 
@@ -46,6 +68,25 @@ const CreateChallenge = () => {
       if (data.youtube_url) setYoutubeUrl(data.youtube_url);
       if (data.logo_url) { setLogoUrl(data.logo_url); setLogoPreview(data.logo_url); }
       if (data.logo_text) setLogoText(data.logo_text);
+
+      // Load dimension items
+      const { data: items } = await supabase
+        .from("challenge_dimension_items")
+        .select("dimension, value, sort_order")
+        .eq("challenge_id", challengeId)
+        .order("sort_order");
+
+      if (items?.length) {
+        const dims = emptyDimensions();
+        for (const item of items) {
+          const key = item.dimension as DimensionKey;
+          if (key in dims) {
+            dims[key].push(item.value);
+          }
+        }
+        setDimensions(dims);
+      }
+
       setLoading(false);
     };
     load();
@@ -66,6 +107,34 @@ const CreateChallenge = () => {
     const preview = URL.createObjectURL(file);
     if (type === "image") { setImageFile(file); setImagePreview(preview); }
     else { setLogoFile(file); setLogoPreview(preview); }
+  };
+
+  const addDimensionItem = (dim: DimensionKey) => {
+    const val = newItems[dim].trim();
+    if (!val) return;
+    setDimensions((prev) => ({ ...prev, [dim]: [...prev[dim], val] }));
+    setNewItems((prev) => ({ ...prev, [dim]: "" }));
+  };
+
+  const removeDimensionItem = (dim: DimensionKey, index: number) => {
+    setDimensions((prev) => ({ ...prev, [dim]: prev[dim].filter((_, i) => i !== index) }));
+  };
+
+  const saveDimensionItems = async (cId: string) => {
+    // Delete existing items
+    await supabase.from("challenge_dimension_items").delete().eq("challenge_id", cId);
+
+    // Insert new items
+    const rows: { challenge_id: string; dimension: string; value: string; sort_order: number }[] = [];
+    for (const dim of DIMENSIONS) {
+      dimensions[dim.key].forEach((value, i) => {
+        rows.push({ challenge_id: cId, dimension: dim.key, value, sort_order: i });
+      });
+    }
+    if (rows.length > 0) {
+      const { error } = await supabase.from("challenge_dimension_items").insert(rows);
+      if (error) throw error;
+    }
   };
 
   const handleSave = async () => {
@@ -93,6 +162,8 @@ const CreateChallenge = () => {
           })
           .eq("id", challengeId);
         if (error) throw error;
+
+        await saveDimensionItems(challengeId);
         toast.success("האתגר עודכן בהצלחה!");
       } else {
         const { data: challenge, error } = await supabase
@@ -116,6 +187,8 @@ const CreateChallenge = () => {
           const lUrl = await uploadImage(logoFile, challenge.id, "logo");
           await supabase.from("challenges").update({ logo_url: lUrl }).eq("id", challenge.id);
         }
+
+        await saveDimensionItems(challenge.id);
         toast.success("האתגר נוצר בהצלחה!");
       }
       navigate("/dashboard");
@@ -155,31 +228,69 @@ const CreateChallenge = () => {
 
       <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-          {/* Title */}
+          {/* Title & Description */}
           <div className="bg-card rounded-2xl p-5 shadow-card space-y-4">
             <h2 className="font-heading font-bold text-lg">פרטי האתגר</h2>
-
             <div>
               <label className="text-sm font-medium text-muted-foreground mb-1 block">שם האתגר *</label>
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="הזינו שם לאתגר"
-                className="text-right"
-                maxLength={200}
-              />
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="הזינו שם לאתגר" className="text-right" maxLength={200} />
             </div>
-
             <div>
               <label className="text-sm font-medium text-muted-foreground mb-1 block">תיאור</label>
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="תיאור קצר של האתגר"
-                className="text-right"
-                rows={3}
-              />
+              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="תיאור קצר של האתגר" className="text-right" rows={3} />
             </div>
+          </div>
+
+          {/* 5 Dimensions */}
+          <div className="bg-card rounded-2xl p-5 shadow-card space-y-5">
+            <h2 className="font-heading font-bold text-lg">חמישה מימדים</h2>
+            <p className="text-sm text-muted-foreground">הוסיפו ערכים לכל מימד – זמן, מקום, אדם, חפץ ונוסף</p>
+
+            {DIMENSIONS.map((dim) => {
+              const Icon = dim.icon;
+              return (
+                <div key={dim.key} className={`border-r-4 ${dim.border} pr-4 space-y-2`}>
+                  <div className="flex items-center gap-2">
+                    <Icon className={`size-5 ${dim.color}`} />
+                    <h3 className="font-heading font-bold">{dim.label}</h3>
+                    <span className="text-xs text-muted-foreground">({dimensions[dim.key].length})</span>
+                  </div>
+
+                  {/* Items list */}
+                  <AnimatePresence>
+                    {dimensions[dim.key].map((item, idx) => (
+                      <motion.div
+                        key={`${dim.key}-${idx}`}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2"
+                      >
+                        <span className="text-sm flex-1">{item}</span>
+                        <button onClick={() => removeDimensionItem(dim.key, idx)} className="text-muted-foreground hover:text-destructive transition-colors">
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+
+                  {/* Add new item */}
+                  <div className="flex gap-2">
+                    <Input
+                      value={newItems[dim.key]}
+                      onChange={(e) => setNewItems((prev) => ({ ...prev, [dim.key]: e.target.value }))}
+                      placeholder={`הוסיפו ${dim.label}...`}
+                      className="text-right flex-1"
+                      maxLength={200}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addDimensionItem(dim.key); } }}
+                    />
+                    <Button variant="outline" size="icon" onClick={() => addDimensionItem(dim.key)} disabled={!newItems[dim.key].trim()}>
+                      <Plus className="size-4" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           {/* Image */}
@@ -188,10 +299,7 @@ const CreateChallenge = () => {
             {imagePreview ? (
               <div className="relative">
                 <img src={imagePreview} alt="תמונת אתגר" className="w-full max-h-64 object-cover rounded-xl" />
-                <button
-                  onClick={() => { setImageFile(null); setImagePreview(undefined); setImageUrl(undefined); }}
-                  className="absolute top-2 left-2 bg-destructive text-destructive-foreground rounded-full p-1"
-                >
+                <button onClick={() => { setImageFile(null); setImagePreview(undefined); setImageUrl(undefined); }} className="absolute top-2 left-2 bg-destructive text-destructive-foreground rounded-full p-1">
                   <X className="size-4" />
                 </button>
               </div>
@@ -210,34 +318,20 @@ const CreateChallenge = () => {
               <Youtube className="size-5 text-destructive" />
               קישור לסרטון
             </h2>
-            <Input
-              value={youtubeUrl}
-              onChange={(e) => setYoutubeUrl(e.target.value)}
-              placeholder="https://youtube.com/watch?v=..."
-              className="text-left"
-              dir="ltr"
-            />
-            {youtubeUrl && isValidYouTubeUrl(youtubeUrl) && (
-              <YouTubeEmbed url={youtubeUrl} />
-            )}
-            {youtubeUrl && !isValidYouTubeUrl(youtubeUrl) && (
-              <p className="text-sm text-destructive">קישור YouTube לא תקין</p>
-            )}
+            <Input value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} placeholder="https://youtube.com/watch?v=..." className="text-left" dir="ltr" />
+            {youtubeUrl && isValidYouTubeUrl(youtubeUrl) && <YouTubeEmbed url={youtubeUrl} />}
+            {youtubeUrl && !isValidYouTubeUrl(youtubeUrl) && <p className="text-sm text-destructive">קישור YouTube לא תקין</p>}
           </div>
 
           {/* Logo & Title Text */}
           <div className="bg-card rounded-2xl p-5 shadow-card space-y-4">
             <h2 className="font-heading font-bold text-lg">לוגו ומשפט כותרת</h2>
-
             <div>
               <label className="text-sm font-medium text-muted-foreground mb-1 block">לוגו</label>
               {logoPreview ? (
                 <div className="relative inline-block">
                   <img src={logoPreview} alt="לוגו" className="h-20 object-contain rounded-lg" />
-                  <button
-                    onClick={() => { setLogoFile(null); setLogoPreview(undefined); setLogoUrl(undefined); }}
-                    className="absolute -top-2 -left-2 bg-destructive text-destructive-foreground rounded-full p-1"
-                  >
+                  <button onClick={() => { setLogoFile(null); setLogoPreview(undefined); setLogoUrl(undefined); }} className="absolute -top-2 -left-2 bg-destructive text-destructive-foreground rounded-full p-1">
                     <X className="size-3" />
                   </button>
                 </div>
@@ -249,15 +343,9 @@ const CreateChallenge = () => {
                 </label>
               )}
             </div>
-
             <div>
               <label className="text-sm font-medium text-muted-foreground mb-1 block">משפט כותרת</label>
-              <Input
-                value={logoText}
-                onChange={(e) => setLogoText(e.target.value)}
-                placeholder="משפט שיופיע מתחת ללוגו"
-                className="text-right"
-              />
+              <Input value={logoText} onChange={(e) => setLogoText(e.target.value)} placeholder="משפט שיופיע מתחת ללוגו" className="text-right" />
             </div>
           </div>
         </motion.div>
