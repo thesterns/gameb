@@ -964,12 +964,12 @@ const GamePlay = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className={`font-heading font-semibold ${
-              answers.find((a) => a.id === selectedAnswerId)?.is_correct
+              myAnswerCorrect
                 ? "text-[hsl(var(--accent))]"
                 : "text-destructive-foreground"
             }`}
           >
-            {answers.find((a) => a.id === selectedAnswerId)?.is_correct
+            {myAnswerCorrect
               ? "תשובה נכונה! +10 נקודות 🎉"
               : `תשובה שגויה. התשובה הנכונה: ${correctAnswerForDisplay?.text || "?"}`}
           </motion.p>
