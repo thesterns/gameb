@@ -523,6 +523,33 @@ const GamePlay = () => {
     };
   }, [autoAdvance, isHost, timeUp, gameFinished, showIntroSlide, showLeaderboard, currentIndex]);
 
+  const handleShowStats = async () => {
+    if (!sessionId || !questions.length || currentIndex >= questions.length) return;
+    const questionId = questions[currentIndex].id;
+
+    const { data: responses } = await supabase
+      .from("game_responses")
+      .select("answer_id")
+      .eq("session_id", sessionId)
+      .eq("question_id", questionId);
+
+    const countMap: Record<string, number> = {};
+    for (const r of responses || []) {
+      if (r.answer_id) {
+        countMap[r.answer_id] = (countMap[r.answer_id] || 0) + 1;
+      }
+    }
+
+    const distribution = answers.map((a, idx) => ({
+      text: a.text,
+      count: countMap[a.id] || 0,
+      colorClass: ANSWER_COLORS[idx % ANSWER_COLORS.length],
+    }));
+
+    setStatsData(distribution);
+    setShowStats(true);
+  };
+
   const handlePlayerLeaderboard = async () => {
     if (!sessionId) return;
 
