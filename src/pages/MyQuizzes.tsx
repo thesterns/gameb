@@ -185,6 +185,8 @@ const MyQuizzes = () => {
                   <Trash2 className="!size-4" />
                 </Button>
               </div>
+            </motion.div>
+          ))
         )}
       </main>
     </div>
