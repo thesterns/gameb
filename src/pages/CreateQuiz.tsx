@@ -420,6 +420,43 @@ const CreateQuiz = () => {
                 rows={2}
               />
             </div>
+            {/* Quiz image */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground">תמונת חידון (לא חובה)</label>
+              {quizImagePreview ? (
+                <div className="relative rounded-xl overflow-hidden border border-border">
+                  <img src={quizImagePreview} alt="תמונת חידון" className="w-full max-h-48 object-contain bg-muted/30" />
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 left-2 size-7 rounded-full"
+                    onClick={() => { setQuizImageFile(null); setQuizImagePreview(undefined); setQuizImageUrl(undefined); }}
+                  >
+                    <X className="!size-3.5" />
+                  </Button>
+                </div>
+              ) : (
+                <label className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors border border-dashed border-border rounded-xl p-3 justify-center">
+                  <ImagePlus className="size-4" />
+                  <span>הוסף תמונה לחידון</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (!file.type.startsWith("image/")) { toast.error("יש לבחור קובץ תמונה בלבד"); return; }
+                        if (file.size > 5 * 1024 * 1024) { toast.error("גודל התמונה מוגבל ל-5MB"); return; }
+                        setQuizImageFile(file);
+                        setQuizImagePreview(URL.createObjectURL(file));
+                      }
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              )}
+            </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">סוג משחק *</label>
               <Select value={mode} onValueChange={setMode} dir="rtl">
