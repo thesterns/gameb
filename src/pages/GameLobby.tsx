@@ -94,6 +94,24 @@ const GameLobby = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleShare = async () => {
+    const joinUrl = `${window.location.origin}/join/${joinCode}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `הצטרפו למשחק: ${quizTitle}`,
+          text: `הצטרפו למשחק החידון "${quizTitle}" עם הקוד ${joinCode}`,
+          url: joinUrl,
+        });
+      } catch {
+        // User cancelled share
+      }
+    } else {
+      await navigator.clipboard.writeText(joinUrl);
+      toast.success("קישור ההצטרפות הועתק!");
+    }
+  };
+
   const handleSelectKing = (participantId: string) => {
     setKingParticipantId((prev) => (prev === participantId ? null : participantId));
   };
