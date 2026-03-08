@@ -65,6 +65,7 @@ const GamePlay = () => {
 
   // King/tribe mode state
   const [quizMode, setQuizMode] = useState("genius");
+  const [quizTheme, setQuizTheme] = useState<GameTheme>("default");
   const [kingParticipantId, setKingParticipantId] = useState<string | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [kingAnswerId, setKingAnswerId] = useState<string | null>(null);
