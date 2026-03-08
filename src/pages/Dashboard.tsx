@@ -135,22 +135,51 @@ const Dashboard = () => {
                 {quizzes.map((quiz) => {
                   const mode = modeLabels[quiz.mode] || modeLabels.genius;
                   return (
-                    <motion.button
+                    <motion.div
                       key={quiz.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      onClick={() => navigate(`/quiz/${quiz.id}`)}
                       className="bg-card rounded-2xl p-5 shadow-card hover:shadow-elevated transition-all text-right"
                     >
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-                        {mode.icon}
-                        <span>{mode.label}</span>
-                      </div>
-                      <h4 className="font-heading font-bold text-lg text-foreground truncate">{quiz.title}</h4>
-                      {quiz.description && (
-                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{quiz.description}</p>
-                      )}
-                    </motion.button>
+                      <button
+                        onClick={() => navigate(`/quiz/${quiz.id}`)}
+                        className="w-full text-right"
+                      >
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+                          {mode.icon}
+                          <span>{mode.label}</span>
+                        </div>
+                        <h4 className="font-heading font-bold text-lg text-foreground truncate">{quiz.title}</h4>
+                        {quiz.description && (
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{quiz.description}</p>
+                        )}
+                      </button>
+                      <Button
+                        variant="hero"
+                        size="sm"
+                        className="mt-3 w-full"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          try {
+                            const { data: { user } } = await supabase.auth.getUser();
+                            if (!user) return;
+                            const joinCode = String(Math.floor(10000 + Math.random() * 90000));
+                            const { data: session, error } = await supabase
+                              .from("game_sessions")
+                              .insert({ quiz_id: quiz.id, host_user_id: user.id, join_code: joinCode })
+                              .select()
+                              .single();
+                            if (error || !session) throw error;
+                            navigate(`/game/${session.id}/lobby`);
+                          } catch {
+                            toast.error("שגיאה בהפעלת המשחק");
+                          }
+                        }}
+                      >
+                        <Play className="!size-4" />
+                        התחל משחק
+                      </Button>
+                    </motion.div>
                   );
                 })}
               </div>
