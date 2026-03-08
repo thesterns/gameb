@@ -985,7 +985,6 @@ const GameFinished = ({
 }) => {
   const navigate = useNavigate();
   const t = themeClasses[quizTheme];
-  const navigate = useNavigate();
   const [leaderboard, setLeaderboard] = useState<{ player_name: string; total_score: number }[]>(
     []
   );
