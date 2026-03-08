@@ -265,7 +265,11 @@ const CreateChallenge = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <header className="border-b border-border bg-card sticky top-0 z-30">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(isEdit ? "/my-challenges" : "/dashboard")}
+          >
             <ArrowRight className="!size-4" />
             חזרה
           </Button>
