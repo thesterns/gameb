@@ -1038,7 +1038,7 @@ const GameFinished = ({
           >
             <Trophy className="size-16 text-[hsl(var(--answer-yellow))] mx-auto mb-2" />
           </motion.div>
-          <h1 className="text-3xl font-heading font-bold text-primary-foreground">המשחק נגמר!</h1>
+          <h1 className={`text-3xl font-heading font-bold ${t.text}`}>המשחק נגמר!</h1>
         </div>
 
         <div className="bg-card rounded-3xl p-8 shadow-elevated space-y-6">
