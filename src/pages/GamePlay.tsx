@@ -904,8 +904,8 @@ const GamePlay = () => {
             >
               <div className="text-center mb-4">
                 <Trophy className="size-12 text-[hsl(var(--answer-yellow))] mx-auto mb-2" />
-                <h2 className="text-2xl font-heading font-bold text-primary-foreground">לוח נקודות</h2>
-                <p className="text-primary-foreground/60 text-sm">אחרי שאלה {currentIndex + 1} מתוך {questions.length}</p>
+                <h2 className={`text-2xl font-heading font-bold ${t.text}`}>לוח נקודות</h2>
+                <p className={`${t.textSecondary} text-sm`}>אחרי שאלה {currentIndex + 1} מתוך {questions.length}</p>
               </div>
 
               <div className="bg-card rounded-3xl p-6 shadow-elevated space-y-3 max-h-[60vh] overflow-y-auto">
