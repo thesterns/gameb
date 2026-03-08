@@ -26,6 +26,7 @@ const GameLobby = () => {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoText, setLogoText] = useState<string | null>(null);
   const [joinCode, setJoinCode] = useState("");
+  const [challengeId, setChallengeId] = useState<string | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [kingParticipantId, setKingParticipantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,6 +53,7 @@ const GameLobby = () => {
 
       if (session.challenge_id) {
         setGameType("challenge");
+        setChallengeId(session.challenge_id);
         const { data: challenge } = await supabase
           .from("challenges")
           .select("title, youtube_url, image_url, logo_url, logo_text")
@@ -158,6 +160,54 @@ const GameLobby = () => {
     if (gameType === "quiz" && quizMode === "king" && !kingParticipantId) {
       toast.error("יש לבחור מלך לפני תחילת המשחק");
       return;
+    }
+
+    // For challenges, assign random dimension values to each participant
+    if (gameType === "challenge" && challengeId) {
+      try {
+        const { data: dimItems } = await supabase
+          .from("challenge_dimension_items")
+          .select("dimension, value")
+          .eq("challenge_id", challengeId);
+
+        if (dimItems && dimItems.length > 0) {
+          // Group by dimension
+          const byDimension: Record<string, string[]> = {};
+          for (const item of dimItems) {
+            if (!byDimension[item.dimension]) byDimension[item.dimension] = [];
+            byDimension[item.dimension].push(item.value);
+          }
+
+          // Assign one random value per dimension per participant
+          const assignments: { session_id: string; participant_id: string; dimension: string; value: string }[] = [];
+          for (const p of participants) {
+            for (const [dimension, values] of Object.entries(byDimension)) {
+              const randomValue = values[Math.floor(Math.random() * values.length)];
+              assignments.push({
+                session_id: sessionId!,
+                participant_id: p.id,
+                dimension,
+                value: randomValue,
+              });
+            }
+          }
+
+          if (assignments.length > 0) {
+            const { error: assignErr } = await supabase
+              .from("participant_dimension_assignments")
+              .insert(assignments);
+            if (assignErr) {
+              console.error("Assignment error:", assignErr);
+              toast.error("שגיאה בהקצאת ערכים למשתתפים");
+              return;
+            }
+          }
+        }
+      } catch (e) {
+        console.error(e);
+        toast.error("שגיאה בהקצאת ערכים");
+        return;
+      }
     }
 
     const updateData: Record<string, unknown> = { status: "active" };

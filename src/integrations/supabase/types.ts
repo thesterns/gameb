@@ -266,6 +266,45 @@ export type Database = {
           },
         ]
       }
+      participant_dimension_assignments: {
+        Row: {
+          dimension: string
+          id: string
+          participant_id: string
+          session_id: string
+          value: string
+        }
+        Insert: {
+          dimension: string
+          id?: string
+          participant_id: string
+          session_id: string
+          value: string
+        }
+        Update: {
+          dimension?: string
+          id?: string
+          participant_id?: string
+          session_id?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participant_dimension_assignments_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "game_participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participant_dimension_assignments_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       questions: {
         Row: {
           created_at: string
