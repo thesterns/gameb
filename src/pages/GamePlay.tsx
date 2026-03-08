@@ -757,11 +757,13 @@ const GamePlay = () => {
   const currentQuestion = questions[currentIndex];
   if (!currentQuestion) return null;
 
-  // In genius mode, correct answer is pre-set. In king/tribe, it's the king's choice.
+  // In genius mode, correct answer is revealed via broadcast. In king/tribe, it's the king's choice.
   const correctAnswerForDisplay =
     isKingOrTribeMode && kingAnswerId
       ? answers.find((a) => a.id === kingAnswerId)
-      : answers.find((a) => a.is_correct);
+      : revealedCorrectAnswerId
+      ? answers.find((a) => a.id === revealedCorrectAnswerId)
+      : null;
 
   return (
     <div className={`min-h-screen ${t.bg} flex flex-col`} dir="rtl">
