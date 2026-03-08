@@ -88,7 +88,7 @@ const CreateQuiz = () => {
     const loadQuiz = async () => {
       const { data: quiz, error: quizErr } = await supabase
         .from("quizzes")
-        .select("title, description, mode")
+        .select("title, description, mode, time_per_question")
         .eq("id", quizId)
         .single();
 
@@ -101,6 +101,7 @@ const CreateQuiz = () => {
       setTitle(quiz.title);
       setDescription(quiz.description || "");
       setMode(quiz.mode || "genius");
+      setTimePerQuestion(quiz.time_per_question ?? 30);
 
       const { data: dbQuestions } = await supabase
         .from("questions")
