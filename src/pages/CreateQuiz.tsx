@@ -249,6 +249,23 @@ const CreateQuiz = () => {
                 rows={2}
               />
             </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">סוג משחק *</label>
+              <Select value={mode} onValueChange={setMode} dir="rtl">
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="genius">🧠 גאון</SelectItem>
+                  <SelectItem value="king">👑 מלך</SelectItem>
+                  <SelectItem value="tribe">🏕️ שבט</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+                <Info className="size-4 mt-0.5 shrink-0" />
+                <span>{modeDescriptions[mode].description}</span>
+              </div>
+            </div>
           </div>
         </motion.div>
 
