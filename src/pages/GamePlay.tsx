@@ -631,6 +631,7 @@ const GamePlay = () => {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
         >
+          <QuizLogo logoUrl={quizLogoUrl} logoText={quizLogoText} size="lg" className="mb-4" />
           {quizYoutubeUrl && (
             <motion.div
               className="mb-6"
