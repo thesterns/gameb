@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Users, Loader2, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
+import QuizLogo from "@/components/QuizLogo";
 
 interface Participant {
   id: string;
