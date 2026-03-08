@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
-import { Timer, CheckCircle2, XCircle, Trophy, ArrowLeft, Users, Crown, RotateCw } from "lucide-react";
+import { Timer, CheckCircle2, XCircle, Trophy, ArrowLeft, Users, Crown, RotateCw, BarChart3 } from "lucide-react";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
 import QuizLogo from "@/components/QuizLogo";
 import { Button } from "@/components/ui/button";
@@ -112,6 +112,10 @@ const GamePlay = () => {
   // Player leaderboard popup
   const [showPlayerLeaderboard, setShowPlayerLeaderboard] = useState(false);
   const [playerLeaderboardData, setPlayerLeaderboardData] = useState<{ player_name: string; total_score: number }[]>([]);
+
+  // Statistics overlay
+  const [showStats, setShowStats] = useState(false);
+  const [statsData, setStatsData] = useState<{ text: string; count: number; colorClass: string }[]>([]);
 
   // Determine current king for tribe mode
   const getCurrentKingId = useCallback(
@@ -518,6 +522,33 @@ const GamePlay = () => {
       if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current);
     };
   }, [autoAdvance, isHost, timeUp, gameFinished, showIntroSlide, showLeaderboard, currentIndex]);
+
+  const handleShowStats = async () => {
+    if (!sessionId || !questions.length || currentIndex >= questions.length) return;
+    const questionId = questions[currentIndex].id;
+
+    const { data: responses } = await supabase
+      .from("game_responses")
+      .select("answer_id")
+      .eq("session_id", sessionId)
+      .eq("question_id", questionId);
+
+    const countMap: Record<string, number> = {};
+    for (const r of responses || []) {
+      if (r.answer_id) {
+        countMap[r.answer_id] = (countMap[r.answer_id] || 0) + 1;
+      }
+    }
+
+    const distribution = answers.map((a, idx) => ({
+      text: a.text,
+      count: countMap[a.id] || 0,
+      colorClass: ANSWER_COLORS[idx % ANSWER_COLORS.length],
+    }));
+
+    setStatsData(distribution);
+    setShowStats(true);
+  };
 
   const handlePlayerLeaderboard = async () => {
     if (!sessionId) return;
@@ -1025,9 +1056,19 @@ const GamePlay = () => {
           </motion.p>
         )}
 
-        {/* Host: leaderboard + next question buttons */}
-        {isHost && !showLeaderboard && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3 mt-8 pt-4 border-t border-muted/30">
+        {/* Host: stats + leaderboard + next question buttons */}
+        {isHost && !showLeaderboard && !showStats && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap gap-3 mt-8 pt-4 border-t border-muted/30 justify-center">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={handleShowStats}
+              disabled={isKingOrTribeMode && !kingAnswerId}
+              className="text-muted-foreground"
+            >
+              <BarChart3 className="!size-4" />
+              סטטיסטיקה
+            </Button>
             <Button variant="outline" size="lg" onClick={handleShowLeaderboard} className="text-muted-foreground">
               <Trophy className="!size-4" />
               לוח נקודות
@@ -1039,6 +1080,86 @@ const GamePlay = () => {
           </motion.div>
         )}
       </div>
+
+      {/* Statistics overlay */}
+      <AnimatePresence>
+        {showStats && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className={`fixed inset-0 z-50 ${t.bg} flex items-center justify-center px-4`}
+            dir="rtl"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="w-full max-w-md"
+            >
+              <div className="text-center mb-4">
+                <BarChart3 className="size-12 text-primary mx-auto mb-2" />
+                <h2 className={`text-2xl font-heading font-bold ${t.text}`}>התפלגות תשובות</h2>
+                <p className={`${t.textSecondary} text-sm`}>שאלה {currentIndex + 1}: {questions[currentIndex]?.text}</p>
+              </div>
+
+              <div className="bg-card rounded-3xl p-6 shadow-elevated space-y-4">
+                {statsData.map((item, idx) => {
+                  const maxCount = Math.max(...statsData.map(s => s.count), 1);
+                  const pct = Math.round((item.count / participantCount) * 100) || 0;
+                  return (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.08 }}
+                      className="space-y-1"
+                    >
+                      <div className="flex justify-between text-sm">
+                        <span className="font-heading font-semibold text-foreground truncate max-w-[70%]">{item.text}</span>
+                        <span className="text-muted-foreground font-heading">{item.count} ({pct}%)</span>
+                      </div>
+                      <div className="h-6 bg-muted/30 rounded-full overflow-hidden">
+                        <motion.div
+                          className={`h-full rounded-full ${item.colorClass}`}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${maxCount > 0 ? (item.count / maxCount) * 100 : 0}%` }}
+                          transition={{ delay: idx * 0.08 + 0.2, duration: 0.5, ease: "easeOut" }}
+                        />
+                      </div>
+                    </motion.div>
+                  );
+                })}
+                {statsData.length === 0 && (
+                  <p className="text-center text-muted-foreground py-4">אין נתונים עדיין</p>
+                )}
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="mt-4 flex gap-3"
+              >
+                <Button variant="outline" size="lg" className="flex-1" onClick={() => {
+                  setShowStats(false);
+                  handleShowLeaderboard();
+                }}>
+                  <Trophy className="!size-4" />
+                  לוח נקודות
+                </Button>
+                <Button variant="hero" size="lg" className="flex-1" onClick={() => {
+                  setShowStats(false);
+                  handleNextQuestion();
+                }}>
+                  <ArrowLeft className="!size-4" />
+                  {currentIndex + 1 >= questions.length ? "סיים משחק" : "שאלה הבאה"}
+                </Button>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Leaderboard overlay */}
       <AnimatePresence>
