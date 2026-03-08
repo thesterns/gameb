@@ -73,6 +73,7 @@ const ChallengePlay = () => {
   const [sentences, setSentences] = useState<SentenceEntry[]>([]);
   const [votes, setVotes] = useState<Vote[]>([]);
   const [loading, setLoading] = useState(true);
+  const [enableVoting, setEnableVoting] = useState(true);
   const [editing, setEditing] = useState(false);
   const [editSentence, setEditSentence] = useState("");
 
@@ -121,7 +122,7 @@ const ChallengePlay = () => {
     const load = async () => {
       const { data: session } = await supabase
         .from("game_sessions")
-        .select("challenge_id")
+        .select("challenge_id, enable_voting")
         .eq("id", sessionId)
         .single();
 
@@ -129,6 +130,8 @@ const ChallengePlay = () => {
         navigate("/dashboard");
         return;
       }
+
+      setEnableVoting((session as any).enable_voting !== false);
 
       const [chRes, partsRes, assignRes, sentRes, votesRes] = await Promise.all([
         supabase.from("challenges").select("title, description, image_url, youtube_url, logo_url, logo_text").eq("id", session.challenge_id).single(),
@@ -531,7 +534,7 @@ const ChallengePlay = () => {
               )}
 
               {/* Other players' sentences with voting */}
-              {submitted && otherSentences.length > 0 && (
+              {submitted && enableVoting && otherSentences.length > 0 && (
                 <div className="space-y-3">
                   <h3 className="font-heading font-bold text-lg flex items-center gap-2">
                     📝 דרגו את המשפטים
@@ -596,10 +599,10 @@ const ChallengePlay = () => {
                 <Users className="size-5" />
                 משתתפים ({sentences.length}/{participantsWithAssignments.length} שלחו)
               </h3>
-              {sortedParticipants.map((p) => {
+              {(enableVoting ? sortedParticipants : participantsWithAssignments).map((p) => {
                 const pSentence = sentences.find((s) => s.participant_id === p.id);
-                const score = scores[p.id] || 0;
-                const rank = ranking[p.id];
+                const score = enableVoting ? (scores[p.id] || 0) : 0;
+                const rank = enableVoting ? ranking[p.id] : undefined;
                 const rankInfo = rank ? RANK_DISPLAY[rank] : null;
                 return (
                   <motion.div

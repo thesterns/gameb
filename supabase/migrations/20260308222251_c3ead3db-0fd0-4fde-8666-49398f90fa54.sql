@@ -1,0 +1,1 @@
+ALTER TABLE public.game_sessions ADD COLUMN enable_voting boolean NOT NULL DEFAULT true;

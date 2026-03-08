@@ -6,6 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Plus, Target, Edit, Trash2, Play } from "lucide-react";
 import ChallengeHistoryDialog from "@/components/ChallengeHistoryDialog";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface Challenge {
   id: string;
@@ -18,6 +21,9 @@ const MyChallenges = () => {
   const navigate = useNavigate();
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
+  const [startDialogOpen, setStartDialogOpen] = useState(false);
+  const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
+  const [enableVoting, setEnableVoting] = useState(true);
 
   useEffect(() => {
     const load = async () => {
@@ -41,6 +47,31 @@ const MyChallenges = () => {
     if (error) { toast.error("שגיאה במחיקה"); return; }
     setChallenges((prev) => prev.filter((c) => c.id !== id));
     toast.success("האתגר נמחק");
+  };
+
+  const handleOpenStartDialog = (challenge: Challenge) => {
+    setSelectedChallenge(challenge);
+    setEnableVoting(true);
+    setStartDialogOpen(true);
+  };
+
+  const handleStartGame = async () => {
+    if (!selectedChallenge) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const joinCode = String(Math.floor(10000 + Math.random() * 90000));
+      const { data: session, error } = await supabase
+        .from("game_sessions")
+        .insert({ challenge_id: selectedChallenge.id, host_user_id: user.id, join_code: joinCode, enable_voting: enableVoting } as any)
+        .select()
+        .single();
+      if (error || !session) throw error;
+      setStartDialogOpen(false);
+      navigate(`/game/${session.id}/lobby`);
+    } catch {
+      toast.error("שגיאה בהפעלת המשחק");
+    }
   };
 
   return (
@@ -95,22 +126,7 @@ const MyChallenges = () => {
                   variant="hero"
                   size="sm"
                   className="mt-3 w-full"
-                  onClick={async () => {
-                    try {
-                      const { data: { user } } = await supabase.auth.getUser();
-                      if (!user) return;
-                      const joinCode = String(Math.floor(10000 + Math.random() * 90000));
-                      const { data: session, error } = await supabase
-                        .from("game_sessions")
-                        .insert({ challenge_id: challenge.id, host_user_id: user.id, join_code: joinCode } as any)
-                        .select()
-                        .single();
-                      if (error || !session) throw error;
-                      navigate(`/game/${session.id}/lobby`);
-                    } catch {
-                      toast.error("שגיאה בהפעלת המשחק");
-                    }
-                  }}
+                  onClick={() => handleOpenStartDialog(challenge)}
                 >
                   <Play className="!size-4" />
                   התחל משחק
@@ -129,6 +145,35 @@ const MyChallenges = () => {
             ))}
           </div>
         )}
+
+        {/* Start game dialog */}
+        <Dialog open={startDialogOpen} onOpenChange={setStartDialogOpen}>
+          <DialogContent className="max-w-sm" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="text-right">הפעלת אתגר</DialogTitle>
+              <DialogDescription className="text-right">
+                {selectedChallenge?.title}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex items-center justify-between py-4">
+              <Label htmlFor="enable-voting" className="text-sm font-medium">
+                אפשר דירוג משפטים
+              </Label>
+              <Switch
+                id="enable-voting"
+                checked={enableVoting}
+                onCheckedChange={setEnableVoting}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {enableVoting ? "המשתתפים יוכלו לדרג את המשפטים של האחרים" : "המשחק יהיה ללא דירוג"}
+            </p>
+            <Button variant="hero" className="w-full mt-2" onClick={handleStartGame}>
+              <Play className="!size-4" />
+              התחל משחק
+            </Button>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
