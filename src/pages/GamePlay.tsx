@@ -149,7 +149,7 @@ const GamePlay = () => {
 
       const { data: quiz } = await supabase
         .from("quizzes")
-        .select("time_per_question, mode, title, description, image_url, youtube_url, theme")
+        .select("time_per_question, mode, title, description, image_url, youtube_url, theme, logo_url, logo_text")
         .eq("id", session.quiz_id)
         .single();
 
@@ -160,6 +160,8 @@ const GamePlay = () => {
       setQuizDescription((quiz as any)?.description || "");
       setQuizImageUrl((quiz as any)?.image_url || null);
       setQuizYoutubeUrl((quiz as any)?.youtube_url || null);
+      setQuizLogoUrl((quiz as any)?.logo_url || null);
+      setQuizLogoText((quiz as any)?.logo_text || null);
 
       const { data: qs } = await supabase
         .from("questions")
