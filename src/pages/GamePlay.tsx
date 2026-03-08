@@ -510,6 +510,15 @@ const GamePlay = () => {
       const currentQ = questions[currentIndex];
       const pts = currentQ?.double_points ? 20 : 10;
       setScore((prev) => prev + pts);
+      setTotalCorrect((prev) => prev + 1);
+      setCorrectStreak((prev) => {
+        const newStreak = prev + 1;
+        setMaxStreak((m) => Math.max(m, newStreak));
+        if (newStreak >= 3) setShowConfetti(true);
+        return newStreak;
+      });
+    } else {
+      setCorrectStreak(0);
     }
   }, [timeUp, kingAnswerId, isKingOrTribeMode, isHost, selectedAnswerId, isCurrentPlayerKing]);
 
