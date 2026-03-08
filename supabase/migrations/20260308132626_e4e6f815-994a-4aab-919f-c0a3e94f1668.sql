@@ -1,0 +1,1 @@
+ALTER TABLE public.game_sessions ADD COLUMN king_participant_id uuid REFERENCES public.game_participants(id) ON DELETE SET NULL;
