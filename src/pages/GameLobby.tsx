@@ -195,6 +195,18 @@ const GameLobby = () => {
         </div>
 
         <div className="bg-card rounded-3xl p-8 shadow-elevated space-y-6">
+          {/* Quiz media */}
+          {quizYoutubeUrl && (
+            <YouTubeEmbed url={quizYoutubeUrl} />
+          )}
+          {quizImageUrl && !quizYoutubeUrl && (
+            <img
+              src={quizImageUrl}
+              alt={quizTitle}
+              className="w-full max-h-48 object-contain rounded-2xl"
+            />
+          )}
+
           {/* Join Code */}
           <div className="text-center space-y-2">
             <p className="text-sm text-muted-foreground font-medium">קוד להצטרפות</p>
