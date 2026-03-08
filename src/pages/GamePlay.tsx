@@ -1056,9 +1056,19 @@ const GamePlay = () => {
           </motion.p>
         )}
 
-        {/* Host: leaderboard + next question buttons */}
-        {isHost && !showLeaderboard && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3 mt-8 pt-4 border-t border-muted/30">
+        {/* Host: stats + leaderboard + next question buttons */}
+        {isHost && !showLeaderboard && !showStats && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap gap-3 mt-8 pt-4 border-t border-muted/30 justify-center">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={handleShowStats}
+              disabled={isKingOrTribeMode && !kingAnswerId}
+              className="text-muted-foreground"
+            >
+              <BarChart3 className="!size-4" />
+              סטטיסטיקה
+            </Button>
             <Button variant="outline" size="lg" onClick={handleShowLeaderboard} className="text-muted-foreground">
               <Trophy className="!size-4" />
               לוח נקודות
