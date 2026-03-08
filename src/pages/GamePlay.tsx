@@ -809,35 +809,59 @@ const GamePlay = () => {
           </motion.p>
         )}
 
-        {/* Correct answer feedback for player (non-king) */}
-        {timeUp && !isHost && selectedAnswerId && !isCurrentPlayerKing && (
+        {/* Correct answer feedback for player (non-king) in genius mode */}
+        {timeUp && !isHost && selectedAnswerId && !isCurrentPlayerKing && !isKingOrTribeMode && (
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className={`font-heading font-semibold ${
-              (isKingOrTribeMode
-                ? kingAnswerId && selectedAnswerId === kingAnswerId
-                : answers.find((a) => a.id === selectedAnswerId)?.is_correct)
+              answers.find((a) => a.id === selectedAnswerId)?.is_correct
                 ? "text-[hsl(var(--accent))]"
                 : "text-destructive-foreground"
             }`}
           >
-            {(isKingOrTribeMode
-              ? kingAnswerId && selectedAnswerId === kingAnswerId
-              : answers.find((a) => a.id === selectedAnswerId)?.is_correct)
+            {answers.find((a) => a.id === selectedAnswerId)?.is_correct
               ? "תשובה נכונה! +10 נקודות 🎉"
               : `תשובה שגויה. התשובה הנכונה: ${correctAnswerForDisplay?.text || "?"}`}
           </motion.p>
         )}
 
-        {/* King: time up, no king answer yet */}
-        {timeUp && isKingOrTribeMode && !kingAnswerId && !isCurrentPlayerKing && (
+        {/* King/tribe mode: waiting for king to choose */}
+        {timeUp && isKingOrTribeMode && !kingAnswerId && !isCurrentPlayerKing && !isHost && selectedAnswerId && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-[hsl(var(--answer-yellow))] font-heading font-semibold"
+          >
+            👑 ממתינים לבחירת המלך...
+          </motion.p>
+        )}
+
+        {/* King/tribe mode: king hasn't answered and no one is waiting */}
+        {timeUp && isKingOrTribeMode && !kingAnswerId && !isCurrentPlayerKing && !isHost && !selectedAnswerId && (
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="text-[hsl(var(--answer-yellow))] font-heading font-semibold"
           >
             👑 המלך לא בחר תשובה
+          </motion.p>
+        )}
+
+        {/* King/tribe mode: feedback AFTER king chose */}
+        {timeUp && isKingOrTribeMode && kingAnswerId && !isCurrentPlayerKing && !isHost && selectedAnswerId && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className={`font-heading font-semibold ${
+              selectedAnswerId === kingAnswerId
+                ? "text-[hsl(var(--accent))]"
+                : "text-destructive-foreground"
+            }`}
+          >
+            {selectedAnswerId === kingAnswerId
+              ? "תשובה נכונה! +10 נקודות 🎉"
+              : `תשובה שגויה. התשובה הנכונה: ${correctAnswerForDisplay?.text || "?"}`}
           </motion.p>
         )}
 
