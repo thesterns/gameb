@@ -609,6 +609,8 @@ const GamePlay = () => {
         quizYoutubeUrl={quizYoutubeUrl}
         quizImageUrl={quizImageUrl}
         quizTitle={quizTitle}
+        quizLogoUrl={quizLogoUrl}
+        quizLogoText={quizLogoText}
       />
     );
   }
