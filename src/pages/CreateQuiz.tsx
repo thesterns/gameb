@@ -790,6 +790,72 @@ const CreateQuiz = () => {
                 </div>
               </div>
 
+        {/* AI Generate Questions Dialog */}
+        <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
+          <DialogContent className="max-w-sm" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="text-right flex items-center gap-2">
+                <Sparkles className="size-5 text-primary" />
+                יצירת שאלות עם AI
+              </DialogTitle>
+              <DialogDescription className="text-right">
+                הזן נושא וכמות תשובות, וה-AI ייצור שאלות עבורך
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">נושא השאלות *</Label>
+                <Textarea
+                  placeholder="למשל: היסטוריה של מדינת ישראל, גאוגרפיה עולמית, מדע וטכנולוגיה..."
+                  value={aiTopic}
+                  onChange={(e) => setAiTopic(e.target.value)}
+                  maxLength={500}
+                  rows={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">כמות שאלות</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={aiNumQuestions}
+                  onChange={(e) => setAiNumQuestions(Math.min(20, Math.max(1, Number(e.target.value) || 1)))}
+                  className="w-24"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">כמות תשובות לכל שאלה</Label>
+                <Input
+                  type="number"
+                  min={2}
+                  max={8}
+                  value={aiNumAnswers}
+                  onChange={(e) => setAiNumAnswers(Math.min(8, Math.max(2, Number(e.target.value) || 2)))}
+                  className="w-24"
+                />
+              </div>
+            </div>
+            <Button
+              variant="hero"
+              className="w-full"
+              onClick={handleAiGenerate}
+              disabled={aiGenerating || !aiTopic.trim()}
+            >
+              {aiGenerating ? (
+                <>
+                  <Loader2 className="!size-4 animate-spin" />
+                  יוצר שאלות...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="!size-4" />
+                  צור שאלות
+                </>
+              )}
+            </Button>
+          </DialogContent>
+        </Dialog>
 
               {q.imagePreview ? (
                 <div className="relative rounded-xl overflow-hidden border border-border">
