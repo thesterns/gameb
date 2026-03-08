@@ -328,6 +328,9 @@ const GamePlay = () => {
       .on("broadcast", { event: "dismiss_intro" }, () => {
         setShowIntroSlide(false);
       })
+      .on("broadcast", { event: "reveal_correct_answer" }, (payload) => {
+        setRevealedCorrectAnswerId(payload.payload.correct_answer_id);
+      })
       .subscribe((status) => {
         console.log("[Leaderboard] Channel subscription status:", status);
         if (status === "SUBSCRIBED") {
