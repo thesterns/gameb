@@ -83,6 +83,9 @@ const CreateQuiz = () => {
   const [questions, setQuestions] = useState<Question[]>([createDefaultQuestion()]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(isEdit);
+  const [quizImageFile, setQuizImageFile] = useState<File | null>(null);
+  const [quizImagePreview, setQuizImagePreview] = useState<string | undefined>(undefined);
+  const [quizImageUrl, setQuizImageUrl] = useState<string | undefined>(undefined);
 
   // Load existing quiz data in edit mode
   useEffect(() => {
