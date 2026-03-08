@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { Zap, Users, Trophy, Sparkles, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -48,6 +49,7 @@ const item = {
 
 const Index = () => {
   const navigate = useNavigate();
+  const [joinCode, setJoinCode] = useState("");
 
   // Redirect authenticated users (e.g. after OAuth callback) to dashboard
   useEffect(() => {
@@ -94,19 +96,19 @@ const Index = () => {
               צרו חידונים מדהימים, הזמינו שחקנים ותיהנו ממשחק בזמן אמת.
               מושלם לשיעורים, אירועים וכיף עם חברים!
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start max-w-md mx-auto lg:mx-0">
+              <Input
+                placeholder="הכניסו קוד משחק"
+                value={joinCode}
+                onChange={(e) => setJoinCode(e.target.value.replace(/\D/g, "").slice(0, 5))}
+                className="text-center text-lg font-heading tracking-widest h-14 rounded-xl"
+                dir="ltr"
+              />
               <Button
                 variant="hero"
                 size="xl"
-                onClick={() => navigate("/register")}
-              >
-                <Sparkles className="!size-5" />
-                התחילו בחינם
-              </Button>
-              <Button
-                variant="game"
-                size="xl"
-                onClick={() => navigate("/join")}
+                disabled={joinCode.length !== 5}
+                onClick={() => navigate(`/join/${joinCode}`)}
               >
                 <ArrowLeft className="!size-5" />
                 הצטרפו למשחק
