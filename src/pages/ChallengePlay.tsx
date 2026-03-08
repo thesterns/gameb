@@ -534,7 +534,7 @@ const ChallengePlay = () => {
               )}
 
               {/* Other players' sentences with voting */}
-              {submitted && otherSentences.length > 0 && (
+              {submitted && enableVoting && otherSentences.length > 0 && (
                 <div className="space-y-3">
                   <h3 className="font-heading font-bold text-lg flex items-center gap-2">
                     📝 דרגו את המשפטים
