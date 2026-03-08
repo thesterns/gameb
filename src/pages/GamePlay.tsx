@@ -99,6 +99,8 @@ const GamePlay = () => {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [kingAnswerId, setKingAnswerId] = useState<string | null>(null);
   const [waitingForKing, setWaitingForKing] = useState(false);
+  const [myAnswerCorrect, setMyAnswerCorrect] = useState<boolean | null>(null);
+  const [revealedCorrectAnswerId, setRevealedCorrectAnswerId] = useState<string | null>(null);
 
   // Leaderboard state
   const [showLeaderboard, setShowLeaderboard] = useState(false);
