@@ -621,7 +621,17 @@ const GamePlay = () => {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
         >
-          {quizImageUrl && (
+          {quizYoutubeUrl && (
+            <motion.div
+              className="mb-6"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <YouTubeEmbed url={quizYoutubeUrl} className="max-h-64" />
+            </motion.div>
+          )}
+          {quizImageUrl && !quizYoutubeUrl && (
             <motion.img
               src={quizImageUrl}
               alt="תמונת חידון"
