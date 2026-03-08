@@ -7,6 +7,7 @@ import { ArrowRight, Users, Play, Copy, Check, Crown, Share2, QrCode, X } from "
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
+import QuizLogo from "@/components/QuizLogo";
 
 interface Participant {
   id: string;
@@ -21,6 +22,8 @@ const GameLobby = () => {
   const [quizMode, setQuizMode] = useState("genius");
   const [quizYoutubeUrl, setQuizYoutubeUrl] = useState<string | null>(null);
   const [quizImageUrl, setQuizImageUrl] = useState<string | null>(null);
+  const [quizLogoUrl, setQuizLogoUrl] = useState<string | null>(null);
+  const [quizLogoText, setQuizLogoText] = useState<string | null>(null);
   const [joinCode, setJoinCode] = useState("");
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [kingParticipantId, setKingParticipantId] = useState<string | null>(null);
@@ -48,7 +51,7 @@ const GameLobby = () => {
 
       const { data: quiz } = await supabase
         .from("quizzes")
-        .select("title, mode, youtube_url, image_url")
+        .select("title, mode, youtube_url, image_url, logo_url, logo_text")
         .eq("id", session.quiz_id)
         .single();
 
@@ -56,6 +59,8 @@ const GameLobby = () => {
       setQuizMode(quiz?.mode || "genius");
       setQuizYoutubeUrl(quiz?.youtube_url || null);
       setQuizImageUrl(quiz?.image_url || null);
+      setQuizLogoUrl((quiz as any)?.logo_url || null);
+      setQuizLogoText((quiz as any)?.logo_text || null);
 
       const { data: existingParticipants } = await supabase
         .from("game_participants")
@@ -184,6 +189,7 @@ const GameLobby = () => {
             <ArrowRight className="!size-4" />
             חזרה לחידונים
           </Button>
+          <QuizLogo logoUrl={quizLogoUrl} logoText={quizLogoText} size="md" className="mb-2" />
           <h1 className="text-3xl font-heading font-bold text-primary-foreground">
             {quizTitle}
           </h1>

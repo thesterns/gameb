@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Timer, CheckCircle2, XCircle, Trophy, ArrowLeft, Users, Crown } from "lucide-react";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
+import QuizLogo from "@/components/QuizLogo";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { themeClasses, type GameTheme } from "@/lib/gameThemes";
@@ -85,6 +86,8 @@ const GamePlay = () => {
   const [quizDescription, setQuizDescription] = useState("");
   const [quizImageUrl, setQuizImageUrl] = useState<string | null>(null);
   const [quizYoutubeUrl, setQuizYoutubeUrl] = useState<string | null>(null);
+  const [quizLogoUrl, setQuizLogoUrl] = useState<string | null>(null);
+  const [quizLogoText, setQuizLogoText] = useState<string | null>(null);
   const [responseCount, setResponseCount] = useState(0);
   const [participantCount, setParticipantCount] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -146,7 +149,7 @@ const GamePlay = () => {
 
       const { data: quiz } = await supabase
         .from("quizzes")
-        .select("time_per_question, mode, title, description, image_url, youtube_url, theme")
+        .select("time_per_question, mode, title, description, image_url, youtube_url, theme, logo_url, logo_text")
         .eq("id", session.quiz_id)
         .single();
 
@@ -157,6 +160,8 @@ const GamePlay = () => {
       setQuizDescription((quiz as any)?.description || "");
       setQuizImageUrl((quiz as any)?.image_url || null);
       setQuizYoutubeUrl((quiz as any)?.youtube_url || null);
+      setQuizLogoUrl((quiz as any)?.logo_url || null);
+      setQuizLogoText((quiz as any)?.logo_text || null);
 
       const { data: qs } = await supabase
         .from("questions")
@@ -604,6 +609,8 @@ const GamePlay = () => {
         quizYoutubeUrl={quizYoutubeUrl}
         quizImageUrl={quizImageUrl}
         quizTitle={quizTitle}
+        quizLogoUrl={quizLogoUrl}
+        quizLogoText={quizLogoText}
       />
     );
   }
@@ -624,6 +631,7 @@ const GamePlay = () => {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
         >
+          <QuizLogo logoUrl={quizLogoUrl} logoText={quizLogoText} size="lg" className="mb-4" />
           {quizYoutubeUrl && (
             <motion.div
               className="mb-6"
@@ -723,6 +731,7 @@ const GamePlay = () => {
     <div className={`min-h-screen ${t.bg} flex flex-col`} dir="rtl">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3">
+        <QuizLogo logoUrl={quizLogoUrl} logoText={quizLogoText} size="sm" />
         <div className={`flex items-center gap-2 ${t.textSecondary} text-sm`}>
           <span>
             שאלה {currentIndex + 1} / {questions.length}
@@ -1059,6 +1068,8 @@ const GameFinished = ({
   quizYoutubeUrl,
   quizImageUrl,
   quizTitle,
+  quizLogoUrl,
+  quizLogoText,
 }: {
   sessionId: string;
   isHost: boolean;
@@ -1070,6 +1081,8 @@ const GameFinished = ({
   quizYoutubeUrl: string | null;
   quizImageUrl: string | null;
   quizTitle: string;
+  quizLogoUrl: string | null;
+  quizLogoText: string | null;
 }) => {
   const navigate = useNavigate();
   const t = themeClasses[quizTheme];
@@ -1149,6 +1162,7 @@ const GameFinished = ({
         animate={{ opacity: 1, scale: 1 }}
       >
         <div className="text-center mb-6">
+          <QuizLogo logoUrl={quizLogoUrl} logoText={quizLogoText} size="lg" className="mb-3" />
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}

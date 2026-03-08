@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Users, Loader2, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
+import QuizLogo from "@/components/QuizLogo";
 
 interface Participant {
   id: string;
@@ -21,6 +22,8 @@ const PlayerWaiting = () => {
   const [quizDescription, setQuizDescription] = useState("");
   const [quizImageUrl, setQuizImageUrl] = useState<string | null>(null);
   const [quizYoutubeUrl, setQuizYoutubeUrl] = useState<string | null>(null);
+  const [quizLogoUrl, setQuizLogoUrl] = useState<string | null>(null);
+  const [quizLogoText, setQuizLogoText] = useState<string | null>(null);
   const [joinCode, setJoinCode] = useState("");
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,7 +49,7 @@ const PlayerWaiting = () => {
 
       const { data: quiz } = await supabase
         .from("quizzes")
-        .select("title, description, image_url, youtube_url")
+        .select("title, description, image_url, youtube_url, logo_url, logo_text")
         .eq("id", session.quiz_id)
         .single();
 
@@ -54,6 +57,8 @@ const PlayerWaiting = () => {
       setQuizDescription(quiz?.description || "");
       setQuizImageUrl(quiz?.image_url || null);
       setQuizYoutubeUrl(quiz?.youtube_url || null);
+      setQuizLogoUrl((quiz as any)?.logo_url || null);
+      setQuizLogoText((quiz as any)?.logo_text || null);
 
       const { data: existingParticipants } = await supabase
         .from("game_participants")
@@ -130,6 +135,7 @@ const PlayerWaiting = () => {
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="text-center mb-6">
+          <QuizLogo logoUrl={quizLogoUrl} logoText={quizLogoText} size="md" className="mb-3" />
           {quizYoutubeUrl && (
             <div className="mb-4">
               <YouTubeEmbed url={quizYoutubeUrl} className="max-h-48" />

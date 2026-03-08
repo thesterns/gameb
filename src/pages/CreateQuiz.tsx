@@ -91,6 +91,10 @@ const CreateQuiz = () => {
   const [quizImagePreview, setQuizImagePreview] = useState<string | undefined>(undefined);
   const [quizImageUrl, setQuizImageUrl] = useState<string | undefined>(undefined);
   const [quizYoutubeUrl, setQuizYoutubeUrl] = useState<string>("");
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | undefined>(undefined);
+  const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
+  const [logoText, setLogoText] = useState<string>("");
 
   // Load existing quiz data in edit mode
   useEffect(() => {
@@ -99,7 +103,7 @@ const CreateQuiz = () => {
     const loadQuiz = async () => {
       const { data: quiz, error: quizErr } = await supabase
         .from("quizzes")
-        .select("title, description, mode, time_per_question, image_url, theme")
+        .select("title, description, mode, time_per_question, image_url, theme, youtube_url, logo_url, logo_text")
         .eq("id", quizId)
         .single();
 
@@ -120,6 +124,13 @@ const CreateQuiz = () => {
       }
       if ((quiz as any).youtube_url) {
         setQuizYoutubeUrl((quiz as any).youtube_url);
+      }
+      if ((quiz as any).logo_url) {
+        setLogoUrl((quiz as any).logo_url);
+        setLogoPreview((quiz as any).logo_url);
+      }
+      if ((quiz as any).logo_text) {
+        setLogoText((quiz as any).logo_text);
       }
 
       const { data: dbQuestions } = await supabase
@@ -289,10 +300,16 @@ const CreateQuiz = () => {
           finalQuizImageUrl = await uploadQuestionImage(quizImageFile, quizId, 999);
         }
 
+        // Upload logo if needed
+        let finalLogoUrl = logoUrl || null;
+        if (logoFile) {
+          finalLogoUrl = await uploadQuestionImage(logoFile, quizId, 998);
+        }
+
         // Update existing quiz
         const { error: quizErr } = await supabase
           .from("quizzes")
-          .update({ title: title.trim(), description: description.trim() || null, mode, theme, time_per_question: timePerQuestion, image_url: finalQuizImageUrl, youtube_url: quizYoutubeUrl.trim() || null } as any)
+          .update({ title: title.trim(), description: description.trim() || null, mode, theme, time_per_question: timePerQuestion, image_url: finalQuizImageUrl, youtube_url: quizYoutubeUrl.trim() || null, logo_url: finalLogoUrl, logo_text: logoText.trim() || null } as any)
           .eq("id", quizId);
 
         if (quizErr) throw quizErr;
@@ -331,7 +348,7 @@ const CreateQuiz = () => {
         // Create new quiz
         const { data: quiz, error: quizErr } = await supabase
           .from("quizzes")
-          .insert({ title: title.trim(), description: description.trim() || null, user_id: user.id, mode, theme, time_per_question: timePerQuestion, youtube_url: quizYoutubeUrl.trim() || null } as any)
+          .insert({ title: title.trim(), description: description.trim() || null, user_id: user.id, mode, theme, time_per_question: timePerQuestion, youtube_url: quizYoutubeUrl.trim() || null, logo_text: logoText.trim() || null } as any)
           .select()
           .single();
 
@@ -341,6 +358,12 @@ const CreateQuiz = () => {
         if (quizImageFile) {
           const quizImgUrl = await uploadQuestionImage(quizImageFile, quiz.id, 999);
           await supabase.from("quizzes").update({ image_url: quizImgUrl } as any).eq("id", quiz.id);
+        }
+
+        // Upload logo if needed
+        if (logoFile) {
+          const logoImgUrl = await uploadQuestionImage(logoFile, quiz.id, 998);
+          await supabase.from("quizzes").update({ logo_url: logoImgUrl } as any).eq("id", quiz.id);
         }
 
         for (let i = 0; i < questions.length; i++) {
@@ -491,6 +514,53 @@ const CreateQuiz = () => {
               {quizYoutubeUrl && !isValidYouTubeUrl(quizYoutubeUrl) && (
                 <p className="text-xs text-destructive">קישור יוטיוב לא תקין</p>
               )}
+            </div>
+            {/* Logo */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground">לוגו למשחק (לא חובה)</label>
+              <p className="text-xs text-muted-foreground">יוצג בכל השאלות, בשקופית הפתיחה ובתוצאות</p>
+              <div className="flex items-start gap-4">
+                {logoPreview ? (
+                  <div className="relative shrink-0">
+                    <img src={logoPreview} alt="לוגו" className="w-16 h-16 object-contain rounded-xl border border-border bg-muted/30" />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -left-2 size-5 rounded-full"
+                      onClick={() => { setLogoFile(null); setLogoPreview(undefined); setLogoUrl(undefined); }}
+                    >
+                      <X className="!size-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <label className="flex items-center justify-center cursor-pointer border border-dashed border-border rounded-xl w-16 h-16 hover:border-foreground/30 transition-colors shrink-0">
+                    <ImagePlus className="size-5 text-muted-foreground" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          if (!file.type.startsWith("image/")) { toast.error("יש לבחור קובץ תמונה בלבד"); return; }
+                          if (file.size > 5 * 1024 * 1024) { toast.error("גודל התמונה מוגבל ל-5MB"); return; }
+                          setLogoFile(file);
+                          setLogoPreview(URL.createObjectURL(file));
+                        }
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                )}
+                <div className="flex-1">
+                  <Input
+                    placeholder="טקסט כותרת (יוצג ליד הלוגו)"
+                    value={logoText}
+                    onChange={(e) => setLogoText(e.target.value)}
+                    maxLength={100}
+                  />
+                </div>
+              </div>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">סוג משחק *</label>
