@@ -46,8 +46,24 @@ const CreateQuiz = () => {
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [mode, setMode] = useState<string>("genius");
   const [questions, setQuestions] = useState<Question[]>([createDefaultQuestion()]);
   const [saving, setSaving] = useState(false);
+
+  const modeDescriptions: Record<string, { label: string; description: string }> = {
+    genius: {
+      label: "גאון",
+      description: "קובעים מראש תשובות נכונות לשאלות. השחקנים מקבלים ניקוד לפי מהירות ודיוק.",
+    },
+    king: {
+      label: "מלך",
+      description: "התשובה הנכונה תהיה התשובה שיקבע השחקן שהוא המלך.",
+    },
+    tribe: {
+      label: "שבט",
+      description: "התשובה הנכונה תהיה התשובה שיענה אחד השחקנים לפי תור בין כולם.",
+    },
+  };
 
   const updateQuestion = (qId: string, text: string) => {
     setQuestions((prev) =>
