@@ -135,6 +135,7 @@ const PlayerWaiting = () => {
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="text-center mb-6">
+          <QuizLogo logoUrl={quizLogoUrl} logoText={quizLogoText} size="md" className="mb-3" />
           {quizYoutubeUrl && (
             <div className="mb-4">
               <YouTubeEmbed url={quizYoutubeUrl} className="max-h-48" />
