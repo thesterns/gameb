@@ -207,10 +207,16 @@ const GameLobby = () => {
               )}
             </button>
             <p className="text-xs text-muted-foreground">לחץ להעתקה</p>
-            <Button variant="outline" size="sm" className="mx-auto" onClick={handleShare}>
-              <Share2 className="!size-4" />
-              שתף קישור הצטרפות
-            </Button>
+            <div className="flex items-center justify-center gap-2">
+              <Button variant="outline" size="sm" onClick={handleShare}>
+                <Share2 className="!size-4" />
+                שתף קישור
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setShowQR(true)}>
+                <QrCode className="!size-4" />
+                QR
+              </Button>
+            </div>
           </div>
 
           {/* King mode instruction */}
