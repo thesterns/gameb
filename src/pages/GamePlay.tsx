@@ -525,6 +525,8 @@ const GamePlay = () => {
     );
   }
 
+  const t = themeClasses[quizTheme];
+
   if (gameFinished) {
     return (
       <GameFinished
