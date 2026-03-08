@@ -857,10 +857,23 @@ const GamePlay = () => {
         </div>
       )}
 
+      {/* Double points indicator */}
+      {questions[currentIndex]?.double_points && (
+        <div className="px-4 flex justify-center">
+          <div className="bg-primary/20 text-primary rounded-full px-4 py-1 text-sm font-heading font-bold flex items-center gap-1.5 animate-pulse">
+            ⚡ ניקוד כפול!
+          </div>
+        </div>
+      )}
+
       {/* Timer bar */}
       <div className="px-4">
         <Progress
-          value={totalTime > 0 ? (timeLeft / totalTime) * 100 : 0}
+          value={(() => {
+            const currentQ = questions[currentIndex];
+            const qTime = currentQ?.custom_time || totalTime;
+            return qTime > 0 ? (timeLeft / qTime) * 100 : 0;
+          })()}
           className={`h-2 ${t.progressBg}`}
         />
       </div>
