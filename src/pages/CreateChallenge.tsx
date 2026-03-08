@@ -29,6 +29,36 @@ const emptyDimensions = (): DimensionsState => ({
   extra: [],
 });
 
+const emptyNewItems = (): Record<DimensionKey, string> => ({
+  time: "",
+  place: "",
+  person: "",
+  object: "",
+  extra: "",
+});
+
+const parseDimensionValues = (raw: string): string[] =>
+  raw
+    .split(/[\n,]+/)
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+const mergePendingDimensionInputs = (
+  currentDimensions: DimensionsState,
+  pendingInputs: Record<DimensionKey, string>
+): DimensionsState => {
+  const merged = emptyDimensions();
+
+  for (const dim of DIMENSIONS) {
+    merged[dim.key] = [
+      ...currentDimensions[dim.key],
+      ...parseDimensionValues(pendingInputs[dim.key] ?? ""),
+    ];
+  }
+
+  return merged;
+};
+
 const CreateChallenge = () => {
   const navigate = useNavigate();
   const { challengeId } = useParams<{ challengeId: string }>();
