@@ -94,7 +94,7 @@ const CreateQuiz = () => {
     const loadQuiz = async () => {
       const { data: quiz, error: quizErr } = await supabase
         .from("quizzes")
-        .select("title, description, mode, time_per_question")
+        .select("title, description, mode, time_per_question, image_url")
         .eq("id", quizId)
         .single();
 
