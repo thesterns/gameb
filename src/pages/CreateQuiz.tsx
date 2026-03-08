@@ -200,6 +200,38 @@ const CreateQuiz = () => {
     );
   };
 
+  const handleImageSelect = (qId: string, file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("יש לבחור קובץ תמונה בלבד");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("גודל התמונה מוגבל ל-5MB");
+      return;
+    }
+    const preview = URL.createObjectURL(file);
+    setQuestions((prev) =>
+      prev.map((q) => (q.id === qId ? { ...q, imageFile: file, imagePreview: preview } : q))
+    );
+  };
+
+  const removeImage = (qId: string) => {
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q.id === qId ? { ...q, imageFile: undefined, imagePreview: undefined, image_url: undefined } : q
+      )
+    );
+  };
+
+  const uploadQuestionImage = async (file: File, quizId: string, questionIndex: number): Promise<string> => {
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${quizId}/${questionIndex}-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("question-images").upload(path, file);
+    if (error) throw error;
+    const { data } = supabase.storage.from("question-images").getPublicUrl(path);
+    return data.publicUrl;
+  };
+
   const validate = (): string | null => {
     if (!title.trim()) return "יש להזין שם לחידון";
     if (title.trim().length > 200) return "שם החידון ארוך מדי";
