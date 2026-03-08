@@ -278,7 +278,8 @@ const GamePlay = () => {
 
   // Host broadcasts correct answer when time expires (genius mode)
   useEffect(() => {
-    if (!timeUp || !isHost || isKingOrTribeMode || !leaderboardChannelRef.current) return;
+    const isKingOrTribe = quizMode === "king" || quizMode === "tribe";
+    if (!timeUp || !isHost || isKingOrTribe || !leaderboardChannelRef.current) return;
     if (!questions.length || currentIndex >= questions.length) return;
 
     const questionId = questions[currentIndex].id;
@@ -300,7 +301,7 @@ const GamePlay = () => {
       }
     };
     broadcastCorrectAnswer();
-  }, [timeUp, isHost, isKingOrTribeMode, questions, currentIndex]);
+  }, [timeUp, isHost, quizMode, questions, currentIndex]);
 
 
   useEffect(() => {
