@@ -224,6 +224,26 @@ const GamePlay = () => {
     };
   }, [sessionId]);
 
+  // Listen for leaderboard broadcast
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const channel = supabase.channel(`leaderboard-${sessionId}`);
+    channel
+      .on("broadcast", { event: "show_leaderboard" }, (payload) => {
+        setShowLeaderboard(true);
+        setMidGameLeaderboard(payload.payload.leaderboard || []);
+      })
+      .on("broadcast", { event: "hide_leaderboard" }, () => {
+        setShowLeaderboard(false);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [sessionId]);
+
   // Listen for response count (host view) AND king's answer (king/tribe mode)
   useEffect(() => {
     if (!sessionId || questions.length === 0 || currentIndex >= questions.length) return;
