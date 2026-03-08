@@ -657,7 +657,47 @@ const CreateQuiz = () => {
                 maxLength={500}
               />
 
-              {/* Image upload */}
+              {/* Per-question settings: double points & custom time */}
+              <div className="flex flex-wrap items-center gap-4 rounded-xl bg-muted/30 p-3">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <Checkbox
+                    checked={q.double_points}
+                    onCheckedChange={(checked) =>
+                      setQuestions((prev) =>
+                        prev.map((qq) => qq.id === q.id ? { ...qq, double_points: !!checked } : qq)
+                      )
+                    }
+                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                  />
+                  <Zap className="size-4 text-primary" />
+                  <span className="text-sm font-medium">ניקוד כפול</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <Clock className="size-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-muted-foreground">זמן מענה:</span>
+                  <Input
+                    type="number"
+                    min={5}
+                    max={120}
+                    placeholder={`${timePerQuestion}`}
+                    value={q.custom_time ?? ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setQuestions((prev) =>
+                        prev.map((qq) =>
+                          qq.id === q.id
+                            ? { ...qq, custom_time: val ? Math.min(120, Math.max(5, Number(val) || 5)) : undefined }
+                            : qq
+                        )
+                      );
+                    }}
+                    className="w-20 h-8 text-sm"
+                  />
+                  <span className="text-xs text-muted-foreground">שניות</span>
+                </div>
+              </div>
+
+
               {q.imagePreview ? (
                 <div className="relative rounded-xl overflow-hidden border border-border">
                   <img src={q.imagePreview} alt="תמונת שאלה" className="w-full max-h-48 object-contain bg-muted/30" />
