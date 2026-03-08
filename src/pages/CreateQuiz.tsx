@@ -232,7 +232,7 @@ const CreateQuiz = () => {
         // Update existing quiz
         const { error: quizErr } = await supabase
           .from("quizzes")
-          .update({ title: title.trim(), description: description.trim() || null, mode })
+          .update({ title: title.trim(), description: description.trim() || null, mode, time_per_question: timePerQuestion })
           .eq("id", quizId);
 
         if (quizErr) throw quizErr;
