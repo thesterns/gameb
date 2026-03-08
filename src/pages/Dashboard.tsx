@@ -303,6 +303,7 @@ const Dashboard = () => {
                       <Play className="!size-4" />
                       התחל משחק
                     </Button>
+                    <ChallengeHistoryDialog challengeId={challenge.id} challengeTitle={challenge.title} />
                   </motion.div>
                 ))}
               </div>
