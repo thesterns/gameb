@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowRight, Target, Users, Clock, MapPin, User, Package, Sparkles, Send, CheckCircle } from "lucide-react";
+import { ArrowRight, Target, Users, Clock, MapPin, User, Package, Sparkles, Send, CheckCircle, Edit3 } from "lucide-react";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
 import QuizLogo from "@/components/QuizLogo";
 import { toast } from "sonner";
@@ -73,6 +73,8 @@ const ChallengePlay = () => {
   const [sentences, setSentences] = useState<SentenceEntry[]>([]);
   const [votes, setVotes] = useState<Vote[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [editSentence, setEditSentence] = useState("");
 
   // Compute my votes (what I voted for others)
   const myVotes = votes.filter((v) => v.voter_participant_id === myParticipantId);
@@ -206,6 +208,16 @@ const ChallengePlay = () => {
           });
         }
       )
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "challenge_sentences", filter: `session_id=eq.${sessionId}` },
+        (payload) => {
+          const updated = payload.new as { participant_id: string; sentence: string };
+          setSentences((prev) =>
+            prev.map((s) =>
+              s.participant_id === updated.participant_id ? { ...s, sentence: updated.sentence } : s
+            )
+          );
+        }
+      )
       .subscribe();
 
     // Realtime for votes
@@ -242,6 +254,49 @@ const ChallengePlay = () => {
       toast.success("המשפט נשלח!");
     } catch {
       toast.error("שגיאה בשליחה");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEditSentence = () => {
+    setEditing(true);
+    setEditSentence(sentence);
+  };
+
+  const handleResubmitSentence = async () => {
+    if (!editSentence.trim() || !myParticipantId || !sessionId) return;
+    setSubmitting(true);
+    try {
+      // Update sentence
+      const { error } = await supabase.from("challenge_sentences")
+        .update({ sentence: editSentence.trim() })
+        .eq("session_id", sessionId)
+        .eq("participant_id", myParticipantId);
+      if (error) throw error;
+
+      // Delete all votes targeting this participant (reset their score)
+      await supabase.from("challenge_votes")
+        .delete()
+        .eq("session_id", sessionId)
+        .eq("target_participant_id", myParticipantId);
+
+      setSentence(editSentence.trim());
+      setEditing(false);
+
+      // Update local sentences state
+      setSentences((prev) =>
+        prev.map((s) =>
+          s.participant_id === myParticipantId ? { ...s, sentence: editSentence.trim() } : s
+        )
+      );
+
+      // Clear votes targeting me locally
+      setVotes((prev) => prev.filter((v) => v.target_participant_id !== myParticipantId));
+
+      toast.success("המשפט עודכן והניקוד אופס!");
+    } catch {
+      toast.error("שגיאה בעדכון");
     } finally {
       setSubmitting(false);
     }
@@ -403,7 +458,7 @@ const ChallengePlay = () => {
                   <h3 className="font-heading font-bold text-sm text-muted-foreground text-center">
                     כתבו משפט שמשלב את כל הערכים שקיבלתם
                   </h3>
-                  {submitted ? (
+                  {submitted && !editing ? (
                     <motion.div
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -412,7 +467,46 @@ const ChallengePlay = () => {
                       <CheckCircle className="size-6 text-accent mx-auto" />
                       <p className="font-heading font-bold text-foreground">המשפט נשלח!</p>
                       <p className="text-sm text-muted-foreground italic">"{sentence}"</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleEditSentence}
+                        className="mt-2"
+                      >
+                        <Edit3 className="!size-4" />
+                        ערוך משפט
+                      </Button>
                     </motion.div>
+                  ) : submitted && editing ? (
+                    <div className="space-y-2">
+                      <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 text-center">
+                        <p className="text-xs font-bold text-destructive">⚠️ שליחת משפט חדש תאפס את הניקוד שקיבלת</p>
+                      </div>
+                      <Textarea
+                        value={editSentence}
+                        onChange={(e) => setEditSentence(e.target.value)}
+                        placeholder="כתבו את המשפט החדש..."
+                        className="text-right min-h-[100px]"
+                        maxLength={500}
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          variant="hero"
+                          className="flex-1"
+                          onClick={handleResubmitSentence}
+                          disabled={!editSentence.trim() || submitting}
+                        >
+                          <Send className="!size-4" />
+                          {submitting ? "שולח..." : "שלח מחדש"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setEditing(false)}
+                        >
+                          ביטול
+                        </Button>
+                      </div>
+                    </div>
                   ) : (
                     <div className="space-y-2">
                       <Textarea
