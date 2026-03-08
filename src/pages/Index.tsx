@@ -11,8 +11,8 @@ import heroImage from "@/assets/hero-quiz.png";
 const features = [
   {
     icon: Zap,
-    title: "חידונים בזמן אמת",
-    description: "צרו חידונים ושחקו עם חברים בזמן אמת",
+    title: "משחקים בזמן אמת",
+    description: "צרו משחקים ושחקו עם חברים בזמן אמת",
     color: "bg-answer-red/10 text-answer-red",
   },
   {
