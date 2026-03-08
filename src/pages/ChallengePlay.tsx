@@ -599,10 +599,10 @@ const ChallengePlay = () => {
                 <Users className="size-5" />
                 משתתפים ({sentences.length}/{participantsWithAssignments.length} שלחו)
               </h3>
-              {sortedParticipants.map((p) => {
+              {(enableVoting ? sortedParticipants : participantsWithAssignments).map((p) => {
                 const pSentence = sentences.find((s) => s.participant_id === p.id);
-                const score = scores[p.id] || 0;
-                const rank = ranking[p.id];
+                const score = enableVoting ? (scores[p.id] || 0) : 0;
+                const rank = enableVoting ? ranking[p.id] : undefined;
                 const rankInfo = rank ? RANK_DISPLAY[rank] : null;
                 return (
                   <motion.div
