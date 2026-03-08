@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { Zap, Users, Trophy, Sparkles, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
