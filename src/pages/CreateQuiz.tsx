@@ -108,6 +108,10 @@ const CreateQuiz = () => {
       setDescription(quiz.description || "");
       setMode(quiz.mode || "genius");
       setTimePerQuestion(quiz.time_per_question ?? 30);
+      if ((quiz as any).image_url) {
+        setQuizImageUrl((quiz as any).image_url);
+        setQuizImagePreview((quiz as any).image_url);
+      }
 
       const { data: dbQuestions } = await supabase
         .from("questions")
