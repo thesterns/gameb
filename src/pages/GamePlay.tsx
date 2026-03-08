@@ -112,7 +112,7 @@ const GamePlay = () => {
 
       const { data: qs } = await supabase
         .from("questions")
-        .select("id, text, sort_order")
+        .select("id, text, sort_order, image_url")
         .eq("quiz_id", session.quiz_id)
         .order("sort_order");
 
