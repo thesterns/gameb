@@ -218,6 +218,7 @@ const MyQuizzes = () => {
                 <SelectItem value="genius">🧠 גאון</SelectItem>
                 <SelectItem value="king">👑 מלך</SelectItem>
                 <SelectItem value="tribe">🏕️ שבט</SelectItem>
+                <SelectItem value="majority">📊 הרוב קובע</SelectItem>
               </SelectContent>
             </Select>
           </div>
