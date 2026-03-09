@@ -186,6 +186,9 @@ const GamePlay = () => {
   const [showStats, setShowStats] = useState(false);
   const [statsData, setStatsData] = useState<{ text: string; count: number; colorClass: string }[]>([]);
 
+  // Majority mode - multiple correct answer IDs
+  const [majorityCorrectIds, setMajorityCorrectIds] = useState<string[]>([]);
+
   // Determine current king for tribe mode
   const getCurrentKingId = useCallback(
     (index: number) => {
