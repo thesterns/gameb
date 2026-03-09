@@ -178,6 +178,7 @@ const CreateQuiz = () => {
             double_points: (q as any).double_points || false,
             custom_time: (q as any).custom_time || undefined,
             use_participant_answers: (q as any).use_participant_answers || false,
+            is_open_question: (q as any).is_open_question || false,
           });
         }
         setQuestions(loadedQuestions);
