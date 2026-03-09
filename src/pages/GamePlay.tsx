@@ -641,6 +641,28 @@ const GamePlay = () => {
     }
   }, [timeUp, kingAnswerId, isKingOrTribeMode, isHost, selectedAnswerId, isCurrentPlayerKing]);
 
+  // Track majority mode answer locally for player feedback
+  useEffect(() => {
+    if (!timeUp || !isMajorityMode || isHost || majorityCorrectIds.length === 0 || !selectedAnswerId) return;
+
+    const isCorrect = majorityCorrectIds.includes(selectedAnswerId);
+    setMyAnswerCorrect(isCorrect);
+    if (isCorrect) {
+      const currentQ = questions[currentIndex];
+      const pts = currentQ?.double_points ? 20 : 10;
+      setScore((prev) => prev + pts);
+      setTotalCorrect((prev) => prev + 1);
+      setCorrectStreak((prev) => {
+        const newStreak = prev + 1;
+        setMaxStreak((m) => Math.max(m, newStreak));
+        if (newStreak >= 3) setShowConfetti(true);
+        return newStreak;
+      });
+    } else {
+      setCorrectStreak(0);
+    }
+  }, [timeUp, majorityCorrectIds, isMajorityMode, isHost, selectedAnswerId]);
+
   // Reset confetti after showing
   useEffect(() => {
     if (!showConfetti) return;
