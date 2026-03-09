@@ -556,38 +556,55 @@ const GamePlay = () => {
 
       setSelectedAnswerId(answerId);
 
-      // Call server-side RPC to submit answer (score computed server-side)
-      const { data } = await supabase.rpc("submit_answer", {
-        p_session_id: sessionId,
-        p_participant_id: participantId,
-        p_question_id: questions[currentIndex].id,
-        p_answer_id: answerId,
-      });
+      const currentQ = questions[currentIndex];
+      const isParticipantAnswers = isMajorityMode && currentQ?.use_participant_answers;
 
-      if (isCurrentPlayerKing) {
-        return;
-      }
-
-      if (isKingOrTribeMode) {
-        setWaitingForKing(true);
-      } else if (isMajorityMode) {
-        // For majority mode, wait until results are revealed
-        // Score will be computed later when majority is revealed
+      if (isParticipantAnswers) {
+        // For participant-answer questions, insert directly with response_text
+        // (answer_id FK references answers table, so we can't use participant IDs there)
+        await supabase.from("game_responses").insert({
+          session_id: sessionId,
+          participant_id: participantId,
+          question_id: currentQ.id,
+          answer_id: null,
+          response_text: answerId, // Store chosen participant ID in response_text
+          is_correct: false,
+          score: 0,
+        });
+        // Wait for majority reveal
       } else {
-        // For genius mode, server returns the computed result
-        const result = data as { is_correct: boolean; score: number } | null;
-        setMyAnswerCorrect(result?.is_correct ?? false);
-        if (result?.is_correct) {
-          setScore((prev) => prev + result.score);
-          setTotalCorrect((prev) => prev + 1);
-          setCorrectStreak((prev) => {
-            const newStreak = prev + 1;
-            setMaxStreak((m) => Math.max(m, newStreak));
-            if (newStreak >= 3) setShowConfetti(true);
-            return newStreak;
-          });
+        // Call server-side RPC to submit answer (score computed server-side)
+        const { data } = await supabase.rpc("submit_answer", {
+          p_session_id: sessionId,
+          p_participant_id: participantId,
+          p_question_id: currentQ.id,
+          p_answer_id: answerId,
+        });
+
+        if (isCurrentPlayerKing) {
+          return;
+        }
+
+        if (isKingOrTribeMode) {
+          setWaitingForKing(true);
+        } else if (isMajorityMode) {
+          // For majority mode with predefined answers, wait until results are revealed
         } else {
-          setCorrectStreak(0);
+          // For genius mode, server returns the computed result
+          const result = data as { is_correct: boolean; score: number } | null;
+          setMyAnswerCorrect(result?.is_correct ?? false);
+          if (result?.is_correct) {
+            setScore((prev) => prev + result.score);
+            setTotalCorrect((prev) => prev + 1);
+            setCorrectStreak((prev) => {
+              const newStreak = prev + 1;
+              setMaxStreak((m) => Math.max(m, newStreak));
+              if (newStreak >= 3) setShowConfetti(true);
+              return newStreak;
+            });
+          } else {
+            setCorrectStreak(0);
+          }
         }
       }
     },
