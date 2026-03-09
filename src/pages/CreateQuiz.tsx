@@ -795,6 +795,21 @@ const CreateQuiz = () => {
                   />
                   <span className="text-xs text-muted-foreground">שניות</span>
                 </div>
+                {mode === "majority" && (
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <Checkbox
+                      checked={q.use_participant_answers}
+                      onCheckedChange={(checked) =>
+                        setQuestions((prev) =>
+                          prev.map((qq) => qq.id === q.id ? { ...qq, use_participant_answers: !!checked } : qq)
+                        )
+                      }
+                      className="data-[state=checked]:bg-[hsl(var(--answer-purple))] data-[state=checked]:border-[hsl(var(--answer-purple))]"
+                    />
+                    <Users className="size-4 text-[hsl(var(--answer-purple))]" />
+                    <span className="text-sm font-medium">תשובות = משתתפים</span>
+                  </label>
+                )}
               </div>
 
         {/* AI Generate Questions Dialog */}
