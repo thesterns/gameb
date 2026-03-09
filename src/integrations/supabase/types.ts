@@ -504,6 +504,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      resolve_majority_scores: {
+        Args: { p_question_id: string; p_session_id: string }
+        Returns: undefined
+      }
       submit_answer: {
         Args: {
           p_answer_id: string
