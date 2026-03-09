@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
-import { Zap, Users, Trophy, Sparkles, ArrowLeft } from "lucide-react";
+import { Zap, Users, Trophy, Sparkles, ArrowLeft, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import heroImage from "@/assets/hero-quiz.png";
+import { ContactFormDialog } from "@/components/ContactFormDialog";
 
 const features = [
   {
