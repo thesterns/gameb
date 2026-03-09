@@ -86,7 +86,7 @@ const MyQuizzes = () => {
       // Fetch the original quiz
       const { data: original, error: qErr } = await supabase
         .from("quizzes")
-        .select("title, description, mode")
+        .select("title, description, mode, theme, time_per_question, logo_url, logo_text, image_url, youtube_url")
         .eq("id", quizId)
         .single();
       if (qErr || !original) throw qErr;
@@ -94,38 +94,59 @@ const MyQuizzes = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Create duplicated quiz
       const { data: newQuiz, error: insertErr } = await supabase
         .from("quizzes")
-        .insert({ title: original.title + " (עותק)", description: original.description, mode: original.mode, user_id: user.id })
+        .insert({
+          title: original.title + " (עותק)",
+          description: original.description,
+          mode: original.mode,
+          theme: original.theme,
+          time_per_question: original.time_per_question,
+          logo_url: original.logo_url,
+          logo_text: original.logo_text,
+          image_url: original.image_url,
+          youtube_url: original.youtube_url,
+          user_id: user.id,
+        })
         .select()
         .single();
       if (insertErr || !newQuiz) throw insertErr;
 
-      // Fetch questions
       const { data: questions } = await supabase
         .from("questions")
-        .select("id, text, sort_order")
+        .select("id, text, sort_order, image_url, youtube_url, custom_time, double_points, use_participant_answers")
         .eq("quiz_id", quizId)
         .order("sort_order");
 
       for (const q of questions || []) {
         const { data: newQ } = await supabase
           .from("questions")
-          .insert({ quiz_id: newQuiz.id, text: q.text, sort_order: q.sort_order })
+          .insert({
+            quiz_id: newQuiz.id,
+            text: q.text,
+            sort_order: q.sort_order,
+            image_url: q.image_url,
+            youtube_url: q.youtube_url,
+            custom_time: q.custom_time,
+            double_points: q.double_points,
+            use_participant_answers: q.use_participant_answers,
+          })
           .select()
           .single();
         if (!newQ) continue;
 
-        const { data: answers } = await supabase
-          .from("answers")
-          .select("text, is_correct, sort_order")
-          .eq("question_id", q.id);
+        // Skip copying answers for participant-based questions
+        if (!q.use_participant_answers) {
+          const { data: answers } = await supabase
+            .from("answers")
+            .select("text, is_correct, sort_order")
+            .eq("question_id", q.id);
 
-        if (answers?.length) {
-          await supabase.from("answers").insert(
-            answers.map((a) => ({ ...a, question_id: newQ.id }))
-          );
+          if (answers?.length) {
+            await supabase.from("answers").insert(
+              answers.map((a) => ({ ...a, question_id: newQ.id }))
+            );
+          }
         }
       }
 
