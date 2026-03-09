@@ -286,10 +286,13 @@ const CreateQuiz = () => {
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
       if (!q.text.trim()) return `שאלה ${i + 1}: יש להזין טקסט לשאלה`;
-      if (q.answers.length < 2) return `שאלה ${i + 1}: צריך לפחות 2 תשובות`;
-      for (let j = 0; j < q.answers.length; j++) {
-        if (!q.answers[j].text.trim())
-          return `שאלה ${i + 1}, תשובה ${j + 1}: יש להזין טקסט`;
+      // Skip answer validation for participant-based questions in majority mode
+      if (!(mode === "majority" && q.use_participant_answers)) {
+        if (q.answers.length < 2) return `שאלה ${i + 1}: צריך לפחות 2 תשובות`;
+        for (let j = 0; j < q.answers.length; j++) {
+          if (!q.answers[j].text.trim())
+            return `שאלה ${i + 1}, תשובה ${j + 1}: יש להזין טקסט`;
+        }
       }
     }
     return null;
