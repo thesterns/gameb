@@ -1181,7 +1181,7 @@ const GamePlay = () => {
         )}
 
         {/* Correct answer feedback for player (non-king) in genius mode */}
-        {timeUp && !isHost && selectedAnswerId && !isCurrentPlayerKing && !isKingOrTribeMode && (
+        {timeUp && !isHost && selectedAnswerId && !isCurrentPlayerKing && !isKingOrTribeMode && !isMajorityMode && (
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -1194,6 +1194,23 @@ const GamePlay = () => {
             {myAnswerCorrect
               ? `תשובה נכונה! 🎉${correctStreak >= 3 ? ` 🔥 רצף של ${correctStreak}!` : ""}`
               : `תשובה שגויה. התשובה הנכונה: ${correctAnswerForDisplay?.text || "?"}`}
+          </motion.p>
+        )}
+
+        {/* Majority mode: feedback AFTER results revealed */}
+        {timeUp && !isHost && selectedAnswerId && isMajorityMode && majorityCorrectIds.length > 0 && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className={`font-heading font-semibold text-lg ${
+              myAnswerCorrect
+                ? "text-[hsl(var(--accent))]"
+                : "text-destructive-foreground"
+            }`}
+          >
+            {myAnswerCorrect
+              ? `בחרת עם הרוב! 🎉${correctStreak >= 3 ? ` 🔥 רצף של ${correctStreak}!` : ""}`
+              : `לא בחרת עם הרוב. התשובה של הרוב: ${answers.filter(a => majorityCorrectIds.includes(a.id)).map(a => a.text).join(", ") || "?"}`}
           </motion.p>
         )}
 
