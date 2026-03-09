@@ -812,19 +812,7 @@ const CreateQuiz = () => {
                     <span className="text-sm font-medium">תשובות = משתתפים</span>
                   </label>
                 )}
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <Checkbox
-                    checked={q.is_open_question}
-                    onCheckedChange={(checked) =>
-                      setQuestions((prev) =>
-                        prev.map((qq) => qq.id === q.id ? { ...qq, is_open_question: !!checked } : qq)
-                      )
-                    }
-                    className="data-[state=checked]:bg-[hsl(var(--answer-green))] data-[state=checked]:border-[hsl(var(--answer-green))]"
-                  />
-                  <span className="text-lg">💬</span>
-                  <span className="text-sm font-medium">שאלה פתוחה</span>
-                </label>
+                {/* Open question toggle – hidden until feature is complete */}
               </div>
 
         {/* AI Generate Questions Dialog */}
