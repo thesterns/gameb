@@ -171,7 +171,7 @@ const Index = () => {
               <div className="absolute inset-0 gradient-hero rounded-3xl blur-3xl opacity-20 scale-110" />
               <img
                 src={heroImage}
-                alt="לך תדע - משחקים אינטראקטיביים"
+                alt="zgame - משחקים אינטראקטיביים"
                 className="relative z-10 w-72 md:w-96 animate-float drop-shadow-2xl"
               />
             </div>
