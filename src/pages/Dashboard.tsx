@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Gamepad2, LogOut, BookOpen, Crown, Brain, Users, Play, Target, Edit } from "lucide-react";
+import { Plus, Gamepad2, LogOut, BookOpen, Crown, Brain, Users, Play, Target, Edit, Mail } from "lucide-react";
+import { ContactFormDialog } from "@/components/ContactFormDialog";
 import ThemeToggle from "@/components/ThemeToggle";
 import { toast } from "sonner";
 import ChallengeHistoryDialog from "@/components/ChallengeHistoryDialog";
@@ -313,6 +314,21 @@ const Dashboard = () => {
           )}
         </motion.div>
       </main>
+
+      {/* Footer */}
+      <footer className="px-6 py-8 text-center text-muted-foreground text-sm border-t border-border">
+        <div className="flex items-center justify-center gap-4 mb-2">
+          <ContactFormDialog
+            trigger={
+              <button className="inline-flex items-center gap-1 hover:text-foreground transition-colors">
+                <Mail className="!size-4" />
+                צור קשר
+              </button>
+            }
+          />
+        </div>
+        <p>© 2026 zgame. כל הזכויות שמורות.</p>
+      </footer>
     </div>
   );
 };
