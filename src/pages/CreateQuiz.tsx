@@ -150,7 +150,7 @@ const CreateQuiz = () => {
 
       const { data: dbQuestions } = await supabase
         .from("questions")
-        .select("id, text, sort_order, image_url, double_points, custom_time")
+        .select("id, text, sort_order, image_url, double_points, custom_time, use_participant_answers")
         .eq("quiz_id", quizId)
         .order("sort_order");
 
@@ -176,6 +176,7 @@ const CreateQuiz = () => {
             youtube_url: (q as any).youtube_url || undefined,
             double_points: (q as any).double_points || false,
             custom_time: (q as any).custom_time || undefined,
+            use_participant_answers: (q as any).use_participant_answers || false,
           });
         }
         setQuestions(loadedQuestions);
