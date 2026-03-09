@@ -19,6 +19,7 @@ interface Question {
   youtube_url?: string;
   double_points?: boolean;
   custom_time?: number;
+  use_participant_answers?: boolean;
 }
 
 interface Answer {
