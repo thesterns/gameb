@@ -66,6 +66,10 @@ const modeDescriptions: Record<string, { label: string; description: string }> =
     label: "שבט",
     description: "התשובה הנכונה תהיה התשובה שיענה אחד השחקנים לפי תור בין כולם.",
   },
+  majority: {
+    label: "הרוב קובע",
+    description: "התשובה הנכונה תהיה התשובה שהרוב בחרו. במקרה של שוויון, כל התשובות המקסימליות נכונות.",
+  },
 };
 
 const answerColors = [
