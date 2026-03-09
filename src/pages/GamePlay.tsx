@@ -481,6 +481,9 @@ const GamePlay = () => {
       .on("broadcast", { event: "reveal_correct_answer" }, (payload) => {
         setRevealedCorrectAnswerId(payload.payload.correct_answer_id);
       })
+      .on("broadcast", { event: "reveal_majority_answers" }, (payload) => {
+        setMajorityCorrectIds(payload.payload.correct_ids || []);
+      })
       .subscribe((status) => {
         console.log("[Leaderboard] Channel subscription status:", status);
         if (status === "SUBSCRIBED") {
