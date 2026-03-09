@@ -548,6 +548,7 @@ const GamePlay = () => {
 
   // In king/tribe mode, when king answers, check if we need to wait
   const isKingOrTribeMode = quizMode === "king" || quizMode === "tribe";
+  const isMajorityMode = quizMode === "majority";
 
   const handleSelectAnswer = useCallback(
     async (answerId: string) => {
