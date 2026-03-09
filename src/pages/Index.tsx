@@ -188,7 +188,7 @@ const Index = () => {
           viewport={{ once: true }}
         >
           <h3 className="text-3xl md:text-4xl font-heading font-bold mb-4">
-            למה לך תדע?
+            למה zgame?
           </h3>
           <p className="text-muted-foreground text-lg">
             הכלי המושלם ליצירת משחקים אינטראקטיביים
