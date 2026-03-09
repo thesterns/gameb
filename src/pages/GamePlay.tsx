@@ -712,17 +712,20 @@ const GamePlay = () => {
   const handleShowStats = async () => {
     if (!sessionId || !questions.length || currentIndex >= questions.length) return;
     const questionId = questions[currentIndex].id;
+    const currentQ = questions[currentIndex];
+    const isParticipantAnswers = isMajorityMode && currentQ?.use_participant_answers;
 
     const { data: responses } = await supabase
       .from("game_responses")
-      .select("answer_id")
+      .select("answer_id, response_text")
       .eq("session_id", sessionId)
       .eq("question_id", questionId);
 
     const countMap: Record<string, number> = {};
     for (const r of responses || []) {
-      if (r.answer_id) {
-        countMap[r.answer_id] = (countMap[r.answer_id] || 0) + 1;
+      const key = isParticipantAnswers ? r.response_text : r.answer_id;
+      if (key) {
+        countMap[key] = (countMap[key] || 0) + 1;
       }
     }
 
