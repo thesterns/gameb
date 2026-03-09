@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowRight, Plus, Trash2, GripVertical, Check, Info, ImagePlus, X, Youtube, Zap, Clock, Shuffle, Sparkles, Loader2 } from "lucide-react";
+import { ArrowRight, Plus, Trash2, GripVertical, Check, Info, ImagePlus, X, Youtube, Zap, Clock, Shuffle, Sparkles, Loader2, Users } from "lucide-react";
 import YouTubeEmbed, { isValidYouTubeUrl } from "@/components/YouTubeEmbed";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
