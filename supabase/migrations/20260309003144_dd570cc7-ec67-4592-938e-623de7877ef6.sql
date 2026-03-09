@@ -1,0 +1,1 @@
+ALTER TABLE public.questions ADD COLUMN use_participant_answers boolean NOT NULL DEFAULT false;

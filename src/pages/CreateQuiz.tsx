@@ -625,6 +625,7 @@ const CreateQuiz = () => {
                   <SelectItem value="genius">🧠 גאון</SelectItem>
                   <SelectItem value="king">👑 מלך</SelectItem>
                   <SelectItem value="tribe">🏕️ שבט</SelectItem>
+                  <SelectItem value="majority">🗳️ הרוב קובע</SelectItem>
                 </SelectContent>
               </Select>
               <div className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
