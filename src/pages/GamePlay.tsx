@@ -784,6 +784,15 @@ const GamePlay = () => {
       await updateKingTribeScores(currentIndex);
     }
 
+    // Ensure majority scores are updated before advancing
+    if (isMajorityMode && questions.length > 0 && currentIndex < questions.length) {
+      const questionId = questions[currentIndex].id;
+      await supabase.rpc("resolve_majority_scores", {
+        p_session_id: sessionId,
+        p_question_id: questionId,
+      });
+    }
+
     const nextIndex = currentIndex + 1;
 
     if (nextIndex >= questions.length) {
