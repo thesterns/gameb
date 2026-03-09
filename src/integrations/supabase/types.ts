@@ -242,6 +242,7 @@ export type Database = {
           is_correct: boolean
           participant_id: string
           question_id: string
+          response_text: string | null
           score: number
           session_id: string
         }
@@ -252,6 +253,7 @@ export type Database = {
           is_correct?: boolean
           participant_id: string
           question_id: string
+          response_text?: string | null
           score?: number
           session_id: string
         }
@@ -262,6 +264,7 @@ export type Database = {
           is_correct?: boolean
           participant_id?: string
           question_id?: string
+          response_text?: string | null
           score?: number
           session_id?: string
         }
@@ -357,6 +360,62 @@ export type Database = {
           },
         ]
       }
+      open_question_likes: {
+        Row: {
+          created_at: string
+          id: string
+          question_id: string
+          session_id: string
+          target_participant_id: string
+          voter_participant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          question_id: string
+          session_id: string
+          target_participant_id: string
+          voter_participant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          question_id?: string
+          session_id?: string
+          target_participant_id?: string
+          voter_participant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "open_question_likes_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "open_question_likes_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "open_question_likes_target_participant_id_fkey"
+            columns: ["target_participant_id"]
+            isOneToOne: false
+            referencedRelation: "game_participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "open_question_likes_voter_participant_id_fkey"
+            columns: ["voter_participant_id"]
+            isOneToOne: false
+            referencedRelation: "game_participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       participant_dimension_assignments: {
         Row: {
           dimension: string
@@ -403,6 +462,7 @@ export type Database = {
           double_points: boolean
           id: string
           image_url: string | null
+          is_open_question: boolean
           quiz_id: string
           sort_order: number
           text: string
@@ -415,6 +475,7 @@ export type Database = {
           double_points?: boolean
           id?: string
           image_url?: string | null
+          is_open_question?: boolean
           quiz_id: string
           sort_order?: number
           text: string
@@ -427,6 +488,7 @@ export type Database = {
           double_points?: boolean
           id?: string
           image_url?: string | null
+          is_open_question?: boolean
           quiz_id?: string
           sort_order?: number
           text?: string
@@ -508,11 +570,24 @@ export type Database = {
         Args: { p_question_id: string; p_session_id: string }
         Returns: undefined
       }
+      resolve_open_question_scores: {
+        Args: { p_question_id: string; p_session_id: string }
+        Returns: undefined
+      }
       submit_answer: {
         Args: {
           p_answer_id: string
           p_participant_id: string
           p_question_id: string
+          p_session_id: string
+        }
+        Returns: Json
+      }
+      submit_open_answer: {
+        Args: {
+          p_participant_id: string
+          p_question_id: string
+          p_response_text: string
           p_session_id: string
         }
         Returns: Json
