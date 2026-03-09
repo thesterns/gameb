@@ -302,13 +302,25 @@ const GamePlay = () => {
 
     const loadAnswers = async () => {
       const q = questions[currentIndex];
-      const { data } = await supabase
-        .from("answers")
-        .select("id, text, sort_order")
-        .eq("question_id", q.id)
-        .order("sort_order");
-
-      setAnswers(data || []);
+      
+      // For majority mode with participant answers, use participants as answers
+      if (quizMode === "majority" && (q as any).use_participant_answers) {
+        // Use participants as answers
+        const participantAnswers: Answer[] = participants.map((p, idx) => ({
+          id: p.id, // Use participant ID as answer ID
+          text: p.player_name,
+          sort_order: idx,
+        }));
+        setAnswers(participantAnswers);
+      } else {
+        const { data } = await supabase
+          .from("answers")
+          .select("id, text, sort_order")
+          .eq("question_id", q.id)
+          .order("sort_order");
+        setAnswers(data || []);
+      }
+      
       setSelectedAnswerId(null);
       setTimeUp(false);
       const currentQuestion = questions[currentIndex];
@@ -319,10 +331,11 @@ const GamePlay = () => {
       setWaitingForKing(false);
       setMyAnswerCorrect(null);
       setRevealedCorrectAnswerId(null);
+      setMajorityCorrectIds([]);
     };
 
     loadAnswers();
-  }, [questions, currentIndex, totalTime, showIntroSlide]);
+  }, [questions, currentIndex, totalTime, showIntroSlide, quizMode, participants]);
 
   // Timer countdown
   useEffect(() => {
