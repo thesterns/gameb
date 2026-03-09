@@ -37,6 +37,7 @@ interface Question {
   double_points: boolean;
   custom_time?: number;
   use_participant_answers?: boolean;
+  is_open_question?: boolean;
 }
 
 const generateId = () => crypto.randomUUID();
