@@ -37,6 +37,7 @@ interface Question {
   double_points: boolean;
   custom_time?: number;
   use_participant_answers?: boolean;
+  is_open_question?: boolean;
 }
 
 const generateId = () => crypto.randomUUID();
@@ -150,7 +151,7 @@ const CreateQuiz = () => {
 
       const { data: dbQuestions } = await supabase
         .from("questions")
-        .select("id, text, sort_order, image_url, double_points, custom_time, use_participant_answers")
+        .select("id, text, sort_order, image_url, double_points, custom_time, use_participant_answers, is_open_question")
         .eq("quiz_id", quizId)
         .order("sort_order");
 
@@ -177,6 +178,7 @@ const CreateQuiz = () => {
             double_points: (q as any).double_points || false,
             custom_time: (q as any).custom_time || undefined,
             use_participant_answers: (q as any).use_participant_answers || false,
+            is_open_question: (q as any).is_open_question || false,
           });
         }
         setQuestions(loadedQuestions);
@@ -344,7 +346,7 @@ const CreateQuiz = () => {
           }
           const { data: dbQ, error: qErr } = await supabase
             .from("questions")
-            .insert({ quiz_id: quizId, text: q.text.trim(), sort_order: i, image_url: imageUrl, youtube_url: q.youtube_url?.trim() || null, double_points: q.double_points, custom_time: q.custom_time || null, use_participant_answers: q.use_participant_answers || false } as any)
+            .insert({ quiz_id: quizId, text: q.text.trim(), sort_order: i, image_url: imageUrl, youtube_url: q.youtube_url?.trim() || null, double_points: q.double_points, custom_time: q.custom_time || null, use_participant_answers: q.use_participant_answers || false, is_open_question: q.is_open_question || false } as any)
             .select()
             .single();
 
@@ -392,7 +394,7 @@ const CreateQuiz = () => {
           }
           const { data: dbQ, error: qErr } = await supabase
             .from("questions")
-            .insert({ quiz_id: quiz.id, text: q.text.trim(), sort_order: i, image_url: imageUrl, youtube_url: q.youtube_url?.trim() || null, double_points: q.double_points, custom_time: q.custom_time || null, use_participant_answers: q.use_participant_answers || false } as any)
+            .insert({ quiz_id: quiz.id, text: q.text.trim(), sort_order: i, image_url: imageUrl, youtube_url: q.youtube_url?.trim() || null, double_points: q.double_points, custom_time: q.custom_time || null, use_participant_answers: q.use_participant_answers || false, is_open_question: q.is_open_question || false } as any)
             .select()
             .single();
 
@@ -810,6 +812,19 @@ const CreateQuiz = () => {
                     <span className="text-sm font-medium">תשובות = משתתפים</span>
                   </label>
                 )}
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <Checkbox
+                    checked={q.is_open_question}
+                    onCheckedChange={(checked) =>
+                      setQuestions((prev) =>
+                        prev.map((qq) => qq.id === q.id ? { ...qq, is_open_question: !!checked } : qq)
+                      )
+                    }
+                    className="data-[state=checked]:bg-[hsl(var(--answer-green))] data-[state=checked]:border-[hsl(var(--answer-green))]"
+                  />
+                  <span className="text-lg">💬</span>
+                  <span className="text-sm font-medium">שאלה פתוחה</span>
+                </label>
               </div>
 
         {/* AI Generate Questions Dialog */}
