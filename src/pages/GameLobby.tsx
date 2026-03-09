@@ -255,6 +255,7 @@ const GameLobby = () => {
 
   const isKingMode = gameType === "quiz" && quizMode === "king";
   const isTribeMode = gameType === "quiz" && quizMode === "tribe";
+  const isMajorityMode = gameType === "quiz" && quizMode === "majority";
 
   if (loading) {
     return (
@@ -291,6 +292,9 @@ const GameLobby = () => {
           )}
           {isTribeMode && (
             <p className="text-primary-foreground/70 text-sm mt-1">🏕️ מצב שבט</p>
+          )}
+          {isMajorityMode && (
+            <p className="text-primary-foreground/70 text-sm mt-1">🗳️ הרוב קובע</p>
           )}
           {gameType === "challenge" && (
             <p className="text-primary-foreground/70 text-sm mt-1">🎯 אתגר</p>

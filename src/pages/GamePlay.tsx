@@ -19,6 +19,7 @@ interface Question {
   youtube_url?: string;
   double_points?: boolean;
   custom_time?: number;
+  use_participant_answers?: boolean;
 }
 
 interface Answer {
@@ -185,6 +186,9 @@ const GamePlay = () => {
   const [showStats, setShowStats] = useState(false);
   const [statsData, setStatsData] = useState<{ text: string; count: number; colorClass: string }[]>([]);
 
+  // Majority mode - multiple correct answer IDs
+  const [majorityCorrectIds, setMajorityCorrectIds] = useState<string[]>([]);
+
   // Determine current king for tribe mode
   const getCurrentKingId = useCallback(
     (index: number) => {
@@ -246,7 +250,7 @@ const GamePlay = () => {
 
       const { data: qs } = await supabase
         .from("questions")
-        .select("id, text, sort_order, image_url, youtube_url, double_points, custom_time")
+        .select("id, text, sort_order, image_url, youtube_url, double_points, custom_time, use_participant_answers")
         .eq("quiz_id", session.quiz_id)
         .order("sort_order");
 
@@ -301,13 +305,25 @@ const GamePlay = () => {
 
     const loadAnswers = async () => {
       const q = questions[currentIndex];
-      const { data } = await supabase
-        .from("answers")
-        .select("id, text, sort_order")
-        .eq("question_id", q.id)
-        .order("sort_order");
-
-      setAnswers(data || []);
+      
+      // For majority mode with participant answers, use participants as answers
+      if (quizMode === "majority" && (q as any).use_participant_answers) {
+        // Use participants as answers
+        const participantAnswers: Answer[] = participants.map((p, idx) => ({
+          id: p.id, // Use participant ID as answer ID
+          text: p.player_name,
+          sort_order: idx,
+        }));
+        setAnswers(participantAnswers);
+      } else {
+        const { data } = await supabase
+          .from("answers")
+          .select("id, text, sort_order")
+          .eq("question_id", q.id)
+          .order("sort_order");
+        setAnswers(data || []);
+      }
+      
       setSelectedAnswerId(null);
       setTimeUp(false);
       const currentQuestion = questions[currentIndex];
@@ -318,10 +334,11 @@ const GamePlay = () => {
       setWaitingForKing(false);
       setMyAnswerCorrect(null);
       setRevealedCorrectAnswerId(null);
+      setMajorityCorrectIds([]);
     };
 
     loadAnswers();
-  }, [questions, currentIndex, totalTime, showIntroSlide]);
+  }, [questions, currentIndex, totalTime, showIntroSlide, quizMode, participants]);
 
   // Timer countdown
   useEffect(() => {
@@ -345,32 +362,69 @@ const GamePlay = () => {
     };
   }, [loading, currentIndex, questions, timeUp]);
 
-  // Host broadcasts correct answer when time expires (genius mode)
+  // Host broadcasts correct answer when time expires (genius mode) OR resolves majority
   useEffect(() => {
     const isKingOrTribe = quizMode === "king" || quizMode === "tribe";
-    if (!timeUp || !isHost || isKingOrTribe || !leaderboardChannelRef.current) return;
+    const isMajority = quizMode === "majority";
+    if (!timeUp || !isHost || !leaderboardChannelRef.current) return;
     if (!questions.length || currentIndex >= questions.length) return;
 
     const questionId = questions[currentIndex].id;
-    const broadcastCorrectAnswer = async () => {
-      const { data } = await supabase
-        .from("answers")
-        .select("id")
-        .eq("question_id", questionId)
-        .eq("is_correct", true)
-        .single();
+    
+    if (isMajority) {
+      // Majority mode: determine correct answers based on votes
+      const resolveMajority = async () => {
+        const { data: responses } = await supabase
+          .from("game_responses")
+          .select("answer_id")
+          .eq("session_id", sessionId)
+          .eq("question_id", questionId);
 
-      if (data && leaderboardChannelRef.current) {
-        setRevealedCorrectAnswerId(data.id);
-        await leaderboardChannelRef.current.send({
-          type: "broadcast",
-          event: "reveal_correct_answer",
-          payload: { correct_answer_id: data.id },
-        });
-      }
-    };
-    broadcastCorrectAnswer();
-  }, [timeUp, isHost, quizMode, questions, currentIndex]);
+        const countMap: Record<string, number> = {};
+        for (const r of responses || []) {
+          if (r.answer_id) {
+            countMap[r.answer_id] = (countMap[r.answer_id] || 0) + 1;
+          }
+        }
+
+        const maxCount = Math.max(0, ...Object.values(countMap));
+        const correctIds = maxCount > 0 
+          ? Object.entries(countMap).filter(([, c]) => c === maxCount).map(([id]) => id)
+          : [];
+
+        setMajorityCorrectIds(correctIds);
+
+        if (leaderboardChannelRef.current) {
+          await leaderboardChannelRef.current.send({
+            type: "broadcast",
+            event: "reveal_majority_answers",
+            payload: { correct_ids: correctIds },
+          });
+        }
+      };
+      resolveMajority();
+    } else if (!isKingOrTribe) {
+      // Genius mode
+      const broadcastCorrectAnswer = async () => {
+        const { data } = await supabase
+          .from("answers")
+          .select("id")
+          .eq("question_id", questionId)
+          .eq("is_correct", true)
+          .single();
+
+        if (data && leaderboardChannelRef.current) {
+          setRevealedCorrectAnswerId(data.id);
+          await leaderboardChannelRef.current.send({
+            type: "broadcast",
+            event: "reveal_correct_answer",
+            payload: { correct_answer_id: data.id },
+          });
+        }
+      };
+      broadcastCorrectAnswer();
+    }
+  }, [timeUp, isHost, quizMode, questions, currentIndex, sessionId]);
 
 
   useEffect(() => {
@@ -426,6 +480,9 @@ const GamePlay = () => {
       })
       .on("broadcast", { event: "reveal_correct_answer" }, (payload) => {
         setRevealedCorrectAnswerId(payload.payload.correct_answer_id);
+      })
+      .on("broadcast", { event: "reveal_majority_answers" }, (payload) => {
+        setMajorityCorrectIds(payload.payload.correct_ids || []);
       })
       .subscribe((status) => {
         console.log("[Leaderboard] Channel subscription status:", status);
@@ -491,6 +548,7 @@ const GamePlay = () => {
 
   // In king/tribe mode, when king answers, check if we need to wait
   const isKingOrTribeMode = quizMode === "king" || quizMode === "tribe";
+  const isMajorityMode = quizMode === "majority";
 
   const handleSelectAnswer = useCallback(
     async (answerId: string) => {
@@ -512,6 +570,9 @@ const GamePlay = () => {
 
       if (isKingOrTribeMode) {
         setWaitingForKing(true);
+      } else if (isMajorityMode) {
+        // For majority mode, wait until results are revealed
+        // Score will be computed later when majority is revealed
       } else {
         // For genius mode, server returns the computed result
         const result = data as { is_correct: boolean; score: number } | null;
@@ -539,6 +600,7 @@ const GamePlay = () => {
       currentIndex,
       isCurrentPlayerKing,
       isKingOrTribeMode,
+      isMajorityMode,
     ]
   );
 
@@ -579,6 +641,28 @@ const GamePlay = () => {
       setCorrectStreak(0);
     }
   }, [timeUp, kingAnswerId, isKingOrTribeMode, isHost, selectedAnswerId, isCurrentPlayerKing]);
+
+  // Track majority mode answer locally for player feedback
+  useEffect(() => {
+    if (!timeUp || !isMajorityMode || isHost || majorityCorrectIds.length === 0 || !selectedAnswerId) return;
+
+    const isCorrect = majorityCorrectIds.includes(selectedAnswerId);
+    setMyAnswerCorrect(isCorrect);
+    if (isCorrect) {
+      const currentQ = questions[currentIndex];
+      const pts = currentQ?.double_points ? 20 : 10;
+      setScore((prev) => prev + pts);
+      setTotalCorrect((prev) => prev + 1);
+      setCorrectStreak((prev) => {
+        const newStreak = prev + 1;
+        setMaxStreak((m) => Math.max(m, newStreak));
+        if (newStreak >= 3) setShowConfetti(true);
+        return newStreak;
+      });
+    } else {
+      setCorrectStreak(0);
+    }
+  }, [timeUp, majorityCorrectIds, isMajorityMode, isHost, selectedAnswerId]);
 
   // Reset confetti after showing
   useEffect(() => {
@@ -698,6 +782,15 @@ const GamePlay = () => {
     // Ensure king/tribe scores are updated before advancing
     if (isKingOrTribeMode) {
       await updateKingTribeScores(currentIndex);
+    }
+
+    // Ensure majority scores are updated before advancing
+    if (isMajorityMode && questions.length > 0 && currentIndex < questions.length) {
+      const questionId = questions[currentIndex].id;
+      await supabase.rpc("resolve_majority_scores", {
+        p_session_id: sessionId,
+        p_question_id: questionId,
+      });
     }
 
     const nextIndex = currentIndex + 1;
@@ -1010,20 +1103,26 @@ const GamePlay = () => {
             const isSelected = selectedAnswerId === answer.id;
             // King never sees correct/wrong feedback on their own answers
             const isKingViewing = isCurrentPlayerKing;
-            const showCorrectGenius = timeUp && !isKingOrTribeMode && revealedCorrectAnswerId === answer.id;
+            const showCorrectGenius = timeUp && !isKingOrTribeMode && !isMajorityMode && revealedCorrectAnswerId === answer.id;
             // Players in king/tribe mode only see feedback AFTER king has chosen
             const showCorrectKing =
               timeUp && isKingOrTribeMode && !isKingViewing && kingAnswerId && answer.id === kingAnswerId;
-            const showCorrect = showCorrectGenius || showCorrectKing;
+            // Majority mode: show correct for all majority answers
+            const showCorrectMajority = timeUp && isMajorityMode && majorityCorrectIds.includes(answer.id);
+            const showCorrect = showCorrectGenius || showCorrectKing || showCorrectMajority;
             const showWrong =
               timeUp &&
               isSelected &&
               !isKingViewing &&
               (!isKingOrTribeMode || !!kingAnswerId) &&
+              (!isMajorityMode || majorityCorrectIds.length > 0) &&
               !showCorrect;
 
             // In king/tribe mode, don't dim answers until king has chosen
-            const dimUnselected = timeUp && !showCorrect && !showWrong && (!isKingOrTribeMode || !!kingAnswerId || isKingViewing);
+            // In majority mode, don't dim until results are revealed
+            const dimUnselected = timeUp && !showCorrect && !showWrong && 
+              (!isKingOrTribeMode || !!kingAnswerId || isKingViewing) &&
+              (!isMajorityMode || majorityCorrectIds.length > 0);
 
             return (
               <motion.button

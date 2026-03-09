@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowRight, Plus, Trash2, GripVertical, Check, Info, ImagePlus, X, Youtube, Zap, Clock, Shuffle, Sparkles, Loader2 } from "lucide-react";
+import { ArrowRight, Plus, Trash2, GripVertical, Check, Info, ImagePlus, X, Youtube, Zap, Clock, Shuffle, Sparkles, Loader2, Users } from "lucide-react";
 import YouTubeEmbed, { isValidYouTubeUrl } from "@/components/YouTubeEmbed";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -36,6 +36,7 @@ interface Question {
   youtube_url?: string;
   double_points: boolean;
   custom_time?: number;
+  use_participant_answers?: boolean;
 }
 
 const generateId = () => crypto.randomUUID();
@@ -65,6 +66,10 @@ const modeDescriptions: Record<string, { label: string; description: string }> =
   tribe: {
     label: "שבט",
     description: "התשובה הנכונה תהיה התשובה שיענה אחד השחקנים לפי תור בין כולם.",
+  },
+  majority: {
+    label: "הרוב קובע",
+    description: "התשובה הנכונה תהיה התשובה שהרוב בחרו. במקרה של שוויון, כל התשובות המקסימליות נכונות.",
   },
 };
 
@@ -145,7 +150,7 @@ const CreateQuiz = () => {
 
       const { data: dbQuestions } = await supabase
         .from("questions")
-        .select("id, text, sort_order, image_url, double_points, custom_time")
+        .select("id, text, sort_order, image_url, double_points, custom_time, use_participant_answers")
         .eq("quiz_id", quizId)
         .order("sort_order");
 
@@ -171,6 +176,7 @@ const CreateQuiz = () => {
             youtube_url: (q as any).youtube_url || undefined,
             double_points: (q as any).double_points || false,
             custom_time: (q as any).custom_time || undefined,
+            use_participant_answers: (q as any).use_participant_answers || false,
           });
         }
         setQuestions(loadedQuestions);
@@ -338,7 +344,7 @@ const CreateQuiz = () => {
           }
           const { data: dbQ, error: qErr } = await supabase
             .from("questions")
-            .insert({ quiz_id: quizId, text: q.text.trim(), sort_order: i, image_url: imageUrl, youtube_url: q.youtube_url?.trim() || null, double_points: q.double_points, custom_time: q.custom_time || null } as any)
+            .insert({ quiz_id: quizId, text: q.text.trim(), sort_order: i, image_url: imageUrl, youtube_url: q.youtube_url?.trim() || null, double_points: q.double_points, custom_time: q.custom_time || null, use_participant_answers: q.use_participant_answers || false } as any)
             .select()
             .single();
 
@@ -386,7 +392,7 @@ const CreateQuiz = () => {
           }
           const { data: dbQ, error: qErr } = await supabase
             .from("questions")
-            .insert({ quiz_id: quiz.id, text: q.text.trim(), sort_order: i, image_url: imageUrl, youtube_url: q.youtube_url?.trim() || null, double_points: q.double_points, custom_time: q.custom_time || null } as any)
+            .insert({ quiz_id: quiz.id, text: q.text.trim(), sort_order: i, image_url: imageUrl, youtube_url: q.youtube_url?.trim() || null, double_points: q.double_points, custom_time: q.custom_time || null, use_participant_answers: q.use_participant_answers || false } as any)
             .select()
             .single();
 
@@ -620,6 +626,7 @@ const CreateQuiz = () => {
                   <SelectItem value="genius">🧠 גאון</SelectItem>
                   <SelectItem value="king">👑 מלך</SelectItem>
                   <SelectItem value="tribe">🏕️ שבט</SelectItem>
+                  <SelectItem value="majority">🗳️ הרוב קובע</SelectItem>
                 </SelectContent>
               </Select>
               <div className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
@@ -788,6 +795,21 @@ const CreateQuiz = () => {
                   />
                   <span className="text-xs text-muted-foreground">שניות</span>
                 </div>
+                {mode === "majority" && (
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <Checkbox
+                      checked={q.use_participant_answers}
+                      onCheckedChange={(checked) =>
+                        setQuestions((prev) =>
+                          prev.map((qq) => qq.id === q.id ? { ...qq, use_participant_answers: !!checked } : qq)
+                        )
+                      }
+                      className="data-[state=checked]:bg-[hsl(var(--answer-purple))] data-[state=checked]:border-[hsl(var(--answer-purple))]"
+                    />
+                    <Users className="size-4 text-[hsl(var(--answer-purple))]" />
+                    <span className="text-sm font-medium">תשובות = משתתפים</span>
+                  </label>
+                )}
               </div>
 
         {/* AI Generate Questions Dialog */}

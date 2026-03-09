@@ -406,6 +406,7 @@ export type Database = {
           quiz_id: string
           sort_order: number
           text: string
+          use_participant_answers: boolean
           youtube_url: string | null
         }
         Insert: {
@@ -417,6 +418,7 @@ export type Database = {
           quiz_id: string
           sort_order?: number
           text: string
+          use_participant_answers?: boolean
           youtube_url?: string | null
         }
         Update: {
@@ -428,6 +430,7 @@ export type Database = {
           quiz_id?: string
           sort_order?: number
           text?: string
+          use_participant_answers?: boolean
           youtube_url?: string | null
         }
         Relationships: [
@@ -499,6 +502,10 @@ export type Database = {
           p_question_id: string
           p_session_id: string
         }
+        Returns: undefined
+      }
+      resolve_majority_scores: {
+        Args: { p_question_id: string; p_session_id: string }
         Returns: undefined
       }
       submit_answer: {
