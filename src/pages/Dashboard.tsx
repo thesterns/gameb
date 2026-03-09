@@ -314,7 +314,6 @@ const Dashboard = () => {
           )}
         </motion.div>
       </main>
-      </main>
 
       {/* Footer */}
       <footer className="px-6 py-8 text-center text-muted-foreground text-sm border-t border-border">
