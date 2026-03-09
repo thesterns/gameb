@@ -314,6 +314,22 @@ const Dashboard = () => {
           )}
         </motion.div>
       </main>
+      </main>
+
+      {/* Footer */}
+      <footer className="px-6 py-8 text-center text-muted-foreground text-sm border-t border-border">
+        <div className="flex items-center justify-center gap-4 mb-2">
+          <ContactFormDialog
+            trigger={
+              <button className="inline-flex items-center gap-1 hover:text-foreground transition-colors">
+                <Mail className="!size-4" />
+                צור קשר
+              </button>
+            }
+          />
+        </div>
+        <p>© 2026 zgame. כל הזכויות שמורות.</p>
+      </footer>
     </div>
   );
 };
