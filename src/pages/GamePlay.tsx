@@ -570,6 +570,9 @@ const GamePlay = () => {
 
       if (isKingOrTribeMode) {
         setWaitingForKing(true);
+      } else if (isMajorityMode) {
+        // For majority mode, wait until results are revealed
+        // Score will be computed later when majority is revealed
       } else {
         // For genius mode, server returns the computed result
         const result = data as { is_correct: boolean; score: number } | null;
