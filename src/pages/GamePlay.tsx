@@ -374,16 +374,21 @@ const GamePlay = () => {
     if (isMajority) {
       // Majority mode: determine correct answers based on votes
       const resolveMajority = async () => {
+        const currentQ = questions[currentIndex];
+        const isParticipantAnswers = currentQ?.use_participant_answers;
+
         const { data: responses } = await supabase
           .from("game_responses")
-          .select("answer_id")
+          .select("answer_id, response_text")
           .eq("session_id", sessionId)
           .eq("question_id", questionId);
 
         const countMap: Record<string, number> = {};
         for (const r of responses || []) {
-          if (r.answer_id) {
-            countMap[r.answer_id] = (countMap[r.answer_id] || 0) + 1;
+          // For participant-answer questions, use response_text; otherwise use answer_id
+          const key = isParticipantAnswers ? r.response_text : r.answer_id;
+          if (key) {
+            countMap[key] = (countMap[key] || 0) + 1;
           }
         }
 
