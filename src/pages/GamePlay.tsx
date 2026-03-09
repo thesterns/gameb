@@ -600,6 +600,7 @@ const GamePlay = () => {
       currentIndex,
       isCurrentPlayerKing,
       isKingOrTribeMode,
+      isMajorityMode,
     ]
   );
 
