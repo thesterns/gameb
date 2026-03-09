@@ -255,6 +255,7 @@ const GameLobby = () => {
 
   const isKingMode = gameType === "quiz" && quizMode === "king";
   const isTribeMode = gameType === "quiz" && quizMode === "tribe";
+  const isMajorityMode = gameType === "quiz" && quizMode === "majority";
 
   if (loading) {
     return (
