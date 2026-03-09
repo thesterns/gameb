@@ -115,7 +115,7 @@ const MyQuizzes = () => {
 
       const { data: questions } = await supabase
         .from("questions")
-        .select("id, text, sort_order, image_url, youtube_url, custom_time, double_points, use_participant_answers")
+        .select("id, text, sort_order, image_url, youtube_url, custom_time, double_points, use_participant_answers, is_open_question")
         .eq("quiz_id", quizId)
         .order("sort_order");
 
@@ -131,6 +131,7 @@ const MyQuizzes = () => {
             custom_time: q.custom_time,
             double_points: q.double_points,
             use_participant_answers: q.use_participant_answers,
+            is_open_question: q.is_open_question,
           })
           .select()
           .single();
