@@ -77,7 +77,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-heading font-bold text-gradient">לך תדע</h1>
+          <h1 className="text-2xl font-heading font-bold text-gradient">zgame</h1>
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground hidden sm:inline">שלום, {userName}</span>
             <ThemeToggle />

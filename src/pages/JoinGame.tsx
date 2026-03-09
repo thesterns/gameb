@@ -101,7 +101,7 @@ const JoinGame = () => {
         transition={{ duration: 0.4 }}
       >
         <Link to="/" className="text-3xl font-heading font-bold text-primary-foreground inline-block mb-8">
-          לך תדע
+          zgame
         </Link>
 
         <div className="bg-card rounded-3xl p-8 shadow-elevated">

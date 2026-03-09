@@ -97,7 +97,7 @@ const Index = () => {
       {/* Navbar */}
       <nav className="relative z-10 flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
         <h1 className="text-2xl font-heading font-bold text-gradient">
-          לך תדע
+          zgame
         </h1>
         <div className="flex gap-3">
           <Button variant="ghost" onClick={() => navigate("/login")}>
@@ -171,7 +171,7 @@ const Index = () => {
               <div className="absolute inset-0 gradient-hero rounded-3xl blur-3xl opacity-20 scale-110" />
               <img
                 src={heroImage}
-                alt="לך תדע - משחקים אינטראקטיביים"
+                alt="zgame - משחקים אינטראקטיביים"
                 className="relative z-10 w-72 md:w-96 animate-float drop-shadow-2xl"
               />
             </div>
@@ -188,7 +188,7 @@ const Index = () => {
           viewport={{ once: true }}
         >
           <h3 className="text-3xl md:text-4xl font-heading font-bold mb-4">
-            למה לך תדע?
+            למה zgame?
           </h3>
           <p className="text-muted-foreground text-lg">
             הכלי המושלם ליצירת משחקים אינטראקטיביים
@@ -251,7 +251,7 @@ const Index = () => {
 
       {/* Footer */}
       <footer className="px-6 py-8 text-center text-muted-foreground text-sm border-t border-border">
-        <p>© 2026 לך תדע. כל הזכויות שמורות.</p>
+        <p>© 2026 zgame. כל הזכויות שמורות.</p>
       </footer>
     </div>
   );
