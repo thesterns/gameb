@@ -166,3 +166,7 @@
     background-clip: text;
   }
 }
+
+.gpt-engineer-badge {
+  display: none !important;
+}
