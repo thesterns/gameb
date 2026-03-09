@@ -286,10 +286,13 @@ const CreateQuiz = () => {
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
       if (!q.text.trim()) return `שאלה ${i + 1}: יש להזין טקסט לשאלה`;
-      if (q.answers.length < 2) return `שאלה ${i + 1}: צריך לפחות 2 תשובות`;
-      for (let j = 0; j < q.answers.length; j++) {
-        if (!q.answers[j].text.trim())
-          return `שאלה ${i + 1}, תשובה ${j + 1}: יש להזין טקסט`;
+      // Skip answer validation for participant-based questions in majority mode
+      if (!(mode === "majority" && q.use_participant_answers)) {
+        if (q.answers.length < 2) return `שאלה ${i + 1}: צריך לפחות 2 תשובות`;
+        for (let j = 0; j < q.answers.length; j++) {
+          if (!q.answers[j].text.trim())
+            return `שאלה ${i + 1}, תשובה ${j + 1}: יש להזין טקסט`;
+        }
       }
     }
     return null;
@@ -352,15 +355,17 @@ const CreateQuiz = () => {
 
           if (qErr || !dbQ) throw qErr;
 
-          const answersToInsert = q.answers.map((a, j) => ({
-            question_id: dbQ.id,
-            text: a.text.trim(),
-            is_correct: a.is_correct,
-            sort_order: j,
-          }));
+          if (!(mode === "majority" && q.use_participant_answers)) {
+            const answersToInsert = q.answers.map((a, j) => ({
+              question_id: dbQ.id,
+              text: a.text.trim(),
+              is_correct: a.is_correct,
+              sort_order: j,
+            }));
 
-          const { error: aErr } = await supabase.from("answers").insert(answersToInsert);
-          if (aErr) throw aErr;
+            const { error: aErr } = await supabase.from("answers").insert(answersToInsert);
+            if (aErr) throw aErr;
+          }
         }
 
         toast.success("החידון עודכן בהצלחה!");
@@ -400,15 +405,17 @@ const CreateQuiz = () => {
 
           if (qErr || !dbQ) throw qErr;
 
-          const answersToInsert = q.answers.map((a, j) => ({
-            question_id: dbQ.id,
-            text: a.text.trim(),
-            is_correct: a.is_correct,
-            sort_order: j,
-          }));
+          if (!(mode === "majority" && q.use_participant_answers)) {
+            const answersToInsert = q.answers.map((a, j) => ({
+              question_id: dbQ.id,
+              text: a.text.trim(),
+              is_correct: a.is_correct,
+              sort_order: j,
+            }));
 
-          const { error: aErr } = await supabase.from("answers").insert(answersToInsert);
-          if (aErr) throw aErr;
+            const { error: aErr } = await supabase.from("answers").insert(answersToInsert);
+            if (aErr) throw aErr;
+          }
         }
 
         toast.success("החידון נוצר בהצלחה!");
@@ -944,6 +951,15 @@ const CreateQuiz = () => {
                 )}
               </div>
 
+              {/* Hide answers section when using participant answers in majority mode */}
+              {mode === "majority" && q.use_participant_answers ? (
+                <div className="bg-muted/30 rounded-xl p-4 text-center">
+                  <Users className="size-6 text-[hsl(var(--answer-purple))] mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground font-medium">
+                    התשובות יהיו שמות המשתתפים במשחק
+                  </p>
+                </div>
+              ) : (
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">
                   תשובות ({q.answers.length}/8) — סמן תשובות נכונות
@@ -995,6 +1011,7 @@ const CreateQuiz = () => {
                   </Button>
                 )}
               </div>
+              )}
             </motion.div>
           ))}
         </AnimatePresence>
