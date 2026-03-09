@@ -947,6 +947,15 @@ const CreateQuiz = () => {
                 )}
               </div>
 
+              {/* Hide answers section when using participant answers in majority mode */}
+              {mode === "majority" && q.use_participant_answers ? (
+                <div className="bg-muted/30 rounded-xl p-4 text-center">
+                  <Users className="size-6 text-[hsl(var(--answer-purple))] mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground font-medium">
+                    התשובות יהיו שמות המשתתפים במשחק
+                  </p>
+                </div>
+              ) : (
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">
                   תשובות ({q.answers.length}/8) — סמן תשובות נכונות
@@ -998,6 +1007,7 @@ const CreateQuiz = () => {
                   </Button>
                 )}
               </div>
+              )}
             </motion.div>
           ))}
         </AnimatePresence>
