@@ -1093,20 +1093,26 @@ const GamePlay = () => {
             const isSelected = selectedAnswerId === answer.id;
             // King never sees correct/wrong feedback on their own answers
             const isKingViewing = isCurrentPlayerKing;
-            const showCorrectGenius = timeUp && !isKingOrTribeMode && revealedCorrectAnswerId === answer.id;
+            const showCorrectGenius = timeUp && !isKingOrTribeMode && !isMajorityMode && revealedCorrectAnswerId === answer.id;
             // Players in king/tribe mode only see feedback AFTER king has chosen
             const showCorrectKing =
               timeUp && isKingOrTribeMode && !isKingViewing && kingAnswerId && answer.id === kingAnswerId;
-            const showCorrect = showCorrectGenius || showCorrectKing;
+            // Majority mode: show correct for all majority answers
+            const showCorrectMajority = timeUp && isMajorityMode && majorityCorrectIds.includes(answer.id);
+            const showCorrect = showCorrectGenius || showCorrectKing || showCorrectMajority;
             const showWrong =
               timeUp &&
               isSelected &&
               !isKingViewing &&
               (!isKingOrTribeMode || !!kingAnswerId) &&
+              (!isMajorityMode || majorityCorrectIds.length > 0) &&
               !showCorrect;
 
             // In king/tribe mode, don't dim answers until king has chosen
-            const dimUnselected = timeUp && !showCorrect && !showWrong && (!isKingOrTribeMode || !!kingAnswerId || isKingViewing);
+            // In majority mode, don't dim until results are revealed
+            const dimUnselected = timeUp && !showCorrect && !showWrong && 
+              (!isKingOrTribeMode || !!kingAnswerId || isKingViewing) &&
+              (!isMajorityMode || majorityCorrectIds.length > 0);
 
             return (
               <motion.button
