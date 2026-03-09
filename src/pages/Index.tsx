@@ -97,7 +97,7 @@ const Index = () => {
       {/* Navbar */}
       <nav className="relative z-10 flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
         <h1 className="text-2xl font-heading font-bold text-gradient">
-          לך תדע
+          zgame
         </h1>
         <div className="flex gap-3">
           <Button variant="ghost" onClick={() => navigate("/login")}>
