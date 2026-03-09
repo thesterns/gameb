@@ -362,32 +362,69 @@ const GamePlay = () => {
     };
   }, [loading, currentIndex, questions, timeUp]);
 
-  // Host broadcasts correct answer when time expires (genius mode)
+  // Host broadcasts correct answer when time expires (genius mode) OR resolves majority
   useEffect(() => {
     const isKingOrTribe = quizMode === "king" || quizMode === "tribe";
-    if (!timeUp || !isHost || isKingOrTribe || !leaderboardChannelRef.current) return;
+    const isMajority = quizMode === "majority";
+    if (!timeUp || !isHost || !leaderboardChannelRef.current) return;
     if (!questions.length || currentIndex >= questions.length) return;
 
     const questionId = questions[currentIndex].id;
-    const broadcastCorrectAnswer = async () => {
-      const { data } = await supabase
-        .from("answers")
-        .select("id")
-        .eq("question_id", questionId)
-        .eq("is_correct", true)
-        .single();
+    
+    if (isMajority) {
+      // Majority mode: determine correct answers based on votes
+      const resolveMajority = async () => {
+        const { data: responses } = await supabase
+          .from("game_responses")
+          .select("answer_id")
+          .eq("session_id", sessionId)
+          .eq("question_id", questionId);
 
-      if (data && leaderboardChannelRef.current) {
-        setRevealedCorrectAnswerId(data.id);
-        await leaderboardChannelRef.current.send({
-          type: "broadcast",
-          event: "reveal_correct_answer",
-          payload: { correct_answer_id: data.id },
-        });
-      }
-    };
-    broadcastCorrectAnswer();
-  }, [timeUp, isHost, quizMode, questions, currentIndex]);
+        const countMap: Record<string, number> = {};
+        for (const r of responses || []) {
+          if (r.answer_id) {
+            countMap[r.answer_id] = (countMap[r.answer_id] || 0) + 1;
+          }
+        }
+
+        const maxCount = Math.max(0, ...Object.values(countMap));
+        const correctIds = maxCount > 0 
+          ? Object.entries(countMap).filter(([, c]) => c === maxCount).map(([id]) => id)
+          : [];
+
+        setMajorityCorrectIds(correctIds);
+
+        if (leaderboardChannelRef.current) {
+          await leaderboardChannelRef.current.send({
+            type: "broadcast",
+            event: "reveal_majority_answers",
+            payload: { correct_ids: correctIds },
+          });
+        }
+      };
+      resolveMajority();
+    } else if (!isKingOrTribe) {
+      // Genius mode
+      const broadcastCorrectAnswer = async () => {
+        const { data } = await supabase
+          .from("answers")
+          .select("id")
+          .eq("question_id", questionId)
+          .eq("is_correct", true)
+          .single();
+
+        if (data && leaderboardChannelRef.current) {
+          setRevealedCorrectAnswerId(data.id);
+          await leaderboardChannelRef.current.send({
+            type: "broadcast",
+            event: "reveal_correct_answer",
+            payload: { correct_answer_id: data.id },
+          });
+        }
+      };
+      broadcastCorrectAnswer();
+    }
+  }, [timeUp, isHost, quizMode, questions, currentIndex, sessionId]);
 
 
   useEffect(() => {
