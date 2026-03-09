@@ -1132,23 +1132,23 @@ const GamePlay = () => {
                 transition={{ delay: idx * 0.05 }}
                 onClick={() => handleSelectAnswer(answer.id)}
                 disabled={timeUp || !!selectedAnswerId || isHost}
-                className={`relative p-5 rounded-2xl text-lg font-heading font-semibold text-white transition-all
+                className={`relative p-5 rounded-2xl text-lg font-heading font-bold text-white transition-all
                   ${
                     showCorrect
-                      ? "!bg-[hsl(var(--accent))] ring-4 ring-[hsl(var(--accent))]/30"
+                      ? "!bg-[hsl(var(--accent))] ring-4 ring-[hsl(var(--accent))]/30 scale-105 shadow-lg text-xl"
                       : showWrong
-                      ? "!bg-destructive ring-4 ring-destructive/30 opacity-70"
+                      ? "!bg-destructive ring-4 ring-destructive/30 opacity-80"
                       : isSelected
                       ? `${t.answerColors[idx % t.answerColors.length]} ring-4 ring-white/50 scale-[0.97]`
                       : `${t.answerColors[idx % t.answerColors.length]} hover:scale-[1.02] active:scale-[0.97]`
                   }
-                  ${dimUnselected ? "opacity-50" : ""}
+                  ${dimUnselected ? "opacity-40" : ""}
                   disabled:cursor-default
                 `}
               >
                 {answer.text}
                 {showCorrect && (
-                  <CheckCircle2 className="absolute top-2 left-2 size-6" />
+                  <CheckCircle2 className="absolute top-2 left-2 size-7" />
                 )}
                 {showWrong && (
                   <XCircle className="absolute top-2 left-2 size-6" />
