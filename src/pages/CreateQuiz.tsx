@@ -355,15 +355,17 @@ const CreateQuiz = () => {
 
           if (qErr || !dbQ) throw qErr;
 
-          const answersToInsert = q.answers.map((a, j) => ({
-            question_id: dbQ.id,
-            text: a.text.trim(),
-            is_correct: a.is_correct,
-            sort_order: j,
-          }));
+          if (!(mode === "majority" && q.use_participant_answers)) {
+            const answersToInsert = q.answers.map((a, j) => ({
+              question_id: dbQ.id,
+              text: a.text.trim(),
+              is_correct: a.is_correct,
+              sort_order: j,
+            }));
 
-          const { error: aErr } = await supabase.from("answers").insert(answersToInsert);
-          if (aErr) throw aErr;
+            const { error: aErr } = await supabase.from("answers").insert(answersToInsert);
+            if (aErr) throw aErr;
+          }
         }
 
         toast.success("החידון עודכן בהצלחה!");
