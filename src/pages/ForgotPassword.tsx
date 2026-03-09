@@ -38,7 +38,7 @@ const ForgotPassword = () => {
       >
         <div className="text-center mb-8">
           <Link to="/" className="text-3xl font-heading font-bold text-gradient inline-block mb-2">
-            לך תדע
+            zgame
           </Link>
           <h2 className="text-2xl font-heading font-bold">שכחת סיסמה?</h2>
           <p className="text-muted-foreground mt-1">נשלח לך קישור לאיפוס הסיסמה</p>
