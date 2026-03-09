@@ -27,6 +27,7 @@ const modeLabels: Record<string, string> = {
   genius: "🧠 גאון",
   king: "👑 מלך",
   tribe: "🏕️ שבט",
+  majority: "📊 הרוב קובע",
 };
 
 const MyQuizzes = () => {
