@@ -15,15 +15,16 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED")) {
+ useEffect(() => {
+    // בדיקה חד פעמית - אם המשתמש כבר מחובר כשנכנסים לדף, שיעבור לדשבורד
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
         navigate("/dashboard");
       }
-    });
-    return () => subscription.unsubscribe();
+    };
+    checkUser();
   }, [navigate]);
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
