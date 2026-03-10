@@ -1,10 +1,10 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowRight, Target, Users, Clock, MapPin, User, Package, Sparkles, Send, CheckCircle, Edit3, AlertTriangle, Plus } from "lucide-react";
+import { ArrowRight, Target, Users, Clock, MapPin, User, Package, Sparkles, Send, CheckCircle, Edit3, AlertTriangle, Plus, Trophy } from "lucide-react";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
 import QuizLogo from "@/components/QuizLogo";
 import { toast } from "sonner";
@@ -59,6 +59,7 @@ const ChallengePlay = () => {
   const [challenge, setChallenge] = useState<{
     title: string;
     description: string | null;
+    instruction: string | null;
     image_url: string | null;
     youtube_url: string | null;
     logo_url: string | null;
@@ -76,6 +77,10 @@ const ChallengePlay = () => {
   const [enableVoting, setEnableVoting] = useState(true);
   const [editing, setEditing] = useState(false);
   const [editSentence, setEditSentence] = useState("");
+  const [usedValues, setUsedValues] = useState<Set<string>>(new Set());
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const editTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Compute my votes (what I voted for others)
   const myVotes = votes.filter((v) => v.voter_participant_id === myParticipantId);
@@ -115,6 +120,7 @@ const ChallengePlay = () => {
     2: { emoji: "🥈", label: "מקום שני", bg: "bg-gray-400/10 border-gray-400/30" },
     3: { emoji: "🥉", label: "מקום שלישי", bg: "bg-amber-700/10 border-amber-700/30" },
   };
+
   // Check if a sentence contains all assigned values for a participant
   const sentenceContainsAllWords = useCallback((text: string, participantId: string): boolean => {
     const participant = participantsWithAssignments.find(p => p.id === participantId);
@@ -135,6 +141,49 @@ const ChallengePlay = () => {
     )
   );
 
+  // Render sentence with colored assignment words
+  const renderColoredSentence = (text: string, participantId: string) => {
+    const participant = participantsWithAssignments.find(p => p.id === participantId);
+    if (!participant || participant.assignments.length === 0) {
+      return <span>{text}</span>;
+    }
+
+    // Build parts by splitting on assignment values
+    let parts: (string | { text: string; dimension: string })[] = [text];
+
+    for (const a of participant.assignments) {
+      const newParts: typeof parts = [];
+      const escapedValue = a.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(${escapedValue})`, 'gi');
+
+      for (const part of parts) {
+        if (typeof part !== 'string') {
+          newParts.push(part);
+          continue;
+        }
+        const split = part.split(regex);
+        for (const s of split) {
+          if (s.toLowerCase() === a.value.toLowerCase()) {
+            newParts.push({ text: s, dimension: a.dimension });
+          } else if (s) {
+            newParts.push(s);
+          }
+        }
+      }
+      parts = newParts;
+    }
+
+    return (
+      <>
+        {parts.map((part, i) =>
+          typeof part === 'string'
+            ? <span key={i}>{part}</span>
+            : <span key={i} className={`font-bold ${DIMENSION_META[part.dimension]?.color || 'text-primary'}`}>{part.text}</span>
+        )}
+      </>
+    );
+  };
+
   useEffect(() => {
     if (!sessionId) return;
 
@@ -153,14 +202,23 @@ const ChallengePlay = () => {
       setEnableVoting((session as any).enable_voting !== false);
 
       const [chRes, partsRes, assignRes, sentRes, votesRes] = await Promise.all([
-        supabase.from("challenges").select("title, description, image_url, youtube_url, logo_url, logo_text").eq("id", session.challenge_id).single(),
+        supabase.from("challenges").select("title, description, instruction, image_url, youtube_url, logo_url, logo_text").eq("id", session.challenge_id).single(),
         supabase.from("game_participants").select("id, player_name").eq("session_id", sessionId).order("joined_at"),
         supabase.from("participant_dimension_assignments").select("participant_id, dimension, value").eq("session_id", sessionId),
         supabase.from("challenge_sentences").select("participant_id, sentence").eq("session_id", sessionId),
         supabase.from("challenge_votes").select("voter_participant_id, target_participant_id, vote_type").eq("session_id", sessionId),
       ]);
 
-      setChallenge(chRes.data || null);
+      const challengeData = chRes.data as any;
+      setChallenge(challengeData ? {
+        title: challengeData.title,
+        description: challengeData.description,
+        instruction: challengeData.instruction || null,
+        image_url: challengeData.image_url,
+        youtube_url: challengeData.youtube_url,
+        logo_url: challengeData.logo_url,
+        logo_text: challengeData.logo_text,
+      } : null);
 
       const parts = partsRes.data || [];
       const assignmentMap: Record<string, Assignment[]> = {};
@@ -247,7 +305,6 @@ const ChallengePlay = () => {
       .channel(`challenge-votes-${sessionId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "challenge_votes", filter: `session_id=eq.${sessionId}` },
         () => {
-          // Refetch all votes on any change
           supabase.from("challenge_votes").select("voter_participant_id, target_participant_id, vote_type").eq("session_id", sessionId)
             .then(({ data }) => {
               if (data) setVotes(data.map((v) => ({ ...v, vote_type: v.vote_type as VoteType })));
@@ -290,14 +347,12 @@ const ChallengePlay = () => {
     if (!editSentence.trim() || !myParticipantId || !sessionId) return;
     setSubmitting(true);
     try {
-      // Update sentence
       const { error } = await supabase.from("challenge_sentences")
         .update({ sentence: editSentence.trim() })
         .eq("session_id", sessionId)
         .eq("participant_id", myParticipantId);
       if (error) throw error;
 
-      // Delete all votes targeting this participant (reset their score)
       await supabase.from("challenge_votes")
         .delete()
         .eq("session_id", sessionId)
@@ -306,14 +361,12 @@ const ChallengePlay = () => {
       setSentence(editSentence.trim());
       setEditing(false);
 
-      // Update local sentences state
       setSentences((prev) =>
         prev.map((s) =>
           s.participant_id === myParticipantId ? { ...s, sentence: editSentence.trim() } : s
         )
       );
 
-      // Clear votes targeting me locally
       setVotes((prev) => prev.filter((v) => v.target_participant_id !== myParticipantId));
 
       toast.success("המשפט עודכן והניקוד אופס!");
@@ -394,8 +447,12 @@ const ChallengePlay = () => {
   const handleInsertValue = (value: string) => {
     if (submitted && editing) {
       setEditSentence(prev => prev ? `${prev} ${value}` : value);
+      setUsedValues(prev => new Set(prev).add(value));
+      setTimeout(() => editTextareaRef.current?.focus(), 50);
     } else if (!submitted) {
       setSentence(prev => prev ? `${prev} ${value}` : value);
+      setUsedValues(prev => new Set(prev).add(value));
+      setTimeout(() => textareaRef.current?.focus(), 50);
     }
   };
 
@@ -409,16 +466,17 @@ const ChallengePlay = () => {
           const meta = DIMENSION_META[a.dimension];
           if (!meta) return null;
           const Icon = meta.icon;
+          const isUsed = usedValues.has(a.value);
           return (
             <motion.div
               key={a.dimension}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-3 bg-muted/50 rounded-xl px-4 py-3"
+              className={`flex items-center gap-3 bg-muted/50 rounded-xl px-4 py-3 ${isUsed && showInsert ? "opacity-60" : ""}`}
             >
               <Icon className={`size-5 ${meta.color} shrink-0`} />
               <span className="text-sm font-medium text-muted-foreground w-12">{meta.label}</span>
-              <span className="font-heading font-bold text-foreground flex-1">{a.value}</span>
+              <span className={`font-heading font-bold text-foreground flex-1 ${isUsed && showInsert ? "line-through" : ""}`}>{a.value}</span>
               {showInsert && (
                 <Button
                   variant="ghost"
@@ -448,6 +506,18 @@ const ChallengePlay = () => {
   });
 
   const voteOptions: VoteType[] = ["gold", "silver", "bronze", "none"];
+
+  // Leaderboard for display below sentences
+  const leaderboardEntries = [...participantsWithAssignments]
+    .map(p => ({
+      id: p.id,
+      player_name: p.player_name,
+      score: scores[p.id] || 0,
+    }))
+    .sort((a, b) => b.score - a.score);
+
+  // My score (for player view)
+  const myScore = myParticipantId ? (scores[myParticipantId] || 0) : 0;
 
   return (
     <div className="min-h-screen gradient-hero flex items-center justify-center px-4 py-8">
@@ -482,6 +552,13 @@ const ChallengePlay = () => {
           {/* Player view: assignments + sentence input */}
           {!isHost && (
             <>
+              {/* Instruction text */}
+              {challenge.instruction && (
+                <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 text-center">
+                  <p className="text-base font-heading font-semibold text-foreground">{challenge.instruction}</p>
+                </div>
+              )}
+
               {myAssignments.length > 0 && (
                 <div className="space-y-3">
                   <h3 className="font-heading font-bold text-lg text-center">🎯 הערכים שלך</h3>
@@ -526,6 +603,7 @@ const ChallengePlay = () => {
                         <p className="text-xs font-bold text-destructive">⚠️ שליחת משפט חדש תאפס את הניקוד שקיבלת</p>
                       </div>
                       <Textarea
+                        ref={editTextareaRef}
                         value={editSentence}
                         onChange={(e) => setEditSentence(e.target.value)}
                         placeholder="כתבו את המשפט החדש..."
@@ -553,6 +631,7 @@ const ChallengePlay = () => {
                   ) : (
                     <div className="space-y-2">
                       <Textarea
+                        ref={textareaRef}
                         value={sentence}
                         onChange={(e) => setSentence(e.target.value)}
                         placeholder="כתבו את המשפט שלכם כאן..."
@@ -576,6 +655,14 @@ const ChallengePlay = () => {
                       </Button>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* My score display */}
+              {submitted && enableVoting && (
+                <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 text-center">
+                  <p className="text-sm text-muted-foreground">הניקוד שלך</p>
+                  <p className="text-2xl font-heading font-bold text-primary">{myScore} נק׳</p>
                 </div>
               )}
 
@@ -610,7 +697,9 @@ const ChallengePlay = () => {
                               <span className="text-xs font-bold text-muted-foreground">{scores[s.participant_id]} נק׳</span>
                             )}
                           </div>
-                          <p className="text-base font-medium text-foreground leading-relaxed">{s.sentence}</p>
+                          <p className="text-base font-medium text-foreground leading-relaxed">
+                            {renderColoredSentence(s.sentence, s.participant_id)}
+                          </p>
                           <div className="flex gap-1.5">
                             {voteOptions.map((vt) => {
                               const meta = VOTE_META[vt];
@@ -636,12 +725,83 @@ const ChallengePlay = () => {
                   </AnimatePresence>
                 </div>
               )}
+
+              {/* Player view: sentences without voting (when voting is disabled) */}
+              {submitted && !enableVoting && otherSentences.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-heading font-bold text-lg flex items-center gap-2">
+                    📝 המשפטים
+                  </h3>
+                  <AnimatePresence>
+                    {otherSentences.map((s) => (
+                      <motion.div
+                        key={s.participant_id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="rounded-xl p-4 space-y-2 border bg-muted/30 border-transparent"
+                      >
+                        <div className="flex items-center gap-2">
+                          <p className="font-heading font-bold text-sm text-foreground">{s.player_name}</p>
+                          <WordsIndicator valid={sentenceContainsAllWords(s.sentence, s.participant_id)} />
+                        </div>
+                        <p className="text-base font-medium text-foreground leading-relaxed">
+                          {renderColoredSentence(s.sentence, s.participant_id)}
+                        </p>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              )}
+
+              {/* Leaderboard below sentences (player view) */}
+              {submitted && enableVoting && sentences.length > 1 && (
+                <div className="space-y-3">
+                  <h3 className="font-heading font-bold text-lg flex items-center gap-2">
+                    <Trophy className="size-5 text-[hsl(var(--answer-yellow))]" />
+                    לוח תוצאות
+                  </h3>
+                  <div className="space-y-2">
+                    {leaderboardEntries.map((entry, idx) => {
+                      const rank = ranking[entry.id];
+                      const rankInfo = rank ? RANK_DISPLAY[rank] : null;
+                      const isMe = entry.id === myParticipantId;
+                      return (
+                        <motion.div
+                          key={entry.id}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: idx * 0.05 }}
+                          className={`flex items-center justify-between p-3 rounded-xl ${
+                            rankInfo ? rankInfo.bg : "bg-muted/20 border border-transparent"
+                          } ${isMe ? "ring-2 ring-primary" : ""}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            {rankInfo && <span className="text-lg">{rankInfo.emoji}</span>}
+                            <span className={`font-heading font-semibold text-foreground ${isMe ? "text-primary" : ""}`}>
+                              {entry.player_name}
+                            </span>
+                          </div>
+                          <span className="font-heading font-bold text-foreground">{entry.score} נק׳</span>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </>
           )}
 
           {/* Host: show participants with sentences and scores */}
           {isHost && (
             <div className="space-y-4">
+              {/* Instruction display for host */}
+              {challenge.instruction && (
+                <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 text-center">
+                  <p className="text-sm text-muted-foreground mb-1">הנחיה למשתתפים:</p>
+                  <p className="text-base font-heading font-semibold text-foreground">{challenge.instruction}</p>
+                </div>
+              )}
+
               <h3 className="font-heading font-bold text-lg flex items-center gap-2">
                 <Users className="size-5" />
                 משתתפים ({sentences.length}/{participantsWithAssignments.length} שלחו)
@@ -677,12 +837,47 @@ const ChallengePlay = () => {
                     {pSentence && (
                       <div className="flex items-start gap-2">
                         <WordsIndicator valid={sentenceContainsAllWords(pSentence.sentence, p.id)} />
-                        <p className="text-base font-medium text-foreground leading-relaxed flex-1">{pSentence.sentence}</p>
+                        <p className="text-base font-medium text-foreground leading-relaxed flex-1">
+                          {renderColoredSentence(pSentence.sentence, p.id)}
+                        </p>
                       </div>
                     )}
                   </motion.div>
                 );
               })}
+
+              {/* Host leaderboard below sentences */}
+              {enableVoting && sentences.length > 1 && (
+                <div className="space-y-3 pt-4 border-t border-border">
+                  <h3 className="font-heading font-bold text-lg flex items-center gap-2">
+                    <Trophy className="size-5 text-[hsl(var(--answer-yellow))]" />
+                    לוח תוצאות
+                  </h3>
+                  <div className="space-y-2">
+                    {leaderboardEntries.map((entry, idx) => {
+                      const rank = ranking[entry.id];
+                      const rankInfo = rank ? RANK_DISPLAY[rank] : null;
+                      return (
+                        <motion.div
+                          key={entry.id}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: idx * 0.05 }}
+                          className={`flex items-center justify-between p-3 rounded-xl ${
+                            rankInfo ? rankInfo.bg : "bg-muted/20 border border-transparent"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            {rankInfo && <span className="text-lg">{rankInfo.emoji}</span>}
+                            <span className="font-heading font-semibold text-foreground">{entry.player_name}</span>
+                          </div>
+                          <span className="font-heading font-bold text-foreground">{entry.score} נק׳</span>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

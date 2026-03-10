@@ -66,6 +66,7 @@ const CreateChallenge = () => {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [instruction, setInstruction] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | undefined>();
   const [imageUrl, setImageUrl] = useState<string | undefined>();
@@ -94,6 +95,7 @@ const CreateChallenge = () => {
       }
       setTitle(data.title);
       setDescription(data.description || "");
+      setInstruction((data as any).instruction || "");
       if (data.image_url) { setImageUrl(data.image_url); setImagePreview(data.image_url); }
       if (data.youtube_url) setYoutubeUrl(data.youtube_url);
       if (data.logo_url) { setLogoUrl(data.logo_url); setLogoPreview(data.logo_url); }
@@ -207,11 +209,12 @@ const CreateChallenge = () => {
           .update({
             title: title.trim(),
             description: description.trim() || null,
+            instruction: instruction.trim() || null,
             image_url: finalImageUrl,
             youtube_url: youtubeUrl.trim() || null,
             logo_url: finalLogoUrl,
             logo_text: logoText.trim() || null,
-          })
+          } as any)
           .eq("id", challengeId);
         if (error) throw error;
 
@@ -223,10 +226,11 @@ const CreateChallenge = () => {
           .insert({
             title: title.trim(),
             description: description.trim() || null,
+            instruction: instruction.trim() || null,
             user_id: user.id,
             youtube_url: youtubeUrl.trim() || null,
             logo_text: logoText.trim() || null,
-          })
+          } as any)
           .select()
           .single();
         if (error || !challenge) throw error;
@@ -295,6 +299,10 @@ const CreateChallenge = () => {
             <div>
               <label className="text-sm font-medium text-muted-foreground mb-1 block">תיאור</label>
               <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="תיאור קצר של האתגר" className="text-right" rows={3} />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground mb-1 block">הנחיה למשתתפים</label>
+              <Input value={instruction} onChange={(e) => setInstruction(e.target.value)} placeholder="הנחיה שתופיע מעל הערכים במשחק (למשל: ׳כתבו משפט מצחיק׳)" className="text-right" maxLength={300} />
             </div>
           </div>
 

@@ -1,0 +1,1 @@
+ALTER TABLE public.challenges ADD COLUMN instruction text DEFAULT NULL;

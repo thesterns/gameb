@@ -57,7 +57,7 @@ const MyChallenges = () => {
       // Duplicate the challenge
       const { data: newChallenge, error } = await supabase
         .from("challenges")
-        .insert({ title: `${challenge.title} (עותק)`, description: challenge.description, user_id: user.id })
+        .insert({ title: `${challenge.title} (עותק)`, description: challenge.description, user_id: user.id } as any)
         .select()
         .single();
       if (error || !newChallenge) throw error;

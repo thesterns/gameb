@@ -172,6 +172,7 @@ export type Database = {
           description: string | null
           id: string
           image_url: string | null
+          instruction: string | null
           logo_text: string | null
           logo_url: string | null
           title: string
@@ -184,6 +185,7 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          instruction?: string | null
           logo_text?: string | null
           logo_url?: string | null
           title: string
@@ -196,6 +198,7 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          instruction?: string | null
           logo_text?: string | null
           logo_url?: string | null
           title?: string
