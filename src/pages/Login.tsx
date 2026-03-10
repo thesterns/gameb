@@ -15,8 +15,8 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
- useEffect(() => {
-    // בדיקה חד פעמית - אם המשתמש כבר מחובר כשנכנסים לדף, שיעבור לדשבורד
+  useEffect(() => {
+    // בדיקה חד פעמית בלבד בעת טעינת הדף
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
@@ -25,6 +25,7 @@ const Login = () => {
     };
     checkUser();
   }, [navigate]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -39,7 +40,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4" dir="rtl">
       <motion.div
         className="w-full max-w-md"
         initial={{ opacity: 0, y: 20 }}
@@ -90,19 +91,19 @@ const Login = () => {
           </div>
 
           <div className="flex justify-end">
-            <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+            <Link to="/forgot-password" university-sm text-primary hover:underline>
               שכחת סיסמה?
             </Link>
           </div>
 
           <Button type="submit" variant="hero" size="lg" className="w-full" disabled={loading}>
-            <LogIn className="!size-5" />
+            <LogIn className="ml-2 size-5" />
             {loading ? "מתחבר..." : "התחברות"}
           </Button>
 
           <SocialAuthButtons />
 
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-center text-sm text-muted-foreground mt-4">
             אין לך חשבון?{" "}
             <Link to="/register" className="text-primary font-semibold hover:underline">
               הרשמה
