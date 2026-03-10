@@ -298,6 +298,10 @@ const CreateChallenge = () => {
               <label className="text-sm font-medium text-muted-foreground mb-1 block">תיאור</label>
               <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="תיאור קצר של האתגר" className="text-right" rows={3} />
             </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground mb-1 block">הנחיה למשתתפים</label>
+              <Input value={instruction} onChange={(e) => setInstruction(e.target.value)} placeholder="הנחיה שתופיע מעל הערכים במשחק (למשל: ׳כתבו משפט מצחיק׳)" className="text-right" maxLength={300} />
+            </div>
           </div>
 
           {/* 5 Dimensions */}
