@@ -33,9 +33,15 @@ export function ContactFormDialog({ trigger }: ContactFormDialogProps) {
 
     setLoading(true);
     try {
-      const { error } = await supabase.functions.invoke("send-contact-email", {
-        body: form,
-      });
+   const { error } = await supabase
+  .from("contact_requests") // הטבלה שיצרנו ב-SQL Editor
+  .insert([
+    { 
+      name: form.name, 
+      email: form.email, 
+      message: form.message 
+    }
+  ]);
 
       if (error) throw error;
 
