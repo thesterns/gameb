@@ -20,6 +20,7 @@ import CreateChallenge from "./pages/CreateChallenge";
 import MyChallenges from "./pages/MyChallenges";
 import ChallengePlay from "./pages/ChallengePlay";
 import NotFound from "./pages/NotFound";
+import AuthCallback from "./pages/AuthCallback";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/challenge/:challengeId/edit" element={<CreateChallenge />} />
             <Route path="/my-challenges" element={<MyChallenges />} />
             <Route path="/game/:sessionId/challenge-play" element={<ChallengePlay />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
