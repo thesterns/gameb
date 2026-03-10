@@ -15,25 +15,25 @@ const Dashboard = () => {
   useEffect(() => {
     let mounted = true;
 
-    const initializeAuth = async () => {
-      // השהיית ביטחון כדי לתת ל-Supabase לעבד את ה-Token מה-URL
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
+    const checkAuth = async () => {
+      // 1. מחכים קצת ש-Supabase יסיים לקרוא את ה-Token מהכתובת
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
       const { data: { session } } = await supabase.auth.getSession();
       
-      if (!session && mounted) {
-        console.log("No session found, redirecting to login");
-        navigate("/login");
-        return;
-      }
-
-      if (session && mounted) {
-        setUserName(session.user.user_metadata?.full_name || "משתמש");
-        setIsLoading(false);
+      if (mounted) {
+        if (session) {
+          console.log("Session found for:", session.user.email);
+          setUserName(session.user.user_metadata?.full_name || "משתמש");
+          setIsLoading(false);
+        } else {
+          console.log("Still no session, redirecting to login...");
+          navigate("/login");
+        }
       }
     };
 
-    initializeAuth();
+    checkAuth();
 
     return () => { mounted = false; };
   }, [navigate]);
