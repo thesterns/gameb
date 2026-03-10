@@ -38,6 +38,8 @@ return (
 <span className="text-xs text-muted-foreground">או התחברו עם</span>
 <div className="h-px flex-1 bg-border" />
 </div>
+
 );
 };
+
 export default SocialAuthButtons;
