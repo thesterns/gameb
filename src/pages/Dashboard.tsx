@@ -39,33 +39,49 @@ const Dashboard = () => {
   const [loadingChallenges, setLoadingChallenges] = useState(true);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate("/login");
-        return;
+    // מאזין לשינויים בסטטוס החיבור - זה הפתרון לזריקה ל-Login
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session) {
+        setUserName(session.user.user_metadata?.full_name || "משתמש");
+
+        // טעינת הנתונים מה-DB רק כשיש חיבור מאושר
+        try {
+          const [quizzesRes, challengesRes] = await Promise.all([
+            supabase
+              .from("quizzes")
+              .select("id, title, description, mode, created_at")
+              .order("created_at", { ascending: false })
+              .limit(6),
+            supabase
+              .from("challenges")
+              .select("id, title, description, created_at")
+              .order("created_at", { ascending: false })
+              .limit(6),
+          ]);
+
+          setQuizzes(quizzesRes.data || []);
+          setChallenges(challengesRes.data || []);
+        } catch (error) {
+          console.error("Error fetching data:", error);
+        } finally {
+          setLoadingQuizzes(false);
+          setLoadingChallenges(false);
+        }
+      } else {
+        // אם אין session, נחכה רגע קטן לראות אם זה רק עיכוב של גוגל
+        const timeout = setTimeout(async () => {
+          const { data } = await supabase.auth.getSession();
+          if (!data.session) {
+            navigate("/login");
+          }
+        }, 1500);
+        return () => clearTimeout(timeout);
       }
-      setUserName(session.user.user_metadata?.full_name || "משתמש");
+    });
 
-      const [quizzesRes, challengesRes] = await Promise.all([
-        supabase
-          .from("quizzes")
-          .select("id, title, description, mode, created_at")
-          .order("created_at", { ascending: false })
-          .limit(6),
-        supabase
-          .from("challenges")
-          .select("id, title, description, created_at")
-          .order("created_at", { ascending: false })
-          .limit(6),
-      ]);
-
-      setQuizzes(quizzesRes.data || []);
-      setLoadingQuizzes(false);
-      setChallenges(challengesRes.data || []);
-      setLoadingChallenges(false);
+    return () => {
+      subscription.unsubscribe();
     };
-    checkAuth();
   }, [navigate]);
 
   const handleLogout = async () => {
@@ -75,7 +91,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-right" dir="rtl">
       <header className="border-b border-border bg-card">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-heading font-bold text-gradient">zgame</h1>
@@ -83,7 +99,7 @@ const Dashboard = () => {
             <span className="text-sm text-muted-foreground hidden sm:inline">שלום, {userName}</span>
             <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={handleLogout}>
-              <LogOut className="!size-4" />
+              <LogOut className="!size-4 ml-2" />
               יציאה
             </Button>
           </div>
@@ -92,11 +108,10 @@ const Dashboard = () => {
 
       <main className="max-w-6xl mx-auto px-6 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <h2 className="text-3xl font-heading font-bold mb-8">הדשבורד שלי</h2>
+          <h2 className="text-3xl font-heading font-bold mb-8 text-right">הדשבורד שלי</h2>
 
           {/* Quick Actions */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
-            {/* Quiz pair */}
             <div className="grid grid-cols-2 gap-4">
               <button
                 onClick={() => navigate("/quiz/new")}
@@ -121,7 +136,6 @@ const Dashboard = () => {
               </button>
             </div>
 
-            {/* Challenge pair */}
             <div className="grid grid-cols-2 gap-4">
               <button
                 onClick={() => navigate("/challenge/new")}
@@ -159,175 +173,41 @@ const Dashboard = () => {
             </button>
           </div>
 
-          {/* Recent Quizzes */}
-          {loadingQuizzes ? (
-            <div className="bg-card rounded-2xl p-8 shadow-card text-center mb-10">
-              <p className="text-muted-foreground">טוען חידונים...</p>
-            </div>
-          ) : quizzes.length === 0 ? (
-            <div className="bg-card rounded-2xl p-8 shadow-card text-center mb-10">
-              <BookOpen className="!size-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="font-heading font-bold text-xl mb-2">אין חידונים עדיין</h3>
-              <p className="text-muted-foreground mb-4">צרו את החידון הראשון שלכם!</p>
-              <Button variant="hero" onClick={() => navigate("/quiz/new")}>
-                <Plus className="!size-5" />
-                צור חידון חדש
-              </Button>
-            </div>
-          ) : (
-            <div className="mb-10">
-              <div className="flex items-center justify-between mb-4">
+          {/* Recent Quizzes Section */}
+          <div className="mb-10 text-right">
+             <div className="flex items-center justify-between mb-4 flex-row-reverse">
                 <h3 className="font-heading font-bold text-xl">החידונים האחרונים</h3>
-                <Button variant="ghost" size="sm" onClick={() => navigate("/my-quizzes")}>
-                  הצג הכל
-                </Button>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {quizzes.map((quiz) => {
-                  const mode = modeLabels[quiz.mode] || modeLabels.genius;
-                  return (
-                    <motion.div
-                      key={quiz.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="bg-card rounded-2xl p-5 shadow-card hover:shadow-elevated transition-all text-right"
-                    >
-                      <button
-                        onClick={() => navigate(`/quiz/${quiz.id}/edit`)}
-                        className="w-full text-right"
-                      >
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-                          {mode.icon}
-                          <span>{mode.label}</span>
-                        </div>
-                        <h4 className="font-heading font-bold text-lg text-foreground truncate">{quiz.title}</h4>
-                        {quiz.description && (
-                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{quiz.description}</p>
-                        )}
-                      </button>
-                      <Button
-                        variant="hero"
-                        size="sm"
-                        className="mt-3 w-full"
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          try {
-                            const { data: { user } } = await supabase.auth.getUser();
-                            if (!user) return;
-                            const joinCode = String(Math.floor(10000 + Math.random() * 90000));
-                            const { data: session, error } = await supabase
-                              .from("game_sessions")
-                              .insert({ quiz_id: quiz.id, host_user_id: user.id, join_code: joinCode })
-                              .select()
-                              .single();
-                            if (error || !session) throw error;
-                            navigate(`/game/${session.id}/lobby`);
-                          } catch {
-                            toast.error("שגיאה בהפעלת המשחק");
-                          }
-                        }}
-                      >
-                        <Play className="!size-4" />
-                        התחל משחק
-                      </Button>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Recent Challenges */}
-          {loadingChallenges ? (
-            <div className="bg-card rounded-2xl p-8 shadow-card text-center">
-              <p className="text-muted-foreground">טוען אתגרים...</p>
-            </div>
-          ) : challenges.length === 0 ? (
-            <div className="bg-card rounded-2xl p-8 shadow-card text-center">
-              <Target className="!size-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="font-heading font-bold text-xl mb-2">אין אתגרים עדיין</h3>
-              <p className="text-muted-foreground mb-4">צרו את האתגר הראשון שלכם!</p>
-              <Button variant="hero" onClick={() => navigate("/challenge/new")}>
-                <Plus className="!size-5" />
-                צור אתגר חדש
-              </Button>
-            </div>
-          ) : (
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-heading font-bold text-xl">האתגרים האחרונים</h3>
-                <Button variant="ghost" size="sm" onClick={() => navigate("/my-challenges")}>
-                  הצג הכל
-                </Button>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {challenges.map((challenge) => (
-                  <motion.div
-                    key={challenge.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-card rounded-2xl p-5 shadow-card hover:shadow-elevated transition-all text-right"
-                  >
-                    <button
-                      onClick={() => navigate(`/challenge/${challenge.id}/edit`)}
-                      className="w-full text-right"
-                    >
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-                        <Target className="size-3.5" />
-                        <span>אתגר</span>
-                      </div>
-                      <h4 className="font-heading font-bold text-lg text-foreground truncate">{challenge.title}</h4>
-                      {challenge.description && (
-                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{challenge.description}</p>
-                      )}
-                    </button>
-                    <Button
-                      variant="hero"
-                      size="sm"
-                      className="mt-3 w-full"
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        try {
-                          const { data: { user } } = await supabase.auth.getUser();
-                          if (!user) return;
-                          const joinCode = String(Math.floor(10000 + Math.random() * 90000));
-                          const { data: session, error } = await supabase
-                            .from("game_sessions")
-                            .insert({ challenge_id: challenge.id, host_user_id: user.id, join_code: joinCode } as any)
-                            .select()
-                            .single();
-                          if (error || !session) throw error;
-                          navigate(`/game/${session.id}/lobby`);
-                        } catch {
-                          toast.error("שגיאה בהפעלת המשחק");
-                        }
-                      }}
-                    >
-                      <Play className="!size-4" />
-                      התחל משחק
-                    </Button>
-                    <ChallengeHistoryDialog challengeId={challenge.id} challengeTitle={challenge.title} />
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          )}
+                <Button variant="ghost" size="sm" onClick={() => navigate("/my-quizzes")}>הצג הכל</Button>
+             </div>
+             {loadingQuizzes ? (
+                <div className="bg-card rounded-2xl p-8 text-center"><p>טוען חידונים...</p></div>
+             ) : quizzes.length === 0 ? (
+                <div className="bg-card rounded-2xl p-8 text-center border-dashed border-2">
+                   <p className="mb-4">אין חידונים עדיין</p>
+                   <Button onClick={() => navigate("/quiz/new")}>צור חידון ראשון</Button>
+                </div>
+             ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                   {quizzes.map((quiz) => (
+                      <motion.div key={quiz.id} className="bg-card rounded-2xl p-5 shadow-card" whileHover={{ y: -5 }}>
+                         <div className="text-right">
+                            <h4 className="font-bold text-lg truncate">{quiz.title}</h4>
+                            <p className="text-sm text-muted-foreground line-clamp-2">{quiz.description}</p>
+                            <Button className="w-full mt-4" onClick={() => navigate(`/game/${quiz.id}/lobby`)}>
+                               <Play className="ml-2 size-4" /> התחל
+                            </Button>
+                         </div>
+                      </motion.div>
+                   ))}
+                </div>
+             )}
+          </div>
         </motion.div>
       </main>
 
-      {/* Footer */}
-      <footer className="px-6 py-8 text-center text-muted-foreground text-sm border-t border-border">
-        <div className="flex items-center justify-center gap-4 mb-2">
-          <ContactFormDialog
-            trigger={
-              <button className="inline-flex items-center gap-1 hover:text-foreground transition-colors">
-                <Mail className="!size-4" />
-                צור קשר
-              </button>
-            }
-          />
-        </div>
-        <p>© 2026 zgame. כל הזכויות שמורות.</p>
+      <footer className="px-6 py-8 text-center text-muted-foreground text-sm border-t border-border mt-auto">
+        <ContactFormDialog trigger={<button className="hover:text-foreground">צור קשר</button>} />
+        <p className="mt-2">© 2026 zgame. כל הזכויות שמורות.</p>
       </footer>
     </div>
   );
