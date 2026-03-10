@@ -1,7 +1,3 @@
-מצטער על העיכוב, אני מבין שבלוק הקוד הקודם פשוט לא הופיע אצלך. אני אכתוב את הקוד כאן בטקסט פשוט, בלי התיבה המיוחדת, כדי שתראה אותו בבירור.
-
-תעתיק את כל הטקסט שמתחת לקו, ותחליף איתו את כל התוכן בקובץ src/components/SocialAuthButtons.tsx:
-
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
