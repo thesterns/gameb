@@ -8,7 +8,6 @@ const SocialAuthButtons = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          // שים לב: הגדרנו חזרה ישירות לדף ה-dashboard
           redirectTo: 'https://game.makeitbetter.co.il/dashboard',
         },
       });
@@ -20,6 +19,8 @@ const SocialAuthButtons = () => {
     }
   };
 
+  // הערנו את הפונקציה כדי שלא תרוץ בטעות
+  /*
   const handleAppleLogin = async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -35,6 +36,7 @@ const SocialAuthButtons = () => {
       });
     }
   };
+  */
 
   return (
     <div className="space-y-3">
@@ -60,7 +62,8 @@ const SocialAuthButtons = () => {
         התחברות עם Google
       </Button>
 
-      <Button
+      {/* הסתרנו את כפתור ה-Apple על ידי הפיכתו להערה בתוך ה-JSX */}
+      {/* <Button
         type="button"
         variant="outline"
         size="lg"
@@ -72,6 +75,7 @@ const SocialAuthButtons = () => {
         </svg>
         התחברות עם Apple
       </Button>
+      */}
     </div>
   );
 };
