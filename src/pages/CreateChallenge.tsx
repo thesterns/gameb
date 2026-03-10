@@ -66,6 +66,7 @@ const CreateChallenge = () => {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [instruction, setInstruction] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | undefined>();
   const [imageUrl, setImageUrl] = useState<string | undefined>();
