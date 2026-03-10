@@ -209,11 +209,12 @@ const CreateChallenge = () => {
           .update({
             title: title.trim(),
             description: description.trim() || null,
+            instruction: instruction.trim() || null,
             image_url: finalImageUrl,
             youtube_url: youtubeUrl.trim() || null,
             logo_url: finalLogoUrl,
             logo_text: logoText.trim() || null,
-          })
+          } as any)
           .eq("id", challengeId);
         if (error) throw error;
 
