@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { Zap, Users, Trophy, Sparkles, ArrowLeft, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import heroImage from "@/assets/hero-quiz.png";
 import { ContactFormDialog } from "@/components/ContactFormDialog";
 
@@ -78,23 +77,12 @@ const Index = () => {
       return;
     }
 
-    // Navigate to join page with session already resolved – skip code step
     navigate(`/join/${joinCode}`);
     setJoiningGame(false);
   };
 
-  // Redirect authenticated users (e.g. after OAuth callback) to dashboard
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION")) {
-        navigate("/dashboard");
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
   return (
-    <div className="min-h-screen bg-background overflow-hidden">
+    <div className="min-h-screen bg-background overflow-hidden text-right" dir="rtl">
       {/* Navbar */}
       <nav className="relative z-10 flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
         <h1 className="text-2xl font-heading font-bold text-gradient">
@@ -147,7 +135,7 @@ const Index = () => {
                 disabled={joinCode.length !== 5 || joiningGame}
                 onClick={handleJoinFromHome}
               >
-                <ArrowLeft className="!size-5" />
+                <ArrowLeft className="!size-5 ml-2" />
                 {joiningGame ? "בודק..." : "הצטרפו למשחק"}
               </Button>
             </div>
@@ -225,33 +213,8 @@ const Index = () => {
         </motion.div>
       </section>
 
-      {/* Join Game CTA */}
-      <section className="px-6 py-16">
-        <motion.div
-          className="max-w-2xl mx-auto gradient-primary rounded-3xl p-8 md:p-12 text-center text-primary-foreground shadow-elevated"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-        >
-          <h3 className="text-3xl font-heading font-bold mb-4">
-            יש לכם קוד משחק?
-          </h3>
-          <p className="text-primary-foreground/80 mb-6 text-lg">
-            הכניסו את הקוד והצטרפו למשחק תוך שניות
-          </p>
-          <Button
-            variant="outline"
-            size="xl"
-            className="border-primary-foreground/30 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 hover:text-primary-foreground"
-            onClick={() => navigate("/join")}
-          >
-            הצטרפו עכשיו
-          </Button>
-        </motion.div>
-      </section>
-
       {/* Footer */}
-      <footer className="px-6 py-8 text-center text-muted-foreground text-sm border-t border-border">
+      <footer className="px-6 py-8 text-center text-muted-foreground text-sm border-t border-border mt-auto">
         <div className="flex items-center justify-center gap-4 mb-2">
           <ContactFormDialog
             trigger={
