@@ -95,6 +95,7 @@ const CreateChallenge = () => {
       }
       setTitle(data.title);
       setDescription(data.description || "");
+      setInstruction((data as any).instruction || "");
       if (data.image_url) { setImageUrl(data.image_url); setImagePreview(data.image_url); }
       if (data.youtube_url) setYoutubeUrl(data.youtube_url);
       if (data.logo_url) { setLogoUrl(data.logo_url); setLogoPreview(data.logo_url); }
