@@ -25,7 +25,7 @@ const SocialAuthButtons = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'apple',
         options: {
-          redirectTo: 'https://game.makeitbetter.co.il/dashboard',
+          redirectTo: 'https://game.makeitbetter.co.il/auth/callback',
         },
       });
       if (error) throw error;
