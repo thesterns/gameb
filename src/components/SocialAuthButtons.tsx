@@ -4,17 +4,33 @@ import { toast } from "sonner";
 
 const SocialAuthButtons = () => {
   const handleGoogleLogin = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin }
-    });
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          // שינוי לכתובת קבועה כדי למנוע את שגיאת ה-state missing
+          redirectTo: 'https://game.makeitbetter.co.il',
+        },
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      toast.error("שגיאה בהתחברות");
+      console.error(error);
+    }
   };
 
   const handleAppleLogin = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'apple',
-      options: { redirectTo: window.location.origin }
-    });
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'apple',
+        options: {
+          redirectTo: 'https://game.makeitbetter.co.il',
+        },
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      toast.error("שגיאה בהתחברות");
+    }
   };
 
   return (
