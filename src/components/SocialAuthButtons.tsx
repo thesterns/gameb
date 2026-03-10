@@ -41,5 +41,4 @@ return (
 
 );
 };
-
 export default SocialAuthButtons;
