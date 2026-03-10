@@ -226,10 +226,11 @@ const CreateChallenge = () => {
           .insert({
             title: title.trim(),
             description: description.trim() || null,
+            instruction: instruction.trim() || null,
             user_id: user.id,
             youtube_url: youtubeUrl.trim() || null,
             logo_text: logoText.trim() || null,
-          })
+          } as any)
           .select()
           .single();
         if (error || !challenge) throw error;
