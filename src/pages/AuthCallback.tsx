@@ -6,19 +6,37 @@ const AuthCallback = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    supabase.auth.onAuthStateChange((event, session) => {
+    const handleAuth = async () => {
+      // מחכה שה-Session יתבסס
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (session) {
+        navigate("/dashboard", { replace: true });
+      } else {
+        // אם אחרי 2 שניות עדיין אין כלום, כנראה שיש שגיאה
+        const timeout = setTimeout(() => {
+          navigate("/login", { replace: true });
+        }, 2000);
+        return () => clearTimeout(timeout);
+      }
+    };
+
+    handleAuth();
+
+    // מאזין לאירוע כניסה
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
-        navigate("/dashboard");
-      } else if (event === "SIGNED_OUT") {
-        navigate("/login");
+        navigate("/dashboard", { replace: true });
       }
     });
+
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      <p className="ml-4">מתחבר למערכת...</p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background" dir="rtl">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+      <p className="text-lg font-medium">משלים התחברות מאובטחת...</p>
     </div>
   );
 };
