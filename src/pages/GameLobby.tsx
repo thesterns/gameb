@@ -9,7 +9,6 @@ import { QRCodeSVG } from "qrcode.react";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
 import QuizLogo from "@/components/QuizLogo";
 
-
 interface Participant {
   id: string;
   player_name: string;
@@ -33,8 +32,7 @@ const GameLobby = () => {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
-  const [showImageModal, setShowImageModal] = useState(false);
-  const [showImageZoom, setShowImageZoom] = useState(false);
+  const [showImageZoom, setShowImageZoom] = useState(false); // State חדש להגדלה
 
   useEffect(() => {
     if (!sessionId) return;
@@ -165,7 +163,6 @@ const GameLobby = () => {
       return;
     }
 
-    // For challenges, assign random dimension values to each participant
     if (gameType === "challenge" && challengeId) {
       try {
         const { data: dimItems } = await supabase
@@ -174,7 +171,6 @@ const GameLobby = () => {
           .eq("challenge_id", challengeId);
 
         if (dimItems && dimItems.length > 0) {
-          // Group by dimension + dedupe values
           const byDimension: Record<string, string[]> = {};
           for (const item of dimItems) {
             if (!byDimension[item.dimension]) byDimension[item.dimension] = [];
@@ -192,21 +188,17 @@ const GameLobby = () => {
             return;
           }
 
-          // Assign random values per dimension, with shuffled participant order each time
           const assignments: { session_id: string; participant_id: string; dimension: string; value: string }[] = [];
 
           for (const [dimension, values] of Object.entries(byDimension)) {
             const shuffledParticipants = [...participants].sort(() => Math.random() - 0.5);
-
             let shuffledValues = [...values].sort(() => Math.random() - 0.5);
 
             for (let i = 0; i < shuffledParticipants.length; i++) {
               if (i > 0 && i % values.length === 0) {
                 shuffledValues = [...values].sort(() => Math.random() - 0.5);
               }
-
               const randomValue = shuffledValues[i % values.length];
-
               assignments.push({
                 session_id: sessionId!,
                 participant_id: shuffledParticipants[i].id,
@@ -290,41 +282,22 @@ const GameLobby = () => {
           <h1 className="text-3xl font-heading font-bold text-primary-foreground">
             {gameTitle}
           </h1>
-          {isKingMode && (
-            <p className="text-primary-foreground/70 text-sm mt-1">👑 מצב מלך</p>
-          )}
-          {isTribeMode && (
-            <p className="text-primary-foreground/70 text-sm mt-1">🏕️ מצב שבט</p>
-          )}
-          {isMajorityMode && (
-            <p className="text-primary-foreground/70 text-sm mt-1">🗳️ הרוב קובע</p>
-          )}
-          {gameType === "challenge" && (
-            <p className="text-primary-foreground/70 text-sm mt-1">🎯 אתגר</p>
-          )}
+          {isKingMode && <p className="text-primary-foreground/70 text-sm mt-1">👑 מצב מלך</p>}
+          {isTribeMode && <p className="text-primary-foreground/70 text-sm mt-1">🏕️ מצב שבט</p>}
+          {isMajorityMode && <p className="text-primary-foreground/70 text-sm mt-1">🗳️ הרוב קובע</p>}
+          {gameType === "challenge" && <p className="text-primary-foreground/70 text-sm mt-1">🎯 אתגר</p>}
         </div>
 
         <div className="bg-card rounded-3xl p-8 shadow-elevated space-y-6">
-        {/* Media */}
-{youtubeUrl && <YouTubeEmbed url={youtubeUrl} />}
-
-{/* --- כאן אתה מחליף --- */}
-{imageUrl && !youtubeUrl && (
-  <img 
-    src={imageUrl} 
-    alt={gameTitle} 
-    className="w-full max-h-48 object-contain rounded-2xl cursor-zoom-in hover:opacity-90 transition-opacity" 
-    onClick={() => setShowImageZoom(true)}
-  />
-)}
-{/* ---------------------- */}
-            >
-              <img
-                src={imageUrl}
-                alt={gameTitle}
-                className="w-full max-h-48 object-contain rounded-2xl cursor-zoom-in"
-              />
-            </button>
+          {/* Media */}
+          {youtubeUrl && <YouTubeEmbed url={youtubeUrl} />}
+          {imageUrl && !youtubeUrl && (
+            <img 
+              src={imageUrl} 
+              alt={gameTitle} 
+              className="w-full max-h-48 object-contain rounded-2xl cursor-zoom-in hover:opacity-90 transition-opacity" 
+              onClick={() => setShowImageZoom(true)}
+            />
           )}
 
           {/* Join Code */}
@@ -349,7 +322,7 @@ const GameLobby = () => {
             </div>
           </div>
 
-          {/* King mode instruction */}
+          {/* Instructions */}
           {isKingMode && (
             <div className="bg-[hsl(var(--answer-yellow))]/10 border border-[hsl(var(--answer-yellow))]/30 rounded-xl p-3 text-center">
               <p className="text-sm font-medium text-foreground flex items-center justify-center gap-1">
@@ -418,27 +391,22 @@ const GameLobby = () => {
           </Button>
         </div>
 
-       {/* QR Code Modal */}
+        {/* QR Code Modal */}
         <AnimatePresence>
           {showQR && (
-             // ... הקוד הקיים של ה-QR ...
-          )}
-        </AnimatePresence>
-
-        {/* --- כאן אתה מדביק את חלק 3 (Image Zoom Modal) --- */}
-        <AnimatePresence>
-          {showImageZoom && imageUrl && (
-            <motion.div ...>
-               // הקוד שנתתי לך
-            </motion.div>
-          )}
-        </AnimatePresence>
-        {/* -------------------------------------------------- */}
-
-      </motion.div> {/* סגירה של ה-div הראשי */}
-    </div>
-  );
-};
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center px-4"
+              onClick={() => setShowQR(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="bg-card rounded-3xl p-8 shadow-elevated text-center max-w-sm w-full"
+                onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-heading font-bold text-lg">סרקו להצטרפות</h3>
@@ -449,51 +417,42 @@ const GameLobby = () => {
                 <div className="bg-white rounded-2xl p-6 inline-block mx-auto">
                   <QRCodeSVG value={`${window.location.origin}/join/${joinCode}`} size={220} level="M" />
                 </div>
-                <p className="text-sm text-muted-foreground mt-4">
-                  קוד: <span className="font-bold font-heading tracking-wider">{joinCode}</span>
-                </p>
+                <p className="text-sm text-muted-foreground mt-4">קוד: <span className="font-bold font-heading tracking-wider">{joinCode}</span></p>
               </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Image Modal */}
+        {/* Image Zoom Modal */}
         <AnimatePresence>
-          {showImageModal && imageUrl && (
+          {showImageZoom && imageUrl && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4"
-              onClick={() => setShowImageModal(false)}
+              className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4 md:p-10"
+              onClick={() => setShowImageZoom(false)}
             >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-card rounded-3xl p-4 shadow-elevated max-w-3xl w-full flex flex-col items-stretch"
+              <motion.div 
+                className="relative max-w-5xl w-full h-full flex items-center justify-center"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-heading font-bold text-lg truncate">
-                    {gameTitle}
-                  </h3>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowImageModal(false)}
-                  >
-                    <X className="!size-4" />
-                  </Button>
-                </div>
-
-                <div className="flex items-center justify-center">
-                  <img
-                    src={imageUrl}
-                    alt={gameTitle}
-                    className="max-h-[80vh] w-auto max-w-full object-contain rounded-2xl"
-                  />
-                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute -top-12 right-0 text-white hover:bg-white/20"
+                  onClick={() => setShowImageZoom(false)}
+                >
+                  <X className="!size-8" />
+                </Button>
+                <img
+                  src={imageUrl}
+                  alt={gameTitle}
+                  className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+                />
               </motion.div>
             </motion.div>
           )}
