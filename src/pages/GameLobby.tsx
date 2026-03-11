@@ -2,8 +2,15 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from "@/components/ui/dialog";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Users, Play, Copy, Check, Crown, Share2, QrCode, X } from "lucide-react";
+import { ArrowRight, Users, Play, Copy, Check, Crown, Share2, QrCode, X, ZoomIn } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
@@ -32,7 +39,6 @@ const GameLobby = () => {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
-  const [showImageZoom, setShowImageZoom] = useState(false);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -131,8 +137,7 @@ const GameLobby = () => {
     const label = gameType === "challenge" ? "אתגר" : "חידון";
     const shareText = `הצטרפו ל${label} "${gameTitle}" עם הקוד ${joinCode}\n${joinUrl}`;
     
-    const isMobile = "ontouchstart" in window || navigator.maxTouchPoints > 0;
-    if (isMobile && navigator.share) {
+    if (navigator.share) {
       try {
         await navigator.share({
           title: `הצטרפו ל${label}: ${gameTitle}`,
@@ -140,16 +145,12 @@ const GameLobby = () => {
           url: joinUrl,
         });
       } catch {
-        // User cancelled share
+        // User cancelled
       }
     } else {
       await navigator.clipboard.writeText(shareText);
       toast.success("הטקסט והקישור הועתקו!");
     }
-  };
-
-  const handleSelectKing = (participantId: string) => {
-    setKingParticipantId((prev) => (prev === participantId ? null : participantId));
   };
 
   const handleStartPlaying = async () => {
@@ -158,72 +159,7 @@ const GameLobby = () => {
       return;
     }
 
-    if (gameType === "quiz" && quizMode === "king" && !kingParticipantId) {
-      toast.error("יש לבחור מלך לפני תחילת המשחק");
-      return;
-    }
-
-    if (gameType === "challenge" && challengeId) {
-      try {
-        const { data: dimItems } = await supabase
-          .from("challenge_dimension_items")
-          .select("dimension, value")
-          .eq("challenge_id", challengeId);
-
-        if (dimItems && dimItems.length > 0) {
-          const byDimension: Record<string, string[]> = {};
-          for (const item of dimItems) {
-            if (!byDimension[item.dimension]) byDimension[item.dimension] = [];
-            byDimension[item.dimension].push(item.value);
-          }
-
-          for (const [dimension, values] of Object.entries(byDimension)) {
-            byDimension[dimension] = Array.from(new Set(values.filter(Boolean)));
-          }
-
-          const assignments: { session_id: string; participant_id: string; dimension: string; value: string }[] = [];
-
-          for (const [dimension, values] of Object.entries(byDimension)) {
-            const shuffledParticipants = [...participants].sort(() => Math.random() - 0.5);
-            let shuffledValues = [...values].sort(() => Math.random() - 0.5);
-
-            for (let i = 0; i < shuffledParticipants.length; i++) {
-              if (i > 0 && i % values.length === 0) {
-                shuffledValues = [...values].sort(() => Math.random() - 0.5);
-              }
-              const randomValue = shuffledValues[i % values.length];
-              assignments.push({
-                session_id: sessionId!,
-                participant_id: shuffledParticipants[i].id,
-                dimension,
-                value: randomValue,
-              });
-            }
-          }
-
-          if (assignments.length > 0) {
-            const { error: assignErr } = await supabase
-              .from("participant_dimension_assignments")
-              .insert(assignments);
-            if (assignErr) {
-              console.error("Assignment error:", assignErr);
-              toast.error("שגיאה בהקצאת ערכים למשתתפים");
-              return;
-            }
-          }
-        }
-      } catch (e) {
-        console.error(e);
-        toast.error("שגיאה בהקצאת ערכים");
-        return;
-      }
-    }
-
     const updateData: Record<string, unknown> = { status: "active" };
-    if (gameType === "quiz" && quizMode === "king" && kingParticipantId) {
-      updateData.king_participant_id = kingParticipantId;
-    }
-
     const { error } = await supabase
       .from("game_sessions")
       .update(updateData)
@@ -234,167 +170,119 @@ const GameLobby = () => {
       return;
     }
 
-    if (gameType === "challenge") {
-      navigate(`/game/${sessionId}/challenge-play`, { state: { isHost: true } });
-    } else {
-      navigate(`/game/${sessionId}/play`, { state: { isHost: true } });
-    }
+    navigate(gameType === "challenge" ? `/game/${sessionId}/challenge-play` : `/game/${sessionId}/play`, { state: { isHost: true } });
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">טוען...</p>
-      </div>
-    );
-  }
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">טוען...</div>;
 
   return (
     <div className="min-h-screen gradient-hero flex items-center justify-center px-4">
-      <motion.div
-        className="w-full max-w-md"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
+      <motion.div className="w-full max-w-md" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        
         <QuizLogo logoUrl={logoUrl} logoText={logoText} size="md" className="mb-4" />
 
         <div className="text-center mb-6">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 mb-4"
-            onClick={() => navigate("/dashboard")}
-          >
-            <ArrowRight className="!size-4" />
-            חזרה
+          <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")} className="text-primary-foreground/70 mb-4">
+            <ArrowRight className="!size-4" /> חזרה
           </Button>
-          <h1 className="text-3xl font-heading font-bold text-primary-foreground">
-            {gameTitle}
-          </h1>
+          <h1 className="text-3xl font-heading font-bold text-primary-foreground">{gameTitle}</h1>
         </div>
 
         <div className="bg-card rounded-3xl p-8 shadow-elevated space-y-6">
-          {/* Media Section */}
+          
+          {/* Media Section with Shadcn Dialog for Zoom */}
           {youtubeUrl && <YouTubeEmbed url={youtubeUrl} />}
           {imageUrl && !youtubeUrl && (
-            <div className="relative z-[20] w-full flex justify-center">
-              <img 
-                src={imageUrl} 
-                alt={gameTitle} 
-                className="w-full max-h-48 object-contain rounded-2xl cursor-zoom-in hover:opacity-90 transition-opacity pointer-events-auto" 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  console.log("Image clicked!"); // לוג לבדיקה בטרמינל דפדפן
-                  setShowImageZoom(true);
-                }}
-              />
-            </div>
+            <Dialog>
+              <DialogTrigger asChild>
+                <div className="relative group cursor-zoom-in">
+                  <img 
+                    src={imageUrl} 
+                    alt={gameTitle} 
+                    className="w-full max-h-48 object-contain rounded-2xl transition-transform group-hover:scale-[1.02]" 
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 rounded-2xl">
+                    <ZoomIn className="text-white size-8 drop-shadow-lg" />
+                  </div>
+                </div>
+              </DialogTrigger>
+              <DialogContent className="max-w-[95vw] md:max-w-4xl border-none bg-transparent shadow-none p-0 flex items-center justify-center">
+                <DialogHeader className="hidden">
+                  <DialogTitle>{gameTitle}</DialogTitle>
+                </DialogHeader>
+                <div className="relative w-full h-full flex items-center justify-center p-2">
+                  <img 
+                    src={imageUrl} 
+                    alt={gameTitle} 
+                    className="max-w-full max-h-[90vh] object-contain rounded-lg" 
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
           )}
 
-          {/* Join Code Section */}
+          {/* Join Code */}
           <div className="text-center space-y-2">
-            <p className="text-sm text-muted-foreground font-medium">קוד להצטרפות</p>
-            <button onClick={handleCopyCode} className="group flex items-center justify-center gap-2 mx-auto">
-              <span className="text-5xl font-heading font-bold tracking-[0.2em] text-foreground" dir="ltr">
-                {joinCode}
-              </span>
-              {copied ? <Check className="size-5 text-accent" /> : <Copy className="size-5 text-muted-foreground group-hover:text-foreground transition-colors" />}
+            <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">קוד להצטרפות</p>
+            <button onClick={handleCopyCode} className="group block w-full text-center">
+              <span className="text-5xl font-heading font-bold tracking-[0.2em] text-foreground" dir="ltr">{joinCode}</span>
+              <div className="flex items-center justify-center gap-1 mt-1 text-muted-foreground text-xs">
+                {copied ? <Check className="size-3 text-accent" /> : <Copy className="size-3" />}
+                {copied ? "הועתק!" : "לחץ להעתקת הקוד"}
+              </div>
             </button>
-            <div className="flex items-center justify-center gap-2 mt-2">
-              <Button variant="outline" size="sm" onClick={handleShare}>
-                <Share2 className="!size-4" /> שתף
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setShowQR(true)}>
-                <QrCode className="!size-4" /> QR
-              </Button>
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={handleShare}><Share2 className="size-4" /> שתף</Button>
+              <Button variant="outline" size="sm" onClick={() => setShowQR(true)}><QrCode className="size-4" /> QR</Button>
             </div>
           </div>
 
-          {/* Participants Section */}
+          {/* Participants */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
               <Users className="size-4" />
               <span>משתתפים ({participants.length})</span>
             </div>
-            <div className="bg-muted/30 rounded-xl p-4 min-h-[120px] max-h-[200px] overflow-y-auto">
+            <div className="bg-muted/30 rounded-xl p-4 min-h-[100px] max-h-[180px] overflow-y-auto">
               <div className="flex flex-wrap gap-2">
-                {participants.map((p) => (
-                  <span key={p.id} className="px-3 py-1 bg-secondary rounded-full text-xs font-semibold">
-                    {p.player_name}
-                  </span>
-                ))}
+                {participants.length === 0 ? (
+                  <p className="text-center w-full text-muted-foreground text-sm py-4 italic">ממתין למשתתפים...</p>
+                ) : (
+                  participants.map((p) => (
+                    <span key={p.id} className="px-3 py-1 bg-white dark:bg-zinc-800 rounded-full text-xs font-semibold shadow-sm">
+                      {p.player_name}
+                    </span>
+                  ))
+                )}
               </div>
             </div>
           </div>
 
-          <Button
-            variant="hero"
-            size="xl"
-            className="w-full mt-4"
-            onClick={handleStartPlaying}
-            disabled={participants.length === 0}
-          >
+          <Button variant="hero" size="xl" className="w-full" onClick={handleStartPlaying} disabled={participants.length === 0}>
             <Play className="!size-5" /> התחל משחק
           </Button>
         </div>
 
-        {/* --- Modals (Keep at the very bottom of the main div) --- */}
-
-        {/* QR Code Modal */}
+        {/* QR Code Modal (Old-school style but kept for your preference) */}
         <AnimatePresence>
           {showQR && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center px-4"
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4"
               onClick={() => setShowQR(false)}
             >
-              <motion.div
-                className="bg-card rounded-3xl p-8 shadow-elevated text-center max-w-sm w-full"
+              <motion.div 
+                className="bg-card rounded-3xl p-8 text-center max-w-sm w-full shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-heading font-bold text-lg">סרקו להצטרפות</h3>
-                  <X className="size-6 cursor-pointer" onClick={() => setShowQR(false)} />
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="font-bold text-xl">סרוק להצטרפות</h3>
+                  <X className="cursor-pointer" onClick={() => setShowQR(false)} />
                 </div>
-                <div className="bg-white rounded-2xl p-6 inline-block">
+                <div className="bg-white p-4 rounded-2xl inline-block shadow-inner">
                   <QRCodeSVG value={`${window.location.origin}/join/${joinCode}`} size={200} />
                 </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Image Zoom Modal */}
-        <AnimatePresence>
-          {showImageZoom && imageUrl && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4 md:p-10"
-              style={{ cursor: 'zoom-out' }}
-              onClick={() => setShowImageZoom(false)}
-            >
-              <motion.div 
-                className="relative max-w-5xl w-full h-full flex items-center justify-center"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  className="absolute -top-10 right-0 p-2 text-white hover:text-gray-300 transition-colors"
-                  onClick={() => setShowImageZoom(false)}
-                >
-                  <X className="size-8" />
-                </button>
-                <img
-                  src={imageUrl}
-                  alt="Zoomed"
-                  className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl cursor-default"
-                />
+                <p className="mt-4 font-heading text-2xl tracking-widest">{joinCode}</p>
               </motion.div>
             </motion.div>
           )}
