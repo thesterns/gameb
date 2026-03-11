@@ -1,3 +1,6 @@
+### הקובץ המלא עם ההגדלה לתמונה
+
+```tsx
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +35,7 @@ const GameLobby = () => {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -305,7 +309,17 @@ const GameLobby = () => {
           {/* Media */}
           {youtubeUrl && <YouTubeEmbed url={youtubeUrl} />}
           {imageUrl && !youtubeUrl && (
-            <img src={imageUrl} alt={gameTitle} className="w-full max-h-48 object-contain rounded-2xl" />
+            <button
+              type="button"
+              className="w-full"
+              onClick={() => setShowImageModal(true)}
+            >
+              <img
+                src={imageUrl}
+                alt={gameTitle}
+                className="w-full max-h-48 object-contain rounded-2xl cursor-zoom-in"
+              />
+            </button>
           )}
 
           {/* Join Code */}
@@ -425,7 +439,51 @@ const GameLobby = () => {
                 <div className="bg-white rounded-2xl p-6 inline-block mx-auto">
                   <QRCodeSVG value={`${window.location.origin}/join/${joinCode}`} size={220} level="M" />
                 </div>
-                <p className="text-sm text-muted-foreground mt-4">קוד: <span className="font-bold font-heading tracking-wider">{joinCode}</span></p>
+                <p className="text-sm text-muted-foreground mt-4">
+                  קוד: <span className="font-bold font-heading tracking-wider">{joinCode}</span>
+                </p>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Image Modal */}
+        <AnimatePresence>
+          {showImageModal && imageUrl && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4"
+              onClick={() => setShowImageModal(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-card rounded-3xl p-4 shadow-elevated max-w-3xl w-full flex flex-col items-stretch"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-heading font-bold text-lg truncate">
+                    {gameTitle}
+                  </h3>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowImageModal(false)}
+                  >
+                    <X className="!size-4" />
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-center">
+                  <img
+                    src={imageUrl}
+                    alt={gameTitle}
+                    className="max-h-[80vh] w-auto max-w-full object-contain rounded-2xl"
+                  />
+                </div>
               </motion.div>
             </motion.div>
           )}
@@ -436,3 +494,4 @@ const GameLobby = () => {
 };
 
 export default GameLobby;
+```
