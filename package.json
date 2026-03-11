@@ -4,6 +4,7 @@
   "version": "0.0.3",
   "type": "module",
   "scripts": {
+    "preinstall": "rm -f package-lock.json pnpm-lock.yaml",
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
