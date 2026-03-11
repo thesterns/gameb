@@ -1,6 +1,3 @@
-### הקובץ המלא עם ההגדלה לתמונה
-
-```tsx
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
