@@ -32,7 +32,7 @@ const GameLobby = () => {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
-  const [showImageZoom, setShowImageZoom] = useState(false); // State חדש להגדלה
+  const [showImageZoom, setShowImageZoom] = useState(false);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -181,13 +181,6 @@ const GameLobby = () => {
             byDimension[dimension] = Array.from(new Set(values.filter(Boolean)));
           }
 
-          const hasAtLeastOneRealChoice = Object.values(byDimension).some((values) => values.length > 1);
-
-          if (participants.length > 1 && !hasAtLeastOneRealChoice) {
-            toast.error("כדי שכל שחקן יקבל ערכים שונים, צריך לפחות שני ערכים באחד המימדים");
-            return;
-          }
-
           const assignments: { session_id: string; participant_id: string; dimension: string; value: string }[] = [];
 
           for (const [dimension, values] of Object.entries(byDimension)) {
@@ -248,10 +241,6 @@ const GameLobby = () => {
     }
   };
 
-  const isKingMode = gameType === "quiz" && quizMode === "king";
-  const isTribeMode = gameType === "quiz" && quizMode === "tribe";
-  const isMajorityMode = gameType === "quiz" && quizMode === "majority";
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -282,25 +271,27 @@ const GameLobby = () => {
           <h1 className="text-3xl font-heading font-bold text-primary-foreground">
             {gameTitle}
           </h1>
-          {isKingMode && <p className="text-primary-foreground/70 text-sm mt-1">👑 מצב מלך</p>}
-          {isTribeMode && <p className="text-primary-foreground/70 text-sm mt-1">🏕️ מצב שבט</p>}
-          {isMajorityMode && <p className="text-primary-foreground/70 text-sm mt-1">🗳️ הרוב קובע</p>}
-          {gameType === "challenge" && <p className="text-primary-foreground/70 text-sm mt-1">🎯 אתגר</p>}
         </div>
 
         <div className="bg-card rounded-3xl p-8 shadow-elevated space-y-6">
-     {/* Media */}
-{youtubeUrl && <YouTubeEmbed url={youtubeUrl} />}
-{imageUrl && !youtubeUrl && (
-  <img 
-    src={imageUrl} 
-    alt={gameTitle} 
-    className="w-full max-h-48 object-contain rounded-2xl cursor-zoom-in hover:opacity-90 transition-opacity" 
-    onClick={() => setShowImageZoom(true)}
-  />
-)}
+          {/* Media Section */}
+          {youtubeUrl && <YouTubeEmbed url={youtubeUrl} />}
+          {imageUrl && !youtubeUrl && (
+            <div className="relative z-[20] w-full flex justify-center">
+              <img 
+                src={imageUrl} 
+                alt={gameTitle} 
+                className="w-full max-h-48 object-contain rounded-2xl cursor-zoom-in hover:opacity-90 transition-opacity pointer-events-auto" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  console.log("Image clicked!"); // לוג לבדיקה בטרמינל דפדפן
+                  setShowImageZoom(true);
+                }}
+              />
+            </div>
+          )}
 
-          {/* Join Code */}
+          {/* Join Code Section */}
           <div className="text-center space-y-2">
             <p className="text-sm text-muted-foreground font-medium">קוד להצטרפות</p>
             <button onClick={handleCopyCode} className="group flex items-center justify-center gap-2 mx-auto">
@@ -309,87 +300,45 @@ const GameLobby = () => {
               </span>
               {copied ? <Check className="size-5 text-accent" /> : <Copy className="size-5 text-muted-foreground group-hover:text-foreground transition-colors" />}
             </button>
-            <p className="text-xs text-muted-foreground">לחץ להעתקה</p>
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-2 mt-2">
               <Button variant="outline" size="sm" onClick={handleShare}>
-                <Share2 className="!size-4" />
-                שתף קישור
+                <Share2 className="!size-4" /> שתף
               </Button>
               <Button variant="outline" size="sm" onClick={() => setShowQR(true)}>
-                <QrCode className="!size-4" />
-                QR
+                <QrCode className="!size-4" /> QR
               </Button>
             </div>
           </div>
 
-          {/* Instructions */}
-          {isKingMode && (
-            <div className="bg-[hsl(var(--answer-yellow))]/10 border border-[hsl(var(--answer-yellow))]/30 rounded-xl p-3 text-center">
-              <p className="text-sm font-medium text-foreground flex items-center justify-center gap-1">
-                <Crown className="size-4 text-[hsl(var(--answer-yellow))]" />
-                לחץ על שחקן כדי לבחור אותו כמלך
-              </p>
-            </div>
-          )}
-
-          {isTribeMode && (
-            <div className="bg-[hsl(var(--answer-green))]/10 border border-[hsl(var(--answer-green))]/30 rounded-xl p-3 text-center">
-              <p className="text-sm font-medium text-foreground">
-                🏕️ במצב שבט, תפקיד המלך עובר בין השחקנים בכל שאלה
-              </p>
-            </div>
-          )}
-
-          {/* Participants */}
+          {/* Participants Section */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
               <Users className="size-4" />
               <span>משתתפים ({participants.length})</span>
             </div>
-
-            <div className="bg-muted/30 rounded-xl p-4 min-h-[120px] max-h-[300px] overflow-y-auto">
-              {participants.length === 0 ? (
-                <p className="text-center text-muted-foreground text-sm py-8">ממתין למשתתפים...</p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  <AnimatePresence>
-                    {participants.map((p) => {
-                      const isKing = kingParticipantId === p.id;
-                      return (
-                        <motion.button
-                          key={p.id}
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          onClick={isKingMode ? () => handleSelectKing(p.id) : undefined}
-                          className={`px-3 py-1.5 rounded-full text-sm font-heading font-semibold flex items-center gap-1 transition-all ${
-                            isKing
-                              ? "bg-[hsl(var(--answer-yellow))] text-white ring-2 ring-[hsl(var(--answer-yellow))]/50"
-                              : "gradient-secondary text-secondary-foreground"
-                          } ${isKingMode ? "cursor-pointer hover:scale-105" : "cursor-default"}`}
-                        >
-                          {isKing && <Crown className="size-3" />}
-                          {p.player_name}
-                        </motion.button>
-                      );
-                    })}
-                  </AnimatePresence>
-                </div>
-              )}
+            <div className="bg-muted/30 rounded-xl p-4 min-h-[120px] max-h-[200px] overflow-y-auto">
+              <div className="flex flex-wrap gap-2">
+                {participants.map((p) => (
+                  <span key={p.id} className="px-3 py-1 bg-secondary rounded-full text-xs font-semibold">
+                    {p.player_name}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Start Button */}
           <Button
             variant="hero"
             size="xl"
-            className="w-full"
+            className="w-full mt-4"
             onClick={handleStartPlaying}
             disabled={participants.length === 0}
           >
-            <Play className="!size-5" />
-            התחל משחק
+            <Play className="!size-5" /> התחל משחק
           </Button>
         </div>
+
+        {/* --- Modals (Keep at the very bottom of the main div) --- */}
 
         {/* QR Code Modal */}
         <AnimatePresence>
@@ -398,26 +347,20 @@ const GameLobby = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center px-4"
+              className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center px-4"
               onClick={() => setShowQR(false)}
             >
               <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
                 className="bg-card rounded-3xl p-8 shadow-elevated text-center max-w-sm w-full"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-heading font-bold text-lg">סרקו להצטרפות</h3>
-                  <Button variant="ghost" size="icon" onClick={() => setShowQR(false)}>
-                    <X className="!size-4" />
-                  </Button>
+                  <X className="size-6 cursor-pointer" onClick={() => setShowQR(false)} />
                 </div>
-                <div className="bg-white rounded-2xl p-6 inline-block mx-auto">
-                  <QRCodeSVG value={`${window.location.origin}/join/${joinCode}`} size={220} level="M" />
+                <div className="bg-white rounded-2xl p-6 inline-block">
+                  <QRCodeSVG value={`${window.location.origin}/join/${joinCode}`} size={200} />
                 </div>
-                <p className="text-sm text-muted-foreground mt-4">קוד: <span className="font-bold font-heading tracking-wider">{joinCode}</span></p>
               </motion.div>
             </motion.div>
           )}
@@ -430,33 +373,33 @@ const GameLobby = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4 md:p-10"
+              className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4 md:p-10"
+              style={{ cursor: 'zoom-out' }}
               onClick={() => setShowImageZoom(false)}
             >
               <motion.div 
                 className="relative max-w-5xl w-full h-full flex items-center justify-center"
-                initial={{ scale: 0.9, opacity: 0 }}
+                initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
+                exit={{ scale: 0.8, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
               >
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute -top-12 right-0 text-white hover:bg-white/20"
+                <button
+                  className="absolute -top-10 right-0 p-2 text-white hover:text-gray-300 transition-colors"
                   onClick={() => setShowImageZoom(false)}
                 >
-                  <X className="!size-8" />
-                </Button>
+                  <X className="size-8" />
+                </button>
                 <img
                   src={imageUrl}
-                  alt={gameTitle}
-                  className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+                  alt="Zoomed"
+                  className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl cursor-default"
                 />
               </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
+
       </motion.div>
     </div>
   );
