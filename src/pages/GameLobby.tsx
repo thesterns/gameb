@@ -418,22 +418,27 @@ const GameLobby = () => {
           </Button>
         </div>
 
-        {/* QR Code Modal */}
+       {/* QR Code Modal */}
         <AnimatePresence>
           {showQR && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center px-4"
-              onClick={() => setShowQR(false)}
-            >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="bg-card rounded-3xl p-8 shadow-elevated text-center max-w-sm w-full"
-                onClick={(e) => e.stopPropagation()}
+             // ... הקוד הקיים של ה-QR ...
+          )}
+        </AnimatePresence>
+
+        {/* --- כאן אתה מדביק את חלק 3 (Image Zoom Modal) --- */}
+        <AnimatePresence>
+          {showImageZoom && imageUrl && (
+            <motion.div ...>
+               // הקוד שנתתי לך
+            </motion.div>
+          )}
+        </AnimatePresence>
+        {/* -------------------------------------------------- */}
+
+      </motion.div> {/* סגירה של ה-div הראשי */}
+    </div>
+  );
+};
               >
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-heading font-bold text-lg">סרקו להצטרפות</h3>
