@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Users, Play, Copy, Check, Crown, Share2, QrCode, X } from "lucide-react";
 import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
 import QuizLogo from "@/components/QuizLogo";
 
@@ -421,12 +422,8 @@ const GameLobby = () => {
                     <X className="!size-4" />
                   </Button>
                 </div>
-                <div className="bg-white rounded-2xl p-6 inline-block mx-auto text-center">
-                  <div className="w-[220px] h-[220px] flex flex-col items-center justify-center border-4 border-dashed border-gray-300 rounded-xl">
-                    <QrCode className="!size-16 text-gray-400 mb-2" />
-                    <p className="text-gray-600 font-bold text-2xl tracking-widest">{joinCode}</p>
-                    <p className="text-gray-400 text-xs mt-1">העתק את הקוד</p>
-                  </div>
+                <div className="bg-white rounded-2xl p-6 inline-block mx-auto">
+                  <QRCodeSVG value={`${window.location.origin}/join/${joinCode}`} size={220} level="M" />
                 </div>
                 <p className="text-sm text-muted-foreground mt-4">קוד: <span className="font-bold font-heading tracking-wider">{joinCode}</span></p>
               </motion.div>
