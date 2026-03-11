@@ -18,6 +18,7 @@ interface Quiz {
   created_at: string;
 }
 
+
 interface Challenge {
   id: string;
   title: string;
