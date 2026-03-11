@@ -34,6 +34,7 @@ const GameLobby = () => {
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
+  const [showImageZoom, setShowImageZoom] = useState(false);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -304,13 +305,19 @@ const GameLobby = () => {
         </div>
 
         <div className="bg-card rounded-3xl p-8 shadow-elevated space-y-6">
-          {/* Media */}
-          {youtubeUrl && <YouTubeEmbed url={youtubeUrl} />}
-          {imageUrl && !youtubeUrl && (
-            <button
-              type="button"
-              className="w-full"
-              onClick={() => setShowImageModal(true)}
+        {/* Media */}
+{youtubeUrl && <YouTubeEmbed url={youtubeUrl} />}
+
+{/* --- כאן אתה מחליף --- */}
+{imageUrl && !youtubeUrl && (
+  <img 
+    src={imageUrl} 
+    alt={gameTitle} 
+    className="w-full max-h-48 object-contain rounded-2xl cursor-zoom-in hover:opacity-90 transition-opacity" 
+    onClick={() => setShowImageZoom(true)}
+  />
+)}
+{/* ---------------------- */}
             >
               <img
                 src={imageUrl}
