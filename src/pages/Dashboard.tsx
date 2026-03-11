@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { 
   LogOut, PlusCircle, BookOpen, Target, Gamepad2, Play, 
-  LayoutDashboard, Trophy, Edit
+  LayoutDashboard, Trophy, Mail
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import { ContactFormDialog } from "@/components/ContactFormDialog";
 import { toast } from "sonner";
 
 interface Quiz {
@@ -35,8 +36,8 @@ const Dashboard = () => {
     let mounted = true;
 
     const initializeDashboard = async () => {
-      // השהיית סנכרון עבור התחברות חיצונית
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // השהייה קלה לסנכרון Auth
+      await new Promise(resolve => setTimeout(resolve, 500));
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -52,19 +53,14 @@ const Dashboard = () => {
             supabase
               .from("quizzes")
               .select("id, title, description, created_at")
-              .eq("user_id", session.user.id)
               .order("created_at", { ascending: false })
               .limit(6),
             supabase
               .from("challenges")
               .select("id, title, description, created_at")
-              .eq("user_id", session.user.id)
               .order("created_at", { ascending: false })
               .limit(6)
           ]);
-
-          if (quizzesRes.error) throw quizzesRes.error;
-          if (challengesRes.error) throw challengesRes.error;
 
           setQuizzes(quizzesRes.data || []);
           setChallenges(challengesRes.data || []);
@@ -86,12 +82,16 @@ const Dashboard = () => {
     navigate("/");
   };
 
-  // פונקציה משותפת ליצירת סשן חדש (חידון או אתגר)
-  const startNewGame = async (id: string, type: 'quiz' | 'challenge') => {
+  // --- שחזור הלוגיקה הקריטית של Lovable ---
+  const handleStartGame = async (id: string, type: 'quiz' | 'challenge') => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        toast.error("עליך להיות מחובר");
+        return;
+      }
 
+      // יצירת קוד הצטרפות
       const joinCode = String(Math.floor(10000 + Math.random() * 90000));
       
       const insertData: any = {
@@ -103,6 +103,7 @@ const Dashboard = () => {
       if (type === 'quiz') insertData.quiz_id = id;
       else insertData.challenge_id = id;
 
+      // יצירת הסשן ב-DB (החלק שהיה חסר ב-Vercel)
       const { data: session, error } = await supabase
         .from("game_sessions")
         .insert(insertData)
@@ -111,9 +112,10 @@ const Dashboard = () => {
 
       if (error || !session) throw error;
 
+      // ניווט ל-ID של הסשן (ולא של החידון!)
       navigate(`/game/${session.id}/lobby`);
-    } catch (error) {
-      console.error("Start game error:", error);
+    } catch (error: any) {
+      console.error("Game start error:", error);
       toast.error("שגיאה בהפעלת המשחק");
     }
   };
@@ -149,7 +151,7 @@ const Dashboard = () => {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h2 className="text-3xl font-heading font-bold mb-8">הדשבורד שלי</h2>
 
-          {/* Quick Actions Grid */}
+          {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
             <div className="grid grid-cols-2 gap-4">
               <button onClick={() => navigate("/quiz/new")} className="bg-card border border-border rounded-2xl p-6 shadow-sm hover:shadow-md transition-all text-center group">
@@ -158,10 +160,9 @@ const Dashboard = () => {
                 </div>
                 <h3 className="font-bold text-base">צור חידון</h3>
               </button>
-
               <button onClick={() => navigate("/my-quizzes")} className="bg-card border border-border rounded-2xl p-6 shadow-sm hover:shadow-md transition-all text-center group">
-                <div className="w-12 h-12 bg-answer-blue/10 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                  <BookOpen className="size-6 text-answer-blue" />
+                <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                  <BookOpen className="size-6 text-blue-500" />
                 </div>
                 <h3 className="font-bold text-base">החידונים שלי</h3>
               </button>
@@ -174,17 +175,15 @@ const Dashboard = () => {
                 </div>
                 <h3 className="font-bold text-base">צור אתגר</h3>
               </button>
-
               <button onClick={() => navigate("/my-challenges")} className="bg-card border border-border rounded-2xl p-6 shadow-sm hover:shadow-md transition-all text-center group">
-                <div className="w-12 h-12 bg-answer-green/10 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                  <Trophy className="size-6 text-answer-green" />
+                <div className="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                  <Trophy className="size-6 text-green-500" />
                 </div>
                 <h3 className="font-bold text-base">האתגרים שלי</h3>
               </button>
             </div>
           </div>
 
-          {/* Recent Lists */}
           <div className="space-y-12">
             {/* Quizzes Section */}
             <section>
@@ -193,11 +192,11 @@ const Dashboard = () => {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {quizzes.map(q => (
-                  <div key={q.id} className="bg-card border border-border rounded-xl p-5 shadow-sm hover:border-primary/30 transition-colors">
+                  <div key={q.id} className="bg-card border border-border rounded-xl p-5 shadow-sm">
                     <h4 className="font-bold truncate mb-1">{q.title}</h4>
-                    <p className="text-xs text-muted-foreground line-clamp-2 mb-4 h-8">{q.description || "אין תיאור זמין"}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2 mb-4 h-8">{q.description || "אין תיאור"}</p>
                     <div className="flex gap-2">
-                      <Button size="sm" className="flex-1" onClick={() => startNewGame(q.id, 'quiz')}>
+                      <Button size="sm" className="flex-1" onClick={() => handleStartGame(q.id, 'quiz')}>
                         <Play className="size-3.5 ml-1.5" /> התחל
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => navigate(`/quiz/edit/${q.id}`)}>ערוך</Button>
@@ -210,15 +209,15 @@ const Dashboard = () => {
             {/* Challenges Section */}
             <section>
               <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <div className="w-1.5 h-6 bg-answer-green rounded-full" /> אתגרים אחרונים
+                <div className="w-1.5 h-6 bg-green-500 rounded-full" /> אתגרים אחרונים
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {challenges.map(c => (
-                  <div key={c.id} className="bg-card border border-border rounded-xl p-5 shadow-sm hover:border-answer-green/30 transition-colors">
+                  <div key={c.id} className="bg-card border border-border rounded-xl p-5 shadow-sm">
                     <h4 className="font-bold truncate mb-1">{c.title}</h4>
-                    <p className="text-xs text-muted-foreground line-clamp-2 mb-4 h-8">{c.description || "ללא תיאור"}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-1 mb-4 h-8">{c.description || "אין תיאור"}</p>
                     <div className="flex gap-2">
-                      <Button size="sm" className="flex-1" onClick={() => startNewGame(c.id, 'challenge')}>
+                      <Button size="sm" className="flex-1" onClick={() => handleStartGame(c.id, 'challenge')}>
                         <Play className="size-3.5 ml-1.5" /> התחל
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => navigate(`/challenge/edit/${c.id}`)}>ערוך</Button>
@@ -230,6 +229,14 @@ const Dashboard = () => {
           </div>
         </motion.div>
       </main>
+
+      <footer className="max-w-6xl mx-auto px-6 py-8 mt-12 border-t border-border flex justify-center">
+        <ContactFormDialog trigger={
+          <Button variant="ghost" size="sm" className="text-muted-foreground">
+            <Mail className="size-4 ml-2" /> צור קשר
+          </Button>
+        } />
+      </footer>
     </div>
   );
 };
