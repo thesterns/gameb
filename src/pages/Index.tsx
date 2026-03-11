@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
-import { Zap, Users, Trophy, Sparkles, ArrowLeft, Mail } from "lucide-react";
+import { Zap, Users, Trophy, Sparkles, ArrowLeft, Mail, Star, GamepadIcon, PartyPopper } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/hero-quiz.png";
@@ -13,25 +13,29 @@ const features = [
     icon: Zap,
     title: "משחקים בזמן אמת",
     description: "צרו משחקים ושחקו עם חברים בזמן אמת",
-    color: "bg-answer-red/10 text-answer-red",
+    color: "bg-gradient-to-br from-rose-500 to-pink-600 text-white",
+    shadowColor: "shadow-lg shadow-rose-500/30",
   },
   {
     icon: Users,
     title: "עד 100 שחקנים",
     description: "הזמינו חברים למשחק עם קוד פשוט",
-    color: "bg-answer-blue/10 text-answer-blue",
+    color: "bg-gradient-to-br from-blue-500 to-indigo-600 text-white",
+    shadowColor: "shadow-lg shadow-blue-500/30",
   },
   {
     icon: Trophy,
     title: "3 מצבי משחק",
     description: "גאון, מלך ושבט - כל אחד חוויה שונה",
-    color: "bg-answer-green/10 text-answer-green",
+    color: "bg-gradient-to-br from-emerald-500 to-teal-600 text-white",
+    shadowColor: "shadow-lg shadow-emerald-500/30",
   },
   {
     icon: Sparkles,
     title: "עיצוב מותאם",
     description: "בחרו סגנון עיצוב שמתאים לאירוע שלכם",
-    color: "bg-answer-yellow/10 text-answer-yellow",
+    color: "bg-gradient-to-br from-amber-500 to-orange-600 text-white",
+    shadowColor: "shadow-lg shadow-amber-500/30",
   },
 ];
 
@@ -82,10 +86,18 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background overflow-hidden text-right" dir="rtl">
+    <div className="min-h-screen bg-background overflow-hidden text-right relative" dir="rtl">
+      {/* Colorful Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-pink-400/20 to-rose-500/20 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute top-1/4 left-0 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-indigo-500/20 rounded-full blur-3xl transform -translate-x-1/2" />
+        <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-gradient-to-br from-emerald-400/20 to-teal-500/20 rounded-full blur-3xl transform translate-y-1/2" />
+        <div className="absolute bottom-1/4 left-1/4 w-64 h-64 bg-gradient-to-br from-amber-400/20 to-orange-500/20 rounded-full blur-3xl" />
+      </div>
+
       {/* Navbar */}
       <nav className="relative z-10 flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
-        <h1 className="text-2xl font-heading font-bold text-gradient">
+        <h1 className="text-2xl font-heading font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
           zgame
         </h1>
         <div className="flex gap-3">
@@ -110,7 +122,7 @@ const Index = () => {
             <h2 className="text-4xl md:text-6xl font-heading font-black leading-tight mb-6">
               משחקים שעושים
               <br />
-              <span className="text-gradient">את ההבדל</span>
+              <span className="bg-gradient-to-r from-rose-500 via-purple-500 to-blue-500 bg-clip-text text-transparent">את ההבדל</span>
             </h2>
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-lg mx-auto lg:mx-0 lg:mr-0">
               צרו משחקים מדהימים, הזמינו שחקנים ותיהנו ממשחק בזמן אמת.
@@ -157,7 +169,9 @@ const Index = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <div className="relative">
-              <div className="absolute inset-0 gradient-hero rounded-3xl blur-3xl opacity-20 scale-110" />
+              <div className="absolute inset-0 bg-gradient-to-r from-rose-500 via-purple-500 to-blue-500 rounded-3xl blur-3xl opacity-30 scale-110" />
+              <div className="absolute -top-4 -right-4 w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full opacity-80 animate-pulse" />
+              <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full opacity-80 animate-pulse" style={{ animationDelay: '0.5s' }} />
               <img
                 src={heroImage}
                 alt="zgame - משחקים אינטראקטיביים"
@@ -176,8 +190,12 @@ const Index = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 text-amber-700 dark:text-amber-400 px-4 py-2 rounded-full text-sm font-medium mb-4">
+            <Star className="!size-4 fill-current" />
+            פיצ'רים מדהימים
+          </div>
           <h3 className="text-3xl md:text-4xl font-heading font-bold mb-4">
-            למה zgame?
+            למה <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">zgame</span>?
           </h3>
           <p className="text-muted-foreground text-lg">
             הכלי המושלם ליצירת משחקים אינטראקטיביים
@@ -191,14 +209,14 @@ const Index = () => {
           whileInView="show"
           viewport={{ once: true }}
         >
-          {features.map((feature) => (
+          {features.map((feature, index) => (
             <motion.div
               key={feature.title}
               variants={item}
-              className="bg-card rounded-2xl p-6 shadow-card hover:shadow-elevated transition-shadow duration-300 text-center"
+              className="bg-card rounded-2xl p-6 shadow-card hover:shadow-elevated hover:-translate-y-1 transition-all duration-300 text-center border border-transparent hover:border-primary/20 group"
             >
               <div
-                className={`w-14 h-14 rounded-xl ${feature.color} flex items-center justify-center mx-auto mb-4`}
+                className={`w-14 h-14 rounded-xl ${feature.color} ${feature.shadowColor} flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300`}
               >
                 <feature.icon className="!size-7" />
               </div>
@@ -213,8 +231,39 @@ const Index = () => {
         </motion.div>
       </section>
 
+      {/* CTA Section */}
+      <section className="px-6 py-16 max-w-4xl mx-auto relative z-10">
+        <motion.div
+          className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-3xl p-8 md:p-12 text-center text-white relative overflow-hidden"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+        >
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIyIi8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
+          <div className="relative z-10">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <PartyPopper className="!size-8" />
+              <GamepadIcon className="!size-8" />
+            </div>
+            <h3 className="text-2xl md:text-3xl font-heading font-bold mb-4">
+              מוכנים להתחיל לשחק?
+            </h3>
+            <p className="text-white/80 mb-6 max-w-md mx-auto">
+              הירשמו עכשיו וצרו את המשחק הראשון שלכם בחינם!
+            </p>
+            <Button 
+              onClick={() => navigate("/register")}
+              size="xl"
+              className="bg-white text-purple-600 hover:bg-white/90 font-bold shadow-lg"
+            >
+              התחילו עכשיו - בחינם
+            </Button>
+          </div>
+        </motion.div>
+      </section>
+
       {/* Footer */}
-      <footer className="px-6 py-8 text-center text-muted-foreground text-sm border-t border-border mt-auto">
+      <footer className="px-6 py-8 text-center text-muted-foreground text-sm border-t border-border mt-auto relative z-10">
         <div className="flex items-center justify-center gap-4 mb-2">
           <ContactFormDialog
             trigger={
@@ -225,7 +274,7 @@ const Index = () => {
             }
           />
         </div>
-        <p>© 2026 zgame. כל הזכויות שמורות.</p>
+        <p>© 2026 <span className="font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">zgame</span>. כל הזכויות שמורות.</p>
       </footer>
     </div>
   );
