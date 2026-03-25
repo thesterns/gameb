@@ -459,7 +459,20 @@ const CreateQuiz = () => {
       setAiTopic("");
       toast.success(`${generated.length} שאלות נוצרו בהצלחה!`);
     } catch (err: any) {
-      toast.error("שגיאה ביצירת שאלות: " + (err?.message || ""));
+      // supabase-js FunctionsError often hides the underlying fetch error in `cause`
+      // We surface more context to make deploy/network/env issues debuggable.
+      const causeMsg =
+        err?.cause?.message ||
+        err?.context?.message ||
+        err?.context?.error ||
+        err?.details;
+
+      console.error("AI generate failed:", err);
+      toast.error(
+        "שגיאה ביצירת שאלות: " +
+          (err?.message || "") +
+          (causeMsg ? ` (${causeMsg})` : "")
+      );
     } finally {
       setAiGenerating(false);
     }

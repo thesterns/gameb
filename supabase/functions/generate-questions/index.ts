@@ -5,6 +5,23 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function getGeminiText(responseJson: any): string | null {
+  const parts = responseJson?.candidates?.[0]?.content?.parts;
+  if (!Array.isArray(parts)) return null;
+  const text = parts
+    .map((p: any) => (typeof p?.text === "string" ? p.text : ""))
+    .join("")
+    .trim();
+  return text || null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -12,14 +29,14 @@ serve(async (req) => {
     const { topic, numAnswers, numQuestions } = await req.json();
 
     if (!topic || !numAnswers || !numQuestions) {
-      return new Response(JSON.stringify({ error: "Missing required fields" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Missing required fields" }, 400);
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
+
+    // Optional override via secrets: GEMINI_MODEL (e.g. "gemini-1.5-flash", "gemini-2.0-flash")
+    const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") || "gemini-1.5-flash";
 
     const systemPrompt = `You are a quiz question generator. Generate quiz questions in Hebrew. 
 Each question must have exactly ${numAnswers} answer options, with exactly one correct answer marked.
@@ -31,95 +48,87 @@ Make the questions interesting, varied, and educational.`;
 
     const userPrompt = `צור ${numQuestions} שאלות חידון בנושא: "${topic}". כל שאלה עם ${numAnswers} תשובות, כאשר תשובה אחת בדיוק נכונה.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const responseSchema = {
+      type: "object",
+      properties: {
+        questions: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              text: { type: "string" },
+              answers: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    text: { type: "string" },
+                    is_correct: { type: "boolean" },
+                  },
+                  required: ["text", "is_correct"],
+                  additionalProperties: false,
+                },
+                minItems: Number(numAnswers),
+                maxItems: Number(numAnswers),
+              },
+            },
+            required: ["text", "answers"],
+            additionalProperties: false,
+          },
+        },
+      },
+      required: ["questions"],
+      additionalProperties: false,
+    } as const;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`,
+      {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "return_questions",
-              description: "Return generated quiz questions",
-              parameters: {
-                type: "object",
-                properties: {
-                  questions: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        text: { type: "string", description: "The question text in Hebrew" },
-                        answers: {
-                          type: "array",
-                          items: {
-                            type: "object",
-                            properties: {
-                              text: { type: "string", description: "Answer text in Hebrew" },
-                              is_correct: { type: "boolean", description: "Whether this is the correct answer" },
-                            },
-                            required: ["text", "is_correct"],
-                            additionalProperties: false,
-                          },
-                        },
-                      },
-                      required: ["text", "answers"],
-                      additionalProperties: false,
-                    },
-                  },
-                },
-                required: ["questions"],
-                additionalProperties: false,
-              },
-            },
-          },
-        ],
-        tool_choice: { type: "function", function: { name: "return_questions" } },
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema,
+          temperature: 0.7,
+        },
       }),
-    });
+      }
+    );
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "יותר מדי בקשות, נסה שוב מאוחר יותר" }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "נדרש תשלום, הוסף קרדיטים" }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return jsonResponse({ error: "יותר מדי בקשות, נסה שוב מאוחר יותר" }, 429);
       }
       const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      return new Response(JSON.stringify({ error: "שגיאה ביצירת שאלות" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      console.error("Gemini error:", response.status, t);
+      return jsonResponse({ error: "שגיאה ביצירת שאלות" }, 500);
     }
 
     const data = await response.json();
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    
-    if (!toolCall?.function?.arguments) {
-      console.error("No tool call in response:", JSON.stringify(data));
-      return new Response(JSON.stringify({ error: "שגיאה בפירוש התשובה מה-AI" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const text = getGeminiText(data);
+    if (!text) {
+      console.error("No text in Gemini response:", JSON.stringify(data));
+      return jsonResponse({ error: "שגיאה בפירוש התשובה מה-AI" }, 500);
     }
 
-    const parsed = JSON.parse(toolCall.function.arguments);
-    const questions = parsed.questions;
+    let parsed: any;
+    try {
+      parsed = JSON.parse(text);
+    } catch (e) {
+      console.error("Failed to parse Gemini JSON:", e, "raw:", text);
+      return jsonResponse({ error: "שגיאה בפירוש התשובה מה-AI" }, 500);
+    }
+
+    const questions = parsed?.questions;
+    if (!Array.isArray(questions)) {
+      console.error("Unexpected Gemini payload:", JSON.stringify(parsed));
+      return jsonResponse({ error: "שגיאה בפירוש התשובה מה-AI" }, 500);
+    }
 
     // Validate and fix: ensure exactly one correct answer per question
     for (const q of questions) {
@@ -135,14 +144,9 @@ Make the questions interesting, varied, and educational.`;
       }
     }
 
-    return new Response(JSON.stringify({ questions }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ questions });
   } catch (e) {
     console.error("generate-questions error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
   }
 });
